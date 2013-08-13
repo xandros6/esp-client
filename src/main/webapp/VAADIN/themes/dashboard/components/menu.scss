@@ -1,0 +1,132 @@
+@mixin dashboard-menu-font($baseclass, $fontcolor) {
+
+	.#{$baseclass} .v-nativebutton {
+		color: $fontcolor;
+		text-shadow: 0 1px 0 rgba(0,0,0,.1);
+	}
+	
+}
+
+@mixin dashboard-menu-bg($baseclass, $bg-selected, $bg-selected2) {
+
+	.#{$baseclass} .v-nativebutton.selected {
+		
+		background: -moz-linear-gradient(top, #2d2f30 0%, $bg-selected 10%, $bg-selected 90%, $bg-selected2 100%);
+		background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,$bg-selected2), color-stop(10%,$bg-selected), color-stop(90%,$bg-selected), color-stop(100%,$bg-selected2));
+		background: -webkit-linear-gradient(top, $bg-selected2 0%,$bg-selected 10%,$bg-selected 90%,$bg-selected2 100%);
+		background: -o-linear-gradient(top, $bg-selected2 0%,$bg-selected 10%,$bg-selected 90%,$bg-selected2 100%);
+		background: -ms-linear-gradient(top, $bg-selected2 0%,$bg-selected 10%,$bg-selected 90%,$bg-selected2 100%);
+	}
+	
+}
+
+@mixin dashboard-menu($baseclass, $fontcolor, $bg-selected) {
+
+	.#{$baseclass} .v-nativebutton {
+		/* TODO mixin */
+		-webkit-appearance: none;
+		
+		display: block;
+		padding: 10px 14px 10px;
+		width: 100%;
+		border: none;
+		margin: 0;
+		position: relative;
+		
+		border-top: 1px solid #4b4c4d;
+		border-top-color: rgba(255,255,255,.05);
+		
+		border-bottom: 1px solid #353637;
+		border-bottom-color: rgba(0,0,0,.18);
+		
+		background: transparent;
+		
+		color: $fontcolor;
+		font-weight: normal;
+		text-shadow: 0 1px 0 rgba(0,0,0,.5);
+		text-align: center;
+		
+		/* TODO mixin */
+		/* 		-webkit-transition: color ease-in-out 100ms, background-color linear 60ms; */
+		/* 		-moz-transition: color ease-in-out 100ms, background-color linear 60ms; */
+		/* 		transition: color ease-in-out 100ms, background-color linear 60ms; */
+	}
+	
+	.#{$baseclass}:after {
+		content: "";
+		display: block;
+		border-top: 1px solid #4b4c4d;
+		border-top-color: rgba(255,255,255,.05);
+		height: 0;
+	}
+	
+	.#{$baseclass} .v-nativebutton-caption {
+		font-size: 12px;
+		font-weight: 600;
+		text-transform: uppercase;
+		display: block;
+		margin: .2em 0 0 0;
+	}
+	
+	.#{$baseclass} .v-nativebutton:focus {
+		outline: none;
+	}
+	
+	.#{$baseclass} .v-nativebutton:hover,
+	.#{$baseclass} .v-nativebutton:focus {
+		color: #e1e1e1;
+	}
+	
+	.#{$baseclass} .v-nativebutton:before {
+		font-size: 24px;
+		line-height: 1;
+		margin: 0;
+	}
+	
+	.v-webkit & .#{$baseclass} .v-nativebutton:before {
+		/* TODO mixin */
+		background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#e8e8e8), color-stop(100%,#d3d3d3));
+		background: -webkit-linear-gradient(top, #fff 0%,#777 100%);
+	/* 	background: linear-gradient(to bottom, #e8e8e8 0%,#d3d3d3 100%); */
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		text-shadow: 0 1px 1px rgba(0,0,0,.2);
+		opacity: .5;
+		
+		/* TODO mixin */
+		-webkit-transition: opacity ease-in-out 200ms;
+		-moz-transition: opacity ease-in-out 200ms;
+		-ms-transition: opacity ease-in-out 200ms;
+		-o-transition: opacity ease-in-out 200ms;
+		transition: opacity ease-in-out 200ms;
+	}
+	
+	.v-webkit & .#{$baseclass} .v-nativebutton:hover:before,
+	.v-webkit & .#{$baseclass} .v-nativebutton:focus:before {
+		opacity: 1;
+	}
+	
+	.#{$baseclass} .v-nativebutton:active {
+		background: rgba(0,0,0,.1);
+	}
+	
+	.#{$baseclass} .v-nativebutton.selected {
+		color: #e1e1e1;
+		text-shadow: 0 2px 2px rgba(0,0,0,.5);
+		
+		border-top-color: #262729;
+		border-bottom-color: #2b2c2e;
+		
+		background: $bg-selected;
+		
+	/* 	background: linear-gradient(to bottom, #2d2f30 0%,$bg-selected 10%,$bg-selected 90%,#2d2f30 100%); */
+	
+		-webkit-transition: none;
+	}
+	
+	.v-webkit & .#{$baseclass} .v-nativebutton.selected:before {
+		text-shadow: none;
+		opacity: 1;
+	}
+	
+}
