@@ -155,7 +155,7 @@
 											vaadin-maven-plugin
 										</artifactId>
 										<versionRange>
-											[7.0.2,)
+											[7.1.2,)
 										</versionRange>
 										<goals>
 											<goal>resources</goal>

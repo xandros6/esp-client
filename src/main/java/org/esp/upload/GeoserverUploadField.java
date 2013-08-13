@@ -56,8 +56,6 @@ public class GeoserverUploadField extends CustomField<IndicatorSurface>
 
     private DatasetManager dsm = new DatasetManager();
 
-    private EntityManager em;
-
     private LayerViewer lv = new LayerViewer();
 
     private Provider<EntityManager> entityManagerProvider;
@@ -201,6 +199,9 @@ public class GeoserverUploadField extends CustomField<IndicatorSurface>
             } catch (TransformException e) {
                 Notification
                         .show(GEOTIFF_ERROR_MSG);
+            } catch (UnknownCRSException e) {
+                Notification
+                        .show(e.getMessage());
             }
 
         } else if (Files.getFileExtension(file.getName()).equals("zip")) {

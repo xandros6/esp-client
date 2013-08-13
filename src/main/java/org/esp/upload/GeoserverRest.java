@@ -23,7 +23,6 @@ import javax.persistence.Query;
 
 import org.esp.domain.blueprint.IndicatorSurface;
 import org.geotools.coverage.grid.GridCoverage2D;
-import org.geotools.coverage.grid.io.imageio.geotiff.GeoTiffIIOMetadataDecoder;
 import org.geotools.data.FeatureReader;
 import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.gce.geotiff.GeoTiffReader;
@@ -34,6 +33,7 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.geometry.DirectPosition;
 import org.opengis.referencing.FactoryException;
+import org.opengis.referencing.ReferenceIdentifier;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.TransformException;
 
@@ -120,19 +120,23 @@ public class GeoserverRest {
     }
 
     public boolean extractTiffMetadata(File tifFile, IndicatorSurface surface)
-            throws FactoryException, IOException, TransformException {
+            throws FactoryException, IOException, TransformException, UnknownCRSException {
 
         GeoTiffReader gtr = new GeoTiffReader(tifFile);
 
         try {
 
-            GeoTiffIIOMetadataDecoder md = gtr.getMetadata();
-
-            // ESRI rasters seem to return a float not a double.
-//            float noDataVal = (float) md.getNoData();
-
             CoordinateReferenceSystem crs = gtr.getCrs();
             Integer epsgCode = CRS.lookupEpsgCode(crs, true);
+            
+            if (epsgCode == null) {
+                ReferenceIdentifier name = crs.getName();
+                String crsName = "Unknown";
+                if (name != null) {
+                    crsName = name.toString();
+                }
+                throw new UnknownCRSException(crsName);
+            }
 
             String srid = "EPSG:" + epsgCode;
 
@@ -165,7 +169,6 @@ public class GeoserverRest {
             Envelope e = new Envelope();
             e.expandToInclude(ll.getOrdinate(0), ll.getOrdinate(1));
             e.expandToInclude(ur.getOrdinate(0), ur.getOrdinate(1));
-            // e.expandToInclude(, y)
 
             Geometry poly = envelopeToWgs84(epsgCode, e);
 
@@ -213,10 +216,6 @@ public class GeoserverRest {
     public boolean publishShp(File zipFile, String srs,
             String layerAndStoreName, String styleName) {
 
-        // FIXME
-        // String defaultStyle = "polygon";
-
-        // System.out.println("STYLE: " + styleName);
         try {
 
             boolean x = publisher.publishShp(workspace, layerAndStoreName,
