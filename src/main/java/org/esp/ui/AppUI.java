@@ -1,12 +1,6 @@
 package org.esp.ui;
 
-import org.jrc.auth.AccountActions;
-import org.jrc.auth.domain.Role;
-import org.jrc.form.permission.RoleManager;
 import org.jrc.form.view.GuicedViewProvider;
-import org.jrc.persist.Dao;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.code.vaadin.application.ui.ScopedUI;
 import com.google.code.vaadin.application.uiscope.UIScoped;
@@ -21,7 +15,6 @@ import com.vaadin.ui.CssLayout;
 @UIScoped
 public class AppUI extends ScopedUI  {
 
-	private Logger logger = LoggerFactory.getLogger(getClass());
 	
 	private CssLayout root = new CssLayout();
     
@@ -35,20 +28,12 @@ public class AppUI extends ScopedUI  {
 	private GuicedViewProvider viewProvider;
 
     private HeaderView headerView;
-
-    private AccountActions accAct;
-
-    private Role role;
-
-//    private MenuView menuView;
 	
 	
 	@Inject
-	public AppUI(GuicedViewProvider viewProvider, HeaderView headerView, AccountActions accAct, RoleManager roleManager) {
+	public AppUI(GuicedViewProvider viewProvider, HeaderView headerView) {
 		this.viewProvider = viewProvider;
 		this.headerView = headerView;
-		this.accAct = accAct;
-		this.role = roleManager.getRole();
 	}
 
 	@Override

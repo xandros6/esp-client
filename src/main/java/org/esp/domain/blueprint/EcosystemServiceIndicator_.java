@@ -4,7 +4,6 @@ import javax.persistence.metamodel.SetAttribute;
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;
 
-import org.jrc.persist.adminunits.Country;
 import org.jrc.persist.adminunits.Grouping;
 
 @StaticMetamodel(EcosystemServiceIndicator.class)

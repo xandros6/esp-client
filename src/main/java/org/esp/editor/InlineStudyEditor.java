@@ -39,6 +39,7 @@ public class InlineStudyEditor extends BaseEditor<Study> {
 
     }
 
+    @SuppressWarnings("static-access")
     @Override
     protected void doPostDelete(Study entity) {
 

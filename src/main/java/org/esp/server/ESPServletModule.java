@@ -8,13 +8,9 @@ import org.jrc.auth.JpaRealm;
 import org.jrc.auth.SecurityFilter;
 import org.jrc.inject.AbstractGuiceServletModule;
 import org.jrc.inject.GuiceApplicationServlet;
-import org.jrc.persist.Dao;
-
 import com.google.code.vaadin.application.MVPApplicationInitParameters;
-import com.google.code.vaadin.application.uiscope.UIScoped;
 import com.google.inject.name.Names;
 import com.google.inject.persist.PersistFilter;
-import com.google.inject.servlet.SessionScoped;
 
 /**
  * 

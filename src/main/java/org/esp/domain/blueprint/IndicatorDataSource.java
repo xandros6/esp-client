@@ -1,6 +1,5 @@
 package org.esp.domain.blueprint;
 
-import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;

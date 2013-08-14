@@ -20,7 +20,6 @@ import org.jrc.form.editor.BaseEditor;
 import org.jrc.form.editor.EntityTable;
 import org.jrc.form.filter.YearField;
 import org.jrc.form.permission.RoleManager;
-import org.jrc.persist.ContainerManager;
 import org.jrc.persist.Dao;
 import org.jrc.persist.adminunits.Grouping;
 import org.jrc.persist.adminunits.Grouping_;
@@ -36,7 +35,6 @@ import com.vaadin.ui.Field;
 import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.Notification;
 import com.vaadin.ui.TextArea;
-import com.vaadin.ui.TextField;
 import com.vaadin.ui.TwinColSelect;
 
 public class EcosystemServiceIndicatorEditor extends

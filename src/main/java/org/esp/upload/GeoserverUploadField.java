@@ -159,7 +159,6 @@ public class GeoserverUploadField extends CustomField<IndicatorSurface>
                 surface.setSpatialDataType(sdt);
 
                 gsr.extractTiffMetadata(file, surface);
-
                 
                 /*
                  * If the layer name is already there we must remove the old layer

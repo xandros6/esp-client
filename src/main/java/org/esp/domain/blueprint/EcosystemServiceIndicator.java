@@ -2,7 +2,6 @@ package org.esp.domain.blueprint;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -16,7 +15,6 @@ import javax.persistence.ManyToMany;
 import javax.persistence.JoinTable;
 import javax.persistence.CascadeType;
 
-import org.jrc.persist.adminunits.Country;
 import org.jrc.persist.adminunits.Grouping;
 
 import java.util.Set;
