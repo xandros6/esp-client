@@ -39,4 +39,21 @@ public class AgreementLevel {
     public String toString() {
         return label;
     }
+    
+    @Override
+    public boolean equals(Object obj) {
+        
+        if (obj instanceof AgreementLevel) {
+            AgreementLevel comparee = (AgreementLevel) obj;
+            if (comparee.getId().equals(getId())) {
+                return true;
+            }
+        }
+        return super.equals(obj);
+    }
+    
+    @Override
+    public int hashCode() {
+        return id.intValue();
+    }
 }

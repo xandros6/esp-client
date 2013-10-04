@@ -181,4 +181,10 @@ public class Study {
     public String toString() {
         return studyName;
     }
+    
+    @Override
+    public int hashCode() {
+        return id.intValue();
+    }
+    
 }

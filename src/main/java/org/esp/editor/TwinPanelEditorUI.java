@@ -21,7 +21,7 @@ public class TwinPanelEditorUI extends HorizontalLayout implements
     
     private Button createButton;
 
-    public TwinPanelEditorUI(String title) {
+    public TwinPanelEditorUI(String title, String description) {
 
         this.setSizeFull();
         this.setSpacing(true);
@@ -33,7 +33,7 @@ public class TwinPanelEditorUI extends HorizontalLayout implements
         
         this.createButton = new Button("New");
         leftPanel.addCreateButton(createButton); 
-        leftPanel.addDescription("Please select a study or create a new one.");
+        leftPanel.addDescription(description);
         
         
         /*

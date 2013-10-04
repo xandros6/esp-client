@@ -7,6 +7,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
 
 @Entity
 @Table(schema = "blueprint", name = "temporal_unit")
@@ -27,6 +28,7 @@ public class TemporalUnit {
     private String label;
 
     @Column
+    @NotNull
     public String getLabel() {
         return label;
     }
@@ -38,5 +40,22 @@ public class TemporalUnit {
     @Override
     public String toString() {
         return label;
+    }
+    
+    @Override
+    public int hashCode() {
+        return id.intValue();
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+    
+        if (obj instanceof TemporalUnit) {
+            TemporalUnit comparee = (TemporalUnit) obj;
+            if (comparee.getId().equals(getId())) {
+                return true;
+            }
+        }
+        return super.equals(obj);
     }
 }

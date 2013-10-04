@@ -146,18 +146,6 @@ public class EcosystemServiceIndicator {
         this.quantificationMethod = quantificationMethod;
     }
 
-    private SpatialDataType spatialDataType;
-
-    @ManyToOne
-    @JoinColumn(name = "spatial_data_type_id")
-    public SpatialDataType getSpatialDataType() {
-        return spatialDataType;
-    }
-
-    public void setSpatialDataType(SpatialDataType spatialDataType) {
-        this.spatialDataType = spatialDataType;
-    }
-
     private EcosystemServiceAccountingType ecosystemServiceAccountingType;
 
     @ManyToOne
@@ -215,17 +203,6 @@ public class EcosystemServiceIndicator {
 
     public void setEndYear(Long endYear) {
         this.endYear = endYear;
-    }
-
-    private String kml;
-
-    @Column
-    public String getKml() {
-        return kml;
-    }
-
-    public void setKml(String kml) {
-        this.kml = kml;
     }
 
     private String comments;

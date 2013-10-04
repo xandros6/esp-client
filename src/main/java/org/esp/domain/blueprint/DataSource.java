@@ -67,4 +67,21 @@ public class DataSource {
     public String toString() {
         return label;
     }
+    
+    @Override
+    public boolean equals(Object obj) {
+    
+        if (obj instanceof DataSource) {
+            DataSource comparee = (DataSource) obj;
+            if (comparee.getId().equals(getId())) {
+                return true;
+            }
+        }
+        return super.equals(obj);
+    }
+    
+    @Override
+    public int hashCode() {
+        return id.intValue();
+    }
 }

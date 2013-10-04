@@ -41,4 +41,21 @@ public class SpatialLevel {
     public String toString() {
         return label;
     }
+    
+    @Override
+    public int hashCode() {
+        return id.intValue();
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+    
+        if (obj instanceof SpatialLevel) {
+            SpatialLevel comparee = (SpatialLevel) obj;
+            if (comparee.getId().equals(getId())) {
+                return true;
+            }
+        }
+        return super.equals(obj);
+    }
 }

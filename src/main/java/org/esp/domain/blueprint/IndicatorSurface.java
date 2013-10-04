@@ -133,4 +133,5 @@ public class IndicatorSurface {
     public void setMinVal(Double minVal) {
         this.minVal = minVal;
     }
+    
 }

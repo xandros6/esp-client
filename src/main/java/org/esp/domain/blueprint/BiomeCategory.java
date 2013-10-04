@@ -39,4 +39,21 @@ public class BiomeCategory {
     public String toString() {
         return label;
     }
+    
+    @Override
+    public boolean equals(Object obj) {
+    
+        if (obj instanceof BiomeCategory) {
+            BiomeCategory comparee = (BiomeCategory) obj;
+            if (comparee.getId().equals(getId())) {
+                return true;
+            }
+        }
+        return super.equals(obj);
+    }
+    
+    @Override
+    public int hashCode() {
+        return id.intValue();
+    }
 }

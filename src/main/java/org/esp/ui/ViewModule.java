@@ -6,8 +6,11 @@ import org.esp.domain.blueprint.EcosystemServiceIndicator;
 import org.esp.domain.blueprint.Study;
 import org.esp.editor.EcosystemServiceIndicatorEditor;
 import org.esp.editor.StudyEditor;
+import org.esp.publisher.LayerManager;
+import org.esp.publisher.MapPublisher;
 import org.jrc.form.view.AbstractViewModule;
 
+import com.google.code.vaadin.application.uiscope.UIScoped;
 import com.google.inject.multibindings.MapBinder;
 import com.vaadin.navigator.View;
 
@@ -37,6 +40,9 @@ public class ViewModule extends AbstractViewModule {
         
         addBinding(ECOSYSTEM_SERVICE_INDICATOR, EcosystemServiceIndicatorEditor.class, EcosystemServiceIndicator.class);
         addBinding(HOME, StudyEditor.class, Study.class); 
+        
+        mapbinder.addBinding("Test").to(LayerManager.class).in(UIScoped.class);
+        mapbinder.addBinding("Publisher").to(MapPublisher.class).in(UIScoped.class);
         
 //        addBinding("Table-Descriptions", TableDescriptionEditor.class, TableDescription.class);
     }

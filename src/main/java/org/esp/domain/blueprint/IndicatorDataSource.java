@@ -48,4 +48,21 @@ public class IndicatorDataSource {
     public void setDataSource(DataSource dataSource) {
         this.dataSource = dataSource;
     }
+    
+    @Override
+    public int hashCode() {
+        return id.intValue();
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+    
+        if (obj instanceof IndicatorDataSource) {
+            IndicatorDataSource comparee = (IndicatorDataSource) obj;
+            if (comparee.getId().equals(getId())) {
+                return true;
+            }
+        }
+        return super.equals(obj);
+    }
 }

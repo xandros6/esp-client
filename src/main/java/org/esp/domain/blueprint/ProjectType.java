@@ -39,4 +39,21 @@ public class ProjectType {
     public String toString() {
         return label;
     }
+    
+    @Override
+    public int hashCode() {
+        return id.intValue();
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+    
+        if (obj instanceof ProjectType) {
+            ProjectType comparee = (ProjectType) obj;
+            if (comparee.getId().equals(getId())) {
+                return true;
+            }
+        }
+        return super.equals(obj);
+    }
 }

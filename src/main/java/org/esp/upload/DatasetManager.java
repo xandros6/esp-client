@@ -17,7 +17,7 @@ import com.google.common.io.Files;
 public class DatasetManager {
     
 
-    protected File unzip(File file) throws ZipException {
+    public File unzip(File file) throws ZipException {
 
         ZipFile zf = new ZipFile(file);
 

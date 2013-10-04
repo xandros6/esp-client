@@ -207,12 +207,6 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.vaadin.addon</groupId>
-			<artifactId>v-leaflet</artifactId>
-			<version>0.0.8</version>
-		</dependency>
-
-		<dependency>
 			<groupId>it.geosolutions</groupId>
 			<artifactId>geoserver-manager</artifactId>
 			<version>1.5.1</version>

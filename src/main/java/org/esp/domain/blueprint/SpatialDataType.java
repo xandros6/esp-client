@@ -39,4 +39,21 @@ public class SpatialDataType {
     public String toString() {
         return label;
     }
+    
+    @Override
+    public int hashCode() {
+        return id.intValue();
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+    
+        if (obj instanceof SpatialDataType) {
+            SpatialDataType comparee = (SpatialDataType) obj;
+            if (comparee.getId().equals(getId())) {
+                return true;
+            }
+        }
+        return super.equals(obj);
+    }
 }

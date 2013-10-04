@@ -10,6 +10,7 @@ public class HeaderView extends HorizontalLayout implements View {
     
     @Inject
     public HeaderView() {
+        
     }
     
 

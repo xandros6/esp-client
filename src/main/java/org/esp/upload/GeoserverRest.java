@@ -21,6 +21,7 @@ import javax.media.jai.RenderedOp;
 import javax.media.jai.operator.ExtremaDescriptor;
 import javax.persistence.Query;
 
+import org.esp.domain.blueprint.ColourMapEntry;
 import org.esp.domain.blueprint.IndicatorSurface;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.data.FeatureReader;
@@ -204,7 +205,7 @@ public class GeoserverRest {
      * @throws IllegalArgumentException
      * @throws FileNotFoundException
      */
-    protected boolean publishTiff(File geotiff, String srs,
+    public boolean publishTiff(File geotiff, String srs,
             String layerAndStoreName, String styleName)
             throws FileNotFoundException, IllegalArgumentException {
 
@@ -254,7 +255,10 @@ public class GeoserverRest {
         }
         return false;
     }
+    
+    
 
+    @Deprecated
     public boolean publishStyle(String styleName, double min, double max)
             throws IOException {
 
@@ -262,18 +266,18 @@ public class GeoserverRest {
 
         Map<String, Object> root = new HashMap<String, Object>();
 
-        List<ColourMapEntry> l = new ArrayList<ColourMapEntry>();
-        ColourMapEntry cm0 = new ColourMapEntry();
+        List<OldCME> l = new ArrayList<OldCME>();
+        OldCME cm0 = new OldCME();
         cm0.setColour("#000000");
         cm0.setValue(0);
         cm0.setOpacity(0);
 
-        ColourMapEntry cme = new ColourMapEntry();
+        OldCME cme = new OldCME();
         cme.setColour("#ffff00");
         cme.setValue(0);
         cme.setOpacity(1);
 
-        ColourMapEntry cme2 = new ColourMapEntry();
+        OldCME cme2 = new OldCME();
         cme2.setColour("#ff0000");
         cme2.setValue(max);
         cme2.setOpacity(1);
@@ -299,6 +303,32 @@ public class GeoserverRest {
         }
         return false;
 
+    }
+
+    public boolean publishSLD(String styleName, List<ColourMapEntry> cmes)
+            throws IOException {
+    
+        Template template = configuration.getTemplate("SldContinuous.ftl");
+    
+        Map<String, Object> root = new HashMap<String, Object>();
+    
+    
+        root.put("styleName", styleName);
+        root.put("colourMapEntries", cmes);
+    
+        try {
+            // PrintWriter pw = new PrintWr
+            StringWriter sw = new StringWriter();
+    
+            template.process(root, sw);
+    
+            String sldBody = sw.toString();
+            return publisher.publishStyle(sldBody);
+        } catch (TemplateException e) {
+            e.printStackTrace();
+        }
+        return false;
+    
     }
 
     private Polygon envelopeToWgs84(Integer epsgCode, Envelope e)

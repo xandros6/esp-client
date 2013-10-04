@@ -13,13 +13,14 @@ public class LayerViewer extends LMap {
 //    LMap lMap = new LMap();
 
     public LayerViewer() {
-
+        
         this.setHeight("300px");
         this.setWidth("500px");
         bl.setUrl("http://{s}.tile.osm.org/{z}/{x}/{y}.png");
         bl.setName("OSM");
         bl.setAttributionString("&copy; <a href='http://osm.org/copyright'>OpenStreetMap</a> contributors");
 
+        this.setBaseLayers(bl);
     }
 
     public void addWmsLayer(String layerName) {

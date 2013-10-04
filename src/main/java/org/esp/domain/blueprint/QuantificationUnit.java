@@ -53,4 +53,21 @@ public class QuantificationUnit {
     public String toString() {
         return label;
     }
+    
+    @Override
+    public int hashCode() {
+        return id.intValue();
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+    
+        if (obj instanceof QuantificationUnit) {
+            QuantificationUnit otherObj = (QuantificationUnit) obj;
+            if (otherObj.getId().equals(this.getId())) {
+                return true;
+            }
+        }
+        return super.equals(obj);
+    }
 }

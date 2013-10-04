@@ -184,8 +184,6 @@ public class EcosystemServiceIndicatorEditor extends
         
         containerManager.getContainer().removeAllContainerFilters();
         containerManager.getContainer().addContainerFilter(filter);
-        containerManager.getContainer().refresh();
-        
         
         theView.setExtraStuff(getReadOnlyForm(study));
         

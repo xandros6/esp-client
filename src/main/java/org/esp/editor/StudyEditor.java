@@ -48,7 +48,9 @@ public class StudyEditor extends BaseEditor<Study> {
         // EcosystemServiceIndicator_.indicator,
         // EcosystemServiceIndicator_.ecosystemService);
         // init(new TwinLevelEditorView());
-        TwinPanelEditorUI theView = new TwinPanelEditorUI("Study");
+
+        String description = "Please select a study or create a new one.";
+        TwinPanelEditorUI theView = new TwinPanelEditorUI("Study", description);
         theView.setTable(table);
         init(theView);
 
@@ -92,7 +94,7 @@ public class StudyEditor extends BaseEditor<Study> {
         Equal filter = new Compare.Equal(Study_.role.getName(), roleManager.getRole());
         containerManager.getContainer().removeAllContainerFilters();
         containerManager.getContainer().addContainerFilter(filter);
-        containerManager.refresh();
+//        containerManager.refresh();
         
 //        super.enter(event);
     }

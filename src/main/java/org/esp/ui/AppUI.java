@@ -3,7 +3,6 @@ package org.esp.ui;
 import org.jrc.form.view.GuicedViewProvider;
 
 import com.google.code.vaadin.application.ui.ScopedUI;
-import com.google.code.vaadin.application.uiscope.UIScoped;
 import com.google.inject.Inject;
 import com.vaadin.annotations.Theme;
 import com.vaadin.navigator.Navigator;
@@ -12,7 +11,6 @@ import com.vaadin.ui.CssLayout;
 
 //@Theme("biopama")
 @Theme("dashboard")
-@UIScoped
 public class AppUI extends ScopedUI  {
 
 	

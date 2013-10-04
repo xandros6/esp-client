@@ -7,16 +7,19 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
+import javax.persistence.ManyToOne;
+import javax.persistence.JoinColumn;
 
 @Entity
-@Table(schema = "blueprint", name = "quantification_method")
-public class QuantificationMethod {
+@Table(schema = "blueprint", name = "colour_map")
+public class ColourMap {
 
     private Long id;
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO, generator = "seq")
-    @SequenceGenerator(allocationSize = 1, name = "seq", sequenceName = "blueprint.quantification_method_id_seq")
+    @SequenceGenerator(allocationSize = 1, name = "seq", sequenceName = "blueprint.colour_map_id_seq")
     public Long getId() {
         return id;
     }
@@ -26,6 +29,7 @@ public class QuantificationMethod {
 
     private String label;
 
+    @NotNull
     @Column
     public String getLabel() {
         return label;
@@ -38,22 +42,5 @@ public class QuantificationMethod {
     @Override
     public String toString() {
         return label;
-    }
-    
-    @Override
-    public int hashCode() {
-        return id.intValue();
-    }
-    
-    @Override
-    public boolean equals(Object obj) {
-    
-        if (obj instanceof QuantificationMethod) {
-            QuantificationMethod comparee = (QuantificationMethod) obj;
-            if (comparee.getId().equals(getId())) {
-                return true;
-            }
-        }
-        return super.equals(obj);
     }
 }

@@ -48,4 +48,21 @@ public class EcosystemServiceIndicatorBiome {
     public void setBiome(Biome biome) {
         this.biome = biome;
     }
+    
+    @Override
+    public int hashCode() {
+        return id.intValue();
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+    
+        if (obj instanceof EcosystemServiceIndicatorBiome) {
+            EcosystemServiceIndicatorBiome comparee = (EcosystemServiceIndicatorBiome) obj;
+            if (comparee.getId().equals(getId())) {
+                return true;
+            }
+        }
+        return super.equals(obj);
+    }
 }

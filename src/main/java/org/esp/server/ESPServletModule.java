@@ -4,6 +4,7 @@ import org.apache.shiro.realm.Realm;
 import org.esp.ui.AppUI;
 import org.jrc.auth.AuthFilter;
 import org.jrc.auth.AuthServlet;
+import org.jrc.auth.FakeAuthServlet;
 import org.jrc.auth.JpaRealm;
 import org.jrc.auth.SecurityFilter;
 import org.jrc.inject.AbstractGuiceServletModule;
@@ -46,7 +47,8 @@ public class ESPServletModule extends AbstractGuiceServletModule {
         
         filter("/*").through(AuthFilter.class);
         
-        serve("/login").with(AuthServlet.class);
+//        serve("/login").with(AuthServlet.class);
+        serve("/login").with(FakeAuthServlet.class);
 
         /*
          * Main application srvlet

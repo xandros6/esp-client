@@ -14,8 +14,9 @@
             <Opacity>1.0</Opacity>
             <ColorMap>
             
+              <ColorMapEntry color="#000000" quantity="0" label="nodata" opacity="0" />
 <#list colourMapEntries as colourMapEntry>
-              <ColorMapEntry color="${colourMapEntry.getColour()}" quantity="${colourMapEntry.getValue()?c}" label="${colourMapEntry.getLabel()}" opacity="${colourMapEntry.getOpacity()}" />
+              <ColorMapEntry color="${colourMapEntry.getColor().getCSS()}" quantity="${colourMapEntry.getValue()?c}" label="${colourMapEntry.getLabel()}" opacity="1" />
 </#list> 
             
             </ColorMap>

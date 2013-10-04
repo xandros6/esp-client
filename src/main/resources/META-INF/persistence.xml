@@ -21,13 +21,11 @@
 		<class>org.jrc.persist.metadata.TableDescription</class>
 		<class>org.jrc.persist.metadata.ColumnDescription</class>
 
-
 		<class>org.jrc.persist.adminunits.Country</class>
 		<class>org.jrc.persist.adminunits.CountryGrouping</class>
 		<class>org.jrc.persist.adminunits.Grouping</class>
 		<class>org.jrc.persist.adminunits.GroupingType</class>
 		<class>org.jrc.persist.adminunits.Site</class>
-
 
 		<properties>
 

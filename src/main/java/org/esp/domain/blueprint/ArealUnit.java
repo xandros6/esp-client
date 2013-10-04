@@ -39,4 +39,21 @@ public class ArealUnit {
     public String toString() {
         return label;
     }
+    
+    @Override
+    public boolean equals(Object obj) {
+        
+        if (obj instanceof ArealUnit) {
+            ArealUnit comparee = (ArealUnit) obj;
+            if (comparee.getLabel().equals(getLabel())) {
+                return true;
+            }
+        }
+        return super.equals(obj);
+    }
+    
+    @Override
+    public int hashCode() {
+        return label.hashCode();
+    }
 }
