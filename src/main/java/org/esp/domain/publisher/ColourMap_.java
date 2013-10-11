@@ -1,4 +1,4 @@
-package org.esp.domain.blueprint;
+package org.esp.domain.publisher;
 
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;

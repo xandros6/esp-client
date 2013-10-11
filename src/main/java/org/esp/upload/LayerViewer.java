@@ -14,8 +14,7 @@ public class LayerViewer extends LMap {
 
     public LayerViewer() {
         
-        this.setHeight("300px");
-        this.setWidth("500px");
+        this.setSizeFull();
         bl.setUrl("http://{s}.tile.osm.org/{z}/{x}/{y}.png");
         bl.setName("OSM");
         bl.setAttributionString("&copy; <a href='http://osm.org/copyright'>OpenStreetMap</a> contributors");

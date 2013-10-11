@@ -28,8 +28,11 @@
 @import "views/reports.scss";
 @import "views/transactions.scss";
 
+@import "display/display-panel.scss";
+
 $header-height: 120px; 
 $esp-blue: rgb(46,112,215);
+$esp-green: rgb(149,204,77);
 
 @mixin dashboard {
 	
@@ -63,13 +66,48 @@ $esp-blue: rgb(46,112,215);
 	@include dashboard-menu-font(progress-indicator, $esp-blue);
 	
 	/*** Custom ******************/
-	.header  {
-		background-image: url('img/esp-vis-header.png');
-		background-repeat: no-repeat;
-		height: $header-height;
-		margin-bottom: 20px;
-		width:100%;
-		background-color: #fff;
+	@include display-panel;
+	
+	.header {
+		padding-left: 20px;
+		padding-top: 5px;
+		
+		div {
+		
+			float: left;
+			
+			.esp {
+				color: $esp-green;
+				font-size: 52px;
+				font-weight: 700;
+				color: $v-green;
+				text-transform: uppercase;
+				text-shadow: 1px 2px 3px rgba(0,0,0,0.5);
+				margin-right: 5px;
+			}
+
+			.mapping {
+				color: $esp-blue;
+				font-size: 52px;
+				font-weight: 400;
+				padding-top: 5px;
+				text-align: justify;
+				/*text-shadow: 1px 2px 3px rgba(255,255,255,0.9);*/
+				
+				text-shadow: 1px 2px 3px rgba(0,0,0,0.5);
+				text-align: center;
+			}	
+
+			.search-box {
+				padding-top: 10px;
+				
+				.v-textfield {
+					height: 27px;
+				}
+			}
+			
+		}
+		font-family: 'Lato', sans-serif;
 	}
 	
 	

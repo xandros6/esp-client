@@ -1,21 +1,21 @@
-package org.esp.domain.blueprint;
+package org.esp.domain.publisher;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
-import javax.persistence.ManyToOne;
-import javax.persistence.JoinColumn;
 
 import com.vaadin.shared.ui.colorpicker.Color;
 
 @Entity
-@Table(schema = "blueprint", name = "colour_map_entry")
+@Table(schema = "publisher", name = "colour_map_entry")
 public class ColourMapEntry {
 
     private Integer id;
@@ -125,6 +125,26 @@ public class ColourMapEntry {
         green = color.getGreen();
         blue = color.getBlue();
         alpha = color.getAlpha();
+    }
+    
+    @Override
+    public int hashCode() {
+        if (id != null) {
+            return id.intValue();
+        }
+        return super.hashCode();
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+    
+        if (obj instanceof ColourMapEntry) {
+            ColourMapEntry comparee = (ColourMapEntry) obj;
+            if (comparee.getId().equals(getId())) {
+                return true;
+            }
+        }
+        return super.equals(obj);
     }
     
 }

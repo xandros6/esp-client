@@ -14,7 +14,7 @@ public class TiffProcessing {
 
     @Test(expected=UnknownCRSException.class)
     public void test() throws FactoryException, IOException, TransformException, UnknownCRSException {
-        GeoserverRest gsr = new GeoserverRest(null, null, null, null, null);
+        TiffMetaEx gsr = new GeoserverRest(null, null, null, null, null);
 
         IndicatorSurface surface = new IndicatorSurface();
 

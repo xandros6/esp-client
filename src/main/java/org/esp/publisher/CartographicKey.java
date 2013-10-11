@@ -2,7 +2,7 @@ package org.esp.publisher;
 
 import java.util.List;
 
-import org.esp.domain.blueprint.ColourMapEntry;
+import org.esp.domain.publisher.ColourMapEntry;
 import org.jrc.ui.SimpleHtmlLabel;
 
 import com.google.common.base.Joiner;
@@ -10,24 +10,39 @@ import com.vaadin.shared.ui.colorpicker.Color;
 
 public class CartographicKey extends SimpleHtmlLabel {
 
-    private static String DIV_TEMPLATE = "<div style='position: relative;'><div style='%s'>&nbsp;</div>%s</div>";
-    private static String STYLE_TEMPLATE = "position: absolute; background-image: -webkit-linear-gradient(bottom, %s); height:100px; width: 20px;";
+    private static String DIV_TEMPLATE = "<div style='width: 50px; height: 95px; margin-left: 20px;'><div style='position: relative;'><div style='%s'>&nbsp;</div>%s</div></div>";
 
     private List<ColourMapEntry> colours;
 
     private String RGB_TEMPLATE = "rgb(%s,%s,%s) %s";
 
-    double min = Double.POSITIVE_INFINITY;
-    double max = Double.NEGATIVE_INFINITY;
+    double min;
+    double max;
 
     private void update() {
         
         String finalStyle = getStyleString();
+        
+        StringBuilder sb = new StringBuilder(); 
 
-        setValue(String.format(DIV_TEMPLATE, finalStyle, "<div style='position: absolute; left: 30px;'>0%</div><div style='position: absolute; top:80px; left: 30px;'>100%</div>"));
+        for (ColourMapEntry cme : colours) {
+            Double val = cme.getValue();
+            double pc = getPercentage(val);
+            double height = 80;
+            sb.append("<div style='position: absolute; left: 30px; top:" + (int) (height * pc)/100 + "px;'>");
+            sb.append(cme.getValue());
+            sb.append("</div>");
+        }
+        
+        String labels = sb.toString();
+
+        setValue(String.format(DIV_TEMPLATE, finalStyle, labels));
     }
     
     private String getStyleString() {
+
+        min = Double.POSITIVE_INFINITY;
+        max = Double.NEGATIVE_INFINITY;
 
         /*
          * Find min and max vals
@@ -54,9 +69,14 @@ public class CartographicKey extends SimpleHtmlLabel {
         }
 
         String colourString = Joiner.on(",").join(rgbStrings);
-        String finalStyle = String.format(STYLE_TEMPLATE, colourString);
-        return finalStyle;
+        
+        String theStyle = String.format("background-image: -webkit-linear-gradient(top, s);"
+                + "background-image: -moz-linear-gradient(top, %s); "
+                + "background-image: linear-gradient(to bottom, %s);", colourString, colourString, colourString);
 
+        String styleTemplate = "position: absolute; %s height:95px; width: 20px;";
+        String finalStyle = String.format(styleTemplate, theStyle);
+        return finalStyle;
     }
 
     /**

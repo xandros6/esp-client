@@ -3,11 +3,11 @@ package org.esp.publisher;
 import java.io.IOException;
 import java.util.List;
 
-import org.esp.domain.blueprint.ColourMap;
-import org.esp.domain.blueprint.ColourMapEntry;
-import org.esp.domain.blueprint.ColourMapEntry_;
+import org.esp.domain.publisher.ColourMap;
+import org.esp.domain.publisher.ColourMapEntry;
+import org.esp.domain.publisher.ColourMapEntry_;
 import org.esp.editor.TwinPanelEditorUI;
-import org.esp.upload.GeoserverRest;
+import org.esp.upload.TiffMetaEx;
 import org.jrc.form.editor.BaseEditor;
 import org.jrc.form.editor.EntityTable;
 import org.jrc.form.permission.RoleManager;
@@ -20,10 +20,10 @@ public class ColourMapEditor extends BaseEditor<ColourMapEntry> {
 
     private RoleManager roleManager;
     private CartographicKey key = new CartographicKey();
-    private GeoserverRest gsr;
+    private TiffMetaEx gsr;
 
     @Inject
-    public ColourMapEditor(final Dao dao, RoleManager roleManager, GeoserverRest gsr) {
+    public ColourMapEditor(final Dao dao, RoleManager roleManager, TiffMetaEx gsr) {
 
         super(ColourMapEntry.class, dao);
         

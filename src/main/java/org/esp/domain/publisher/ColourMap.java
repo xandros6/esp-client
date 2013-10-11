@@ -1,10 +1,13 @@
-package org.esp.domain.blueprint;
+package org.esp.domain.publisher;
+
+import java.util.List;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
@@ -12,7 +15,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.JoinColumn;
 
 @Entity
-@Table(schema = "blueprint", name = "colour_map")
+@Table(schema = "publisher", name = "colour_map")
 public class ColourMap {
 
     private Long id;
@@ -38,9 +41,41 @@ public class ColourMap {
     public void setLabel(String label) {
         this.label = label;
     }
+    
+    
+    private List<ColourMapEntry> colourMapEntries;
+    
+    @OneToMany(mappedBy = "colourMap")
+    public List<ColourMapEntry> getColourMapEntries() {
+        return colourMapEntries;
+    }
+
+    public void setColourMapEntries(List<ColourMapEntry> colourMapEntries) {
+        this.colourMapEntries = colourMapEntries;
+    }
 
     @Override
     public String toString() {
         return label;
+    }
+
+    @Override
+    public int hashCode() {
+        if (id != null) {
+            return id.intValue();
+        }
+        return super.hashCode();
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+    
+        if (obj instanceof ColourMap) {
+            ColourMap comparee = (ColourMap) obj;
+            if (comparee.getId().equals(getId())) {
+                return true;
+            }
+        }
+        return super.equals(obj);
     }
 }
