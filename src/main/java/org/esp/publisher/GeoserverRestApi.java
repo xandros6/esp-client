@@ -11,28 +11,14 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.esp.domain.blueprint.IndicatorSurface;
 import org.esp.domain.publisher.ColourMapEntry;
-import org.geotools.data.FeatureReader;
-import org.geotools.data.shapefile.ShapefileDataStore;
-import org.geotools.referencing.CRS;
 import org.jrc.persist.Dao;
-import org.opengis.feature.simple.SimpleFeature;
-import org.opengis.feature.simple.SimpleFeatureType;
-import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
-import org.opengis.referencing.operation.TransformException;
-
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import com.vividsolutions.jts.geom.Envelope;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.Polygon;
 
 public class GeoserverRestApi {
 

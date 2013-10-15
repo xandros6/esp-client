@@ -134,4 +134,26 @@ public class IndicatorSurface {
         this.minVal = minVal;
     }
     
+
+    @Override
+    public int hashCode() {
+        if (id != null) {
+            return id.intValue();
+        }
+        return super.hashCode();
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+        
+        if (obj instanceof IndicatorSurface) {
+            IndicatorSurface comparee = (IndicatorSurface) obj;
+            if (comparee.getId().equals(getId())) {
+                return true;
+            }
+            return false;
+        }
+        return super.equals(obj);
+    }
+    
 }

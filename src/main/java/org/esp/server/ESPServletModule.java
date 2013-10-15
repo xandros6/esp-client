@@ -36,7 +36,7 @@ public class ESPServletModule extends AbstractGuiceServletModule {
         /*
          * Bind constants
          */
-        Names.bindProperties(binder(), getProperties());
+        Names.bindProperties(binder(), getRuntimeProperties());
 
         /*
          * Security and persistence filters
@@ -47,8 +47,11 @@ public class ESPServletModule extends AbstractGuiceServletModule {
         
         filter("/*").through(AuthFilter.class);
         
-//        serve("/login").with(AuthServlet.class);
-        serve("/login").with(FakeAuthServlet.class);
+        if (isInProductionMode()) {
+            serve("/login").with(AuthServlet.class);
+        } else {
+            serve("/login").with(FakeAuthServlet.class);
+        }
 
         /*
          * Main application srvlet

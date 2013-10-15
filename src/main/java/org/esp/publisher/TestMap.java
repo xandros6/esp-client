@@ -6,15 +6,16 @@ import org.vaadin.addon.leaflet.shared.Bounds;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.vaadin.ui.Panel;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Polygon;
 
-public class TestMap extends LMap {
+public class TestMap extends Panel {
 
     private BaseLayer bl = new BaseLayer();
     private String geoserverWmsEndpoint;
 
-    // LMap lMap = new LMap();
+    private LMap lMap = new LMap();
 
     @Inject
     public TestMap(
@@ -27,8 +28,10 @@ public class TestMap extends LMap {
 
         this.geoserverWmsEndpoint = restUrl + workspace + "/wms";
 
-        this.setBaseLayers(bl);
-        this.setZoomLevel(0);
+        lMap.setBaseLayers(bl);
+        lMap.setZoomLevel(0);
+        
+        setContent(lMap);
     }
 
     public void addWmsLayer(String layerName) {
@@ -40,7 +43,7 @@ public class TestMap extends LMap {
         l.setFormat("image/png");
         l.setLayers(layerName);
 
-        this.setBaseLayers(bl, l);
+        lMap.setBaseLayers(bl, l);
     }
 
     public void zoomTo(Polygon p) {
@@ -59,8 +62,8 @@ public class TestMap extends LMap {
         b.setNorthEastLat(env.getMaxY());
         b.setNorthEastLon(env.getMaxX());
 
-        this.setCenter(b);
-        this.zoomToExtent(b);
+        lMap.setCenter(b);
+        lMap.zoomToExtent(b);
     }
 
 }

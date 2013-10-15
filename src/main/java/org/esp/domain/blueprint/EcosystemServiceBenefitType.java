@@ -43,10 +43,6 @@ public class EcosystemServiceBenefitType {
     }
     
     @Override
-    public int hashCode() {
-        return id.intValue();
-    }
-    @Override
     public boolean equals(Object obj) {
     
         if (obj instanceof EcosystemServiceBenefitType) {
@@ -56,5 +52,13 @@ public class EcosystemServiceBenefitType {
             }
         }
         return super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        if (id != null) {
+            return id.intValue();
+        }
+        return super.hashCode();
     }
 }

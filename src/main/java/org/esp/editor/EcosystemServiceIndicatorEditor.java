@@ -91,7 +91,7 @@ public class EcosystemServiceIndicatorEditor extends
         addFieldGroup("Spatio-temporal");
         
         ff.addField(EcosystemServiceIndicator_.quantificationMethod);
-        ff.addTextArea(EcosystemServiceIndicator_.dataSources);       
+        ff.addField(EcosystemServiceIndicator_.dataSources);       
         
         addFieldGroup("Model and data");
         
@@ -176,7 +176,7 @@ public class EcosystemServiceIndicatorEditor extends
         
         this.study = dao.find(Study.class, id);
         
-        if (! study.getRole().equals(roleManager.getRole())) {
+        if (!study.getRole().equals(roleManager.getRole()) && !study.getRole().getIsSuperUser()) {
             throw new UnauthorizedException("You do not have permission to edit this study.");
         }
         

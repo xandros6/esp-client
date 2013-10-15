@@ -3,6 +3,7 @@ package org.esp.editor;
 import org.esp.domain.blueprint.Study;
 import org.esp.domain.blueprint.Study_;
 import org.esp.ui.ViewModule;
+import org.jrc.auth.domain.Role;
 import org.jrc.form.editor.BaseEditor;
 import org.jrc.form.editor.EntityTable;
 import org.jrc.form.permission.RoleManager;
@@ -23,12 +24,11 @@ public class StudyEditor extends BaseEditor<Study> {
     public StudyEditor(final Dao dao, RoleManager roleManager) {
 
         super(Study.class, dao);
-        
+
         this.roleManager = roleManager;
 
         EntityTable<Study> table = buildTable();
         table.addColumns(Study_.studyName, Study_.studyPurpose);
-        
 
         ff.addField(Study_.studyName);
         ff.addField(Study_.studyPurpose);
@@ -68,7 +68,7 @@ public class StudyEditor extends BaseEditor<Study> {
         goEdit(study);
 
     }
-    
+
     @Override
     protected void doPreCommit(Study obj) {
         obj.setRole(roleManager.getRole());
@@ -82,21 +82,25 @@ public class StudyEditor extends BaseEditor<Study> {
     protected void goEdit(Study study) {
 
         if (study != null) {
-            String newUriFragment = ViewModule.ECOSYSTEM_SERVICE_INDICATOR + "/"
-                                        + study.getId();
+            String newUriFragment = ViewModule.ECOSYSTEM_SERVICE_INDICATOR
+                    + "/" + study.getId();
             UI.getCurrent().getNavigator().navigateTo(newUriFragment);
         }
     }
-    
+
     @Override
     public void enter(ViewChangeEvent event) {
-        
-        Equal filter = new Compare.Equal(Study_.role.getName(), roleManager.getRole());
-        containerManager.getContainer().removeAllContainerFilters();
-        containerManager.getContainer().addContainerFilter(filter);
-//        containerManager.refresh();
-        
-//        super.enter(event);
+
+        Role role = roleManager.getRole();
+
+        if (!role.getIsSuperUser()) {
+
+            Equal filter = new Compare.Equal(Study_.role.getName(), role);
+
+            containerManager.getContainer().removeAllContainerFilters();
+            containerManager.getContainer().addContainerFilter(filter);
+        }
+
     }
 
 }

@@ -43,11 +43,6 @@ public class EcosystemServiceAccountingType {
     }
     
     @Override
-    public int hashCode() {
-        return id.intValue();
-    }
-    
-    @Override
     public boolean equals(Object obj) {
     
         if (obj instanceof EcosystemServiceAccountingType) {
@@ -55,7 +50,16 @@ public class EcosystemServiceAccountingType {
             if (comparee.getId().equals(getId())) {
                 return true;
             }
+            return false;
         }
         return super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        if (id != null) {
+            return id.intValue();
+        }
+        return super.hashCode();
     }
 }

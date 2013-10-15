@@ -253,7 +253,7 @@ public class EcosystemServiceIndicator {
 
     private IndicatorSurface indicatorSurface;
 
-    @OneToOne(mappedBy = "ecosystemServiceIndicator", cascade=CascadeType.ALL)
+    @OneToOne(mappedBy = "ecosystemServiceIndicator", cascade = CascadeType.ALL)
     public IndicatorSurface getIndicatorSurface() {
         return indicatorSurface;
     }
@@ -261,15 +261,16 @@ public class EcosystemServiceIndicator {
     public void setIndicatorSurface(IndicatorSurface indicatorSurface) {
         this.indicatorSurface = indicatorSurface;
     }
-    
-    private String dataSources;
 
-    @Column(name = "data_sources")
-    public String getDataSources() {
+    private Set<DataSource> dataSources;
+
+    @ManyToMany
+    @JoinTable(name = "blueprint.ecosystem_service_indicator_data_source", joinColumns = @JoinColumn(name = "ecosystem_service_indicator_id"), inverseJoinColumns = @JoinColumn(name = "data_source_id"))
+    public Set<DataSource> getDataSources() {
         return dataSources;
     }
 
-    public void setDataSources(String dataSources) {
+    public void setDataSources(Set<DataSource> dataSources) {
         this.dataSources = dataSources;
     }
 
@@ -278,4 +279,24 @@ public class EcosystemServiceIndicator {
         return String.format("%s - %s", ecosystemService, indicator);
     }
 
+    @Override
+    public boolean equals(Object obj) {
+    
+        if (obj instanceof EcosystemServiceIndicator) {
+            EcosystemServiceIndicator comparee = (EcosystemServiceIndicator) obj;
+            if (comparee.getId().equals(getId())) {
+                return true;
+            }
+            return false;
+        }
+        return super.equals(obj);
+    }
+    
+    @Override
+    public int hashCode() {
+        if (id != null) {
+            return id.intValue();
+        }
+        return super.hashCode();
+    }
 }

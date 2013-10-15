@@ -1,6 +1,5 @@
 package org.esp.publisher;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.esp.domain.publisher.ColourMap;
@@ -14,7 +13,6 @@ import org.jrc.form.permission.RoleManager;
 import org.jrc.persist.Dao;
 
 import com.google.inject.Inject;
-import com.vaadin.ui.Notification;
 
 public class ColourMapEditor extends BaseEditor<ColourMapEntry> {
 

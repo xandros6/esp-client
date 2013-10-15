@@ -50,11 +50,6 @@ public class EcosystemServiceIndicatorBiome {
     }
     
     @Override
-    public int hashCode() {
-        return id.intValue();
-    }
-    
-    @Override
     public boolean equals(Object obj) {
     
         if (obj instanceof EcosystemServiceIndicatorBiome) {
@@ -62,7 +57,16 @@ public class EcosystemServiceIndicatorBiome {
             if (comparee.getId().equals(getId())) {
                 return true;
             }
+            return false;
         }
         return super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        if (id != null) {
+            return id.intValue();
+        }
+        return super.hashCode();
     }
 }

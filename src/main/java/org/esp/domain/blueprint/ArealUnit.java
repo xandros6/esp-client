@@ -48,12 +48,16 @@ public class ArealUnit {
             if (comparee.getLabel().equals(getLabel())) {
                 return true;
             }
+            return false;
         }
         return super.equals(obj);
     }
     
     @Override
     public int hashCode() {
-        return label.hashCode();
+        if (id != null) {
+            return id.intValue();
+        }
+        return super.hashCode();
     }
 }

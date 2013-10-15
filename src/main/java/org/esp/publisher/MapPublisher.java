@@ -20,6 +20,19 @@ import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.Notification;
 import com.vaadin.ui.VerticalLayout;
 
+/***
+ * Interface for publishing maps.
+ * 
+ * TODO:
+ * 
+ * [ ] Map colours to database entities
+ * [ ] When editing colour schemes it can be republished to geoserver.
+ * [ ] Support for multiple formats (geotiff, world file etc)
+ * [ ] 
+ * 
+ * @author Will Temperley
+ *
+ */
 public class MapPublisher extends TwinPanelView implements View {
 
     private CartographicKeyEditor cartographicKeyEditor;
@@ -79,9 +92,21 @@ public class MapPublisher extends TwinPanelView implements View {
         }
     }
 
+
     @Override
     public void enter(ViewChangeEvent event) {
 
+        String params = event.getParameters();
+        if (params != null && !params.isEmpty()) {
+
+            try {
+                Long id = Long.valueOf(params);
+
+            } catch (NumberFormatException e) {
+                Notification.show("This isn't a valid id: " + params);
+            }
+        }
+        
     }
     
     private void publish() {

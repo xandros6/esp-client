@@ -42,7 +42,10 @@ public class StudyObjectiveMet {
     
     @Override
     public int hashCode() {
-        return id.intValue();
+        if (id != null) {
+            return id.intValue();
+        }
+        return super.hashCode();
     }
     
     @Override
@@ -53,6 +56,7 @@ public class StudyObjectiveMet {
             if (comparee.getId().equals(getId())) {
                 return true;
             }
+            return false;
         }
         return super.equals(obj);
     }

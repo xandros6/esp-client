@@ -42,9 +42,12 @@ public class QuantificationUnitCategory {
     
     @Override
     public int hashCode() {
-        return id.intValue();
+        if (id != null) {
+            return id.intValue();
+        }
+        return super.hashCode();
     }
-    
+
     @Override
     public boolean equals(Object obj) {
     
@@ -53,6 +56,7 @@ public class QuantificationUnitCategory {
             if (comparee.getId().equals(getId())) {
                 return true;
             }
+            return false;
         }
         return super.equals(obj);
     }

@@ -181,10 +181,27 @@ public class Study {
     public String toString() {
         return studyName;
     }
+
+    @Override
+    public boolean equals(Object obj) {
     
+        if (obj instanceof Study) {
+            Study comparee = (Study) obj;
+            if (comparee.getId().equals(getId())) {
+                return true;
+            }
+            return false;
+        }
+        return super.equals(obj);
+    }
+    
+
     @Override
     public int hashCode() {
-        return id.intValue();
+        if (id != null) {
+            return id.intValue();
+        }
+        return super.hashCode();
     }
     
 }

@@ -41,11 +41,6 @@ public class SpatialDataType {
     }
     
     @Override
-    public int hashCode() {
-        return id.intValue();
-    }
-    
-    @Override
     public boolean equals(Object obj) {
     
         if (obj instanceof SpatialDataType) {
@@ -53,7 +48,17 @@ public class SpatialDataType {
             if (comparee.getId().equals(getId())) {
                 return true;
             }
+            return false;
         }
         return super.equals(obj);
     }
+    
+    @Override
+    public int hashCode() {
+        if (id != null) {
+            return id.intValue();
+        }
+        return super.hashCode();
+    }
+    
 }

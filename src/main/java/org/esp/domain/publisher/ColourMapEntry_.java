@@ -1,6 +1,5 @@
 package org.esp.domain.publisher;
 
-import javax.persistence.metamodel.SetAttribute;
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;
 

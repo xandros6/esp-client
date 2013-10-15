@@ -4,22 +4,25 @@ import org.vaadin.addon.leaflet.LMap;
 import org.vaadin.addon.leaflet.shared.BaseLayer;
 import org.vaadin.addon.leaflet.shared.Bounds;
 
+import com.vaadin.ui.Panel;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Polygon;
 
-public class LayerViewer extends LMap {
+public class LayerViewer extends Panel {
 
     BaseLayer bl = new BaseLayer();
-//    LMap lMap = new LMap();
+    LMap lMap = new LMap();
 
     public LayerViewer() {
         
-        this.setSizeFull();
+        lMap.setSizeFull();
         bl.setUrl("http://{s}.tile.osm.org/{z}/{x}/{y}.png");
         bl.setName("OSM");
         bl.setAttributionString("&copy; <a href='http://osm.org/copyright'>OpenStreetMap</a> contributors");
 
-        this.setBaseLayers(bl);
+        lMap.setBaseLayers(bl);
+        
+        setContent(lMap);
     }
 
     public void addWmsLayer(String layerName) {
@@ -31,9 +34,8 @@ public class LayerViewer extends LMap {
         l.setFormat("image/png");
         l.setLayers(layerName);
         
-        this.setBaseLayers(bl, l);
+        lMap.setBaseLayers(bl, l);
     }
-    
     
     public void zoomTo(Polygon p) {
         
@@ -51,8 +53,8 @@ public class LayerViewer extends LMap {
         b.setNorthEastLat(env.getMaxY());
         b.setNorthEastLon(env.getMaxX());
         
-        this.setCenter(b);
-        this.zoomToExtent(b);
+        lMap.setCenter(b);
+        lMap.zoomToExtent(b);
     }
 
 }

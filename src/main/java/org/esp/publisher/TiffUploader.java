@@ -4,16 +4,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.math.BigInteger;
 import java.util.EventObject;
-import java.util.Set;
-
-import javax.persistence.Query;
-
-import org.esp.domain.blueprint.SpatialDataType;
-import org.esp.upload.TiffMetaEx;
 import org.esp.upload.UnknownCRSException;
-import org.jrc.persist.Dao;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.operation.TransformException;
 import org.slf4j.Logger;
@@ -22,11 +14,9 @@ import org.slf4j.LoggerFactory;
 import com.google.common.io.Files;
 import com.google.common.net.MediaType;
 import com.google.inject.Inject;
-import com.vaadin.ui.Button;
 import com.vaadin.ui.Notification;
 import com.vaadin.ui.Panel;
 import com.vaadin.ui.Upload;
-import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.Upload.FinishedEvent;
 import com.vaadin.ui.VerticalLayout;
 
