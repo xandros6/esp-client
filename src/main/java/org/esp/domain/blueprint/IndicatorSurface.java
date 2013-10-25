@@ -12,6 +12,7 @@ import javax.persistence.Table;
 import javax.persistence.ManyToOne;
 import javax.persistence.JoinColumn;
 
+import org.esp.domain.publisher.ColourMap;
 import org.hibernate.annotations.Type;
 
 import com.vividsolutions.jts.geom.Polygon;
@@ -134,6 +135,17 @@ public class IndicatorSurface {
         this.minVal = minVal;
     }
     
+    private ColourMap colourMap;
+
+    @ManyToOne
+    @JoinColumn(name="colour_map_id")
+    public ColourMap getColourMap() {
+        return colourMap;
+    }
+
+    public void setColourMap(ColourMap colourMap) {
+        this.colourMap = colourMap;
+    }
 
     @Override
     public int hashCode() {

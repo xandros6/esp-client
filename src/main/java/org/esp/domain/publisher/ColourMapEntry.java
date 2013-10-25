@@ -22,7 +22,7 @@ public class ColourMapEntry {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO, generator = "seq")
-    @SequenceGenerator(allocationSize = 1, name = "seq", sequenceName = "blueprint.colour_map_entry_id_seq")
+    @SequenceGenerator(allocationSize = 1, name = "seq", sequenceName = "publisher.colour_map_entry_id_seq")
     public Integer getId() {
         return id;
     }

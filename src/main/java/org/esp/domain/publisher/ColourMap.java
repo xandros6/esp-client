@@ -2,6 +2,7 @@ package org.esp.domain.publisher;
 
 import java.util.List;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -20,7 +21,7 @@ public class ColourMap {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO, generator = "seq")
-    @SequenceGenerator(allocationSize = 1, name = "seq", sequenceName = "blueprint.colour_map_id_seq")
+    @SequenceGenerator(allocationSize = 1, name = "seq", sequenceName = "publisher.colour_map_id_seq")
     public Long getId() {
         return id;
     }
@@ -43,7 +44,7 @@ public class ColourMap {
     
     private List<ColourMapEntry> colourMapEntries;
     
-    @OneToMany(mappedBy = "colourMap")
+    @OneToMany(mappedBy = "colourMap", cascade = CascadeType.ALL)
     public List<ColourMapEntry> getColourMapEntries() {
         return colourMapEntries;
     }

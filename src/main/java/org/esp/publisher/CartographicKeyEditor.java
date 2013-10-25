@@ -3,6 +3,7 @@ package org.esp.publisher;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.esp.domain.publisher.ColourMap;
 import org.esp.domain.publisher.ColourMapEntry;
 import org.jrc.form.component.ColorField;
 import org.jrc.form.editor.EntityTable;
@@ -14,17 +15,23 @@ import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.util.BeanItem;
 import com.vaadin.data.util.BeanItemContainer;
 import com.vaadin.shared.ui.colorpicker.Color;
+import com.vaadin.ui.Button;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.GridLayout;
 import com.vaadin.ui.HorizontalLayout;
+import com.vaadin.ui.Notification;
 import com.vaadin.ui.Table;
+import com.vaadin.ui.Button.ClickEvent;
 
 public class CartographicKeyEditor extends HorizontalLayout {
 
     private Dao dao;
-    private GridLayout gl;
+
     private CartographicKey ck;
+
     private BeanItemContainer<ColourMapEntry> bic;
+    
+    private ColourMap colourMap;
 
     @Inject
     public CartographicKeyEditor(final Dao dao) {
@@ -38,7 +45,6 @@ public class CartographicKeyEditor extends HorizontalLayout {
 
 //        bic.addAll(dao.all(ColourMapEntry.class));
         //TODO temp
-        setDefaultColours();
 
         t.setVisibleColumns("label", "value");
 
@@ -50,9 +56,26 @@ public class CartographicKeyEditor extends HorizontalLayout {
         t.setSelectable(false);
 
         addComponent(t);
-
         addComponent(ck);
+        
+        Button b = new Button("Save");
+        b.addClickListener(new Button.ClickListener() {
+            @Override
+            public void buttonClick(ClickEvent event) {
+                
+                colourMap.setLabel("test");
+
+                if (colourMap.getId() == null) {
+                    dao.persist(colourMap);
+                } else {
+                    dao.merge(colourMap);
+                }
+
+            }
+        });
+        addComponent(b);
     }
+    
 
     class ColourColumnGenerator implements Table.ColumnGenerator {
 
@@ -84,7 +107,7 @@ public class CartographicKeyEditor extends HorizontalLayout {
         }
     }
 
-    private void setDefaultColours() {
+    private List<ColourMapEntry> getDefaultColours() {
 
         ColourMapEntry minCme = new ColourMapEntry();
         ColourMapEntry maxCme = new ColourMapEntry();
@@ -101,16 +124,36 @@ public class CartographicKeyEditor extends HorizontalLayout {
         cmes.add(minCme);
         cmes.add(maxCme);
 
-        setColours(cmes);
+        return cmes;
     }
 
-    public void setColours(List<ColourMapEntry> cmes) {
+    
+    
+    public ColourMap getColourMap() {
+        return colourMap;
+    }
+    
+    public void setColourMap(ColourMap newColourMap) {
+        
+        if (newColourMap == null) {
+            Notification.show("The colourmap should not be missing.");
+            return;
+        }
+
+        this.colourMap = newColourMap;
+        
+        
+        if (colourMap.getColourMapEntries() == null || newColourMap.getColourMapEntries().isEmpty()) {
+            List<ColourMapEntry> defaultColours = getDefaultColours();
+            for (ColourMapEntry colourMapEntry : defaultColours) {
+                colourMapEntry.setColourMap(colourMap);
+            }
+            colourMap.setColourMapEntries(defaultColours);
+        }
+
+        List<ColourMapEntry> cmes = colourMap.getColourMapEntries();
         bic.removeAllItems();
         bic.addAll(cmes);
         ck.setColours(cmes);
-    }
-
-    public List<ColourMapEntry> getColours() {
-        return bic.getItemIds();
     }
 }
