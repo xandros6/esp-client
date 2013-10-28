@@ -25,6 +25,7 @@ public class ColourMap {
     public Long getId() {
         return id;
     }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -40,10 +41,21 @@ public class ColourMap {
     public void setLabel(String label) {
         this.label = label;
     }
-    
-    
+
+    private String styleName;
+
+    @Column(name = "style_name")
+    @NotNull
+    public String getStyleName() {
+        return styleName;
+    }
+
+    public void setStyleName(String styleName) {
+        this.styleName = styleName;
+    }
+
     private List<ColourMapEntry> colourMapEntries;
-    
+
     @OneToMany(mappedBy = "colourMap", cascade = CascadeType.ALL)
     public List<ColourMapEntry> getColourMapEntries() {
         return colourMapEntries;
@@ -65,10 +77,10 @@ public class ColourMap {
         }
         return super.hashCode();
     }
-    
+
     @Override
     public boolean equals(Object obj) {
-    
+
         if (obj instanceof ColourMap) {
             ColourMap comparee = (ColourMap) obj;
             if (comparee.getId().equals(getId())) {

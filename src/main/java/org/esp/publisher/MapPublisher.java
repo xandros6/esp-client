@@ -31,9 +31,11 @@ import com.vaadin.ui.VerticalLayout;
 /***
  * Interface for publishing maps.
  * 
- * TODO:
+ * Colour maps are stored in database entities.
+ * TODO: allow for choosing either from default colour maps or personal ones
  * 
- * [ ] Map colours to database entities [ ] When editing colour schemes it can
+ *  
+ * [ ] When editing colour schemes it can
  * be republished to geoserver. [ ] Support for multiple formats (geotiff, world
  * file etc) [ ]
  * 
@@ -48,6 +50,7 @@ public class MapPublisher extends TwinPanelView implements View {
     private GeoserverRestApi gsr;
     private Dao dao;
     private TestMap testMap;
+
     private IndicatorSurface indicatorSurface;
     private InlineEcosystemServiceIndicatorEditor esiEditor;
     private EcosystemServiceIndicator esi;
@@ -192,7 +195,22 @@ public class MapPublisher extends TwinPanelView implements View {
         }
     }
 
+    /**
+     * 
+     * States might be: 
+     * 1. Already published, new file
+     * 2. Already published, new style
+     * 
+     * 2. File not uploaded, default style
+     * 3. File not uploaded, new style
+     * 
+     * 4. File uploaded, default style
+     * 5. File uploaded, new style (need to publish as well) 
+     * 
+     * 
+     */
     private void publish() {
+        
 
         String layerName = generateLayerName();
 

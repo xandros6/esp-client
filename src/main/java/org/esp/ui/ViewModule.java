@@ -41,6 +41,8 @@ public class ViewModule extends AbstractViewModule {
         addBinding(HOME, StudyEditor.class, Study.class); 
         
         mapbinder.addBinding("Publisher").to(MapPublisher.class).in(UIScoped.class);
+
+        mapbinder.addBinding("Search").to(SearchView.class).in(UIScoped.class);
         
 //        addBinding("Table-Descriptions", TableDescriptionEditor.class, TableDescription.class);
     }
