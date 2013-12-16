@@ -1,12 +1,13 @@
 package org.esp.editor;
 
+import it.jrc.auth.RoleManager;
+
 import org.esp.domain.blueprint.Study;
 import org.esp.domain.blueprint.Study_;
 import org.esp.ui.ViewModule;
 import org.jrc.auth.domain.Role;
 import org.jrc.form.editor.BaseEditor;
 import org.jrc.form.editor.EntityTable;
-import org.jrc.form.permission.RoleManager;
 import org.jrc.persist.Dao;
 
 import com.google.inject.Inject;

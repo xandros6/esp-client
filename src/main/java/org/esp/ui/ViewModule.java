@@ -26,7 +26,9 @@ import com.vaadin.navigator.View;
  */
 public class ViewModule extends AbstractViewModule {
 
+//    public static final String SEARCH = "Search";
     public static final String ECOSYSTEM_SERVICE_INDICATOR = "Ecosystem-Service-Indicator";
+    public static final String PUBLISHER = "Publisher";
     public static final String HOME = "Home";
     
     public static final String QUANTIFICATION_UNIT = "Quantification-Unit";
@@ -38,13 +40,15 @@ public class ViewModule extends AbstractViewModule {
                 View.class);
         
         addBinding(ECOSYSTEM_SERVICE_INDICATOR, EcosystemServiceIndicatorEditor.class, EcosystemServiceIndicator.class);
-        addBinding(HOME, StudyEditor.class, Study.class); 
+//        addBinding(HOME, StudyEditor.class, Study.class); 
         
-        mapbinder.addBinding("Publisher").to(MapPublisher.class).in(UIScoped.class);
-
-        mapbinder.addBinding("Search").to(SearchView.class).in(UIScoped.class);
+        mapbinder.addBinding(PUBLISHER).to(MapPublisher.class).in(UIScoped.class);
+        mapbinder.addBinding(HOME).to(SearchView.class).in(UIScoped.class);
         
 //        addBinding("Table-Descriptions", TableDescriptionEditor.class, TableDescription.class);
     }
 
+    public static String getESILink(EcosystemServiceIndicator esi) {
+        return PUBLISHER + "/" +  esi.getId();
+    }
 }

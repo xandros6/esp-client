@@ -49,7 +49,7 @@ public class MapPublisher extends TwinPanelView implements View {
     private TiffMeta tiffMeta;
     private GeoserverRestApi gsr;
     private Dao dao;
-    private TestMap testMap;
+    private LayerViewer testMap;
 
     private IndicatorSurface indicatorSurface;
     private InlineEcosystemServiceIndicatorEditor esiEditor;
@@ -57,7 +57,7 @@ public class MapPublisher extends TwinPanelView implements View {
 
     @Inject
     public MapPublisher(TiffUploader gsp, CartographicKeyEditor cke,
-            GeoserverRestApi gsr, Dao dao, TestMap layerViewer,
+            GeoserverRestApi gsr, Dao dao, LayerViewer layerViewer,
             InlineEcosystemServiceIndicatorEditor esiEditor) {
 
         this.cartographicKeyEditor = cke;
@@ -84,7 +84,7 @@ public class MapPublisher extends TwinPanelView implements View {
 
             tabSheet.addTab(addPublishingComponents(), "Maps");
 
-            tabSheet.addTab(addMetaComponents(), "Meta");
+            tabSheet.addTab(addMetaComponents(), "Metadata");
         }
 
     }
@@ -189,6 +189,11 @@ public class MapPublisher extends TwinPanelView implements View {
                 esi = new EcosystemServiceIndicator();
             }
             esi = entity;
+            indicatorSurface = esi.getIndicatorSurface();
+            if (indicatorSurface == null) {
+                indicatorSurface = new IndicatorSurface();
+            }
+            
 
         } catch (NumberFormatException e) {
             Notification.show("This isn't a valid id: " + stringId);

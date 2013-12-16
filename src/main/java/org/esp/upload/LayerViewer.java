@@ -1,41 +1,40 @@
 package org.esp.upload;
 
 import org.vaadin.addon.leaflet.LMap;
-import org.vaadin.addon.leaflet.shared.BaseLayer;
+import org.vaadin.addon.leaflet.LTileLayer;
+import org.vaadin.addon.leaflet.LWmsLayer;
 import org.vaadin.addon.leaflet.shared.Bounds;
 
+import com.vaadin.ui.Component;
 import com.vaadin.ui.Panel;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Polygon;
 
 public class LayerViewer extends Panel {
 
-    BaseLayer bl = new BaseLayer();
-    LMap lMap = new LMap();
+    private LMap map;
 
     public LayerViewer() {
         
-        lMap.setSizeFull();
-        bl.setUrl("http://{s}.tile.osm.org/{z}/{x}/{y}.png");
-        bl.setName("OSM");
+        LTileLayer bl = new LTileLayer("http://{s}.tile.osm.org/{z}/{x}/{y}.png");
         bl.setAttributionString("&copy; <a href='http://osm.org/copyright'>OpenStreetMap</a> contributors");
-
-        lMap.setBaseLayers(bl);
+        map = new LMap();
+        setContent(map);
+        map.addBaseLayer(bl, "OSM");
         
-        setContent(lMap);
     }
 
     public void addWmsLayer(String layerName) {
         
-        BaseLayer l = new BaseLayer();
-        l.setWms(true);
+        LWmsLayer l = new LWmsLayer();
         l.setUrl("http://lrm-maps.jrc.ec.europa.eu/geoserver/esp/wms");
         l.setTransparent(true);
         l.setFormat("image/png");
         l.setLayers(layerName);
         
-        lMap.setBaseLayers(bl, l);
+        map.addLayer(l);
     }
+    
     
     public void zoomTo(Polygon p) {
         
@@ -53,8 +52,19 @@ public class LayerViewer extends Panel {
         b.setNorthEastLat(env.getMaxY());
         b.setNorthEastLon(env.getMaxX());
         
-        lMap.setCenter(b);
-        lMap.zoomToExtent(b);
+        map.zoomToExtent(b);
+    }
+
+    public void addComponent(Component lPoly) {
+        map.addComponent(lPoly);
+    }
+
+    public void removeComponent(Component lPoly) {
+        map.removeComponent(lPoly);
+    }
+
+    public LMap getMap() {
+        return map;
     }
 
 }

@@ -1,5 +1,7 @@
 package org.esp.publisher.form;
 
+import it.jrc.auth.RoleManager;
+
 import java.util.List;
 
 import javax.persistence.metamodel.SingularAttribute;
@@ -22,7 +24,6 @@ import org.jrc.form.component.SelectionTable;
 import org.jrc.form.editor.BaseEditor;
 import org.jrc.form.editor.EntityTable;
 import org.jrc.form.filter.YearField;
-import org.jrc.form.permission.RoleManager;
 import org.jrc.persist.Dao;
 import org.jrc.persist.adminunits.Grouping;
 import org.jrc.persist.adminunits.Grouping_;

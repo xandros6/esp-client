@@ -1,14 +1,16 @@
 package org.esp.server;
 
+import it.jrc.auth.AnonymousAuthServlet;
+import it.jrc.auth.AuthFilter;
+import it.jrc.auth.AuthServlet;
+import it.jrc.auth.JpaRealm;
+import it.jrc.auth.SecurityFilter;
+
 import org.apache.shiro.realm.Realm;
 import org.esp.ui.AppUI;
-import org.jrc.auth.AuthFilter;
-import org.jrc.auth.AuthServlet;
-import org.jrc.auth.FakeAuthServlet;
-import org.jrc.auth.JpaRealm;
-import org.jrc.auth.SecurityFilter;
 import org.jrc.inject.AbstractGuiceServletModule;
 import org.jrc.inject.GuiceApplicationServlet;
+
 import com.google.code.vaadin.application.MVPApplicationInitParameters;
 import com.google.inject.name.Names;
 import com.google.inject.persist.PersistFilter;
@@ -48,9 +50,9 @@ public class ESPServletModule extends AbstractGuiceServletModule {
         filter("/*").through(AuthFilter.class);
         
         if (isInProductionMode()) {
-            serve("/login").with(AuthServlet.class);
+            serve("/login").with(AnonymousAuthServlet.class);
         } else {
-            serve("/login").with(FakeAuthServlet.class);
+            serve("/login").with(AuthServlet.class);
         }
 
         /*
