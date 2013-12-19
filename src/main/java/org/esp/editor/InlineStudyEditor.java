@@ -7,7 +7,7 @@ import org.esp.domain.blueprint.IndicatorSurface;
 import org.esp.domain.blueprint.Study;
 import org.esp.domain.blueprint.Study_;
 import org.esp.ui.ViewModule;
-import org.esp.upload.GeoserverRest;
+import org.esp.upload.old.GeoserverRest;
 import org.jrc.form.editor.BaseEditor;
 import org.jrc.persist.Dao;
 

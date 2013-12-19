@@ -56,18 +56,17 @@ public class GeoserverRestApi {
      * @param geotiff
      * @param srs
      * @param layerAndStoreName
-     * @param styleName
      * @return
      * @throws IllegalArgumentException
      * @throws FileNotFoundException
      */
     public boolean publishTiff(File geotiff, String srs,
-            String layerAndStoreName, String styleName)
+            String layerAndStoreName)
             throws FileNotFoundException, IllegalArgumentException {
 
         return publisher.publishGeoTIFF(workspace, layerAndStoreName,
                 layerAndStoreName, geotiff, srs, ProjectionPolicy.NONE,
-                styleName, null);
+                layerAndStoreName, null);
     }
 
     public boolean publishShp(File zipFile, String srs,
@@ -91,7 +90,7 @@ public class GeoserverRestApi {
     }
 
     /**
-     * Deletes the store 
+     * Deletes the store
      * 
      * @return
      */
@@ -99,30 +98,39 @@ public class GeoserverRestApi {
         return publisher.removeCoverageStore(workspace, storeName, true);
     }
 
+    public boolean updateStyle(String styleName, List<ColourMapEntry> cmes) {
 
-    public boolean publishSLD(String styleName, List<ColourMapEntry> cmes)
-            throws IOException {
+        String sldBody = buildSLDBody(styleName, cmes);
+        return publisher.updateStyle(sldBody, styleName);
+    }
 
-        Template template = configuration.getTemplate("SldContinuous.ftl");
+    public boolean publishStyle(String styleName, List<ColourMapEntry> cmes) {
 
-        Map<String, Object> root = new HashMap<String, Object>();
+        String sldBody = buildSLDBody(styleName, cmes);
+        return publisher.publishStyle(sldBody);
+    }
 
-        root.put("styleName", styleName);
-        root.put("colourMapEntries", cmes);
-
+    private String buildSLDBody(String styleName, List<ColourMapEntry> cmes) {
         try {
-            // PrintWriter pw = new PrintWr
-            StringWriter sw = new StringWriter();
+            Template template = configuration.getTemplate("SldContinuous.ftl");
 
+            Map<String, Object> root = new HashMap<String, Object>();
+
+            root.put("styleName", styleName);
+            root.put("colourMapEntries", cmes);
+
+            StringWriter sw = new StringWriter();
             template.process(root, sw);
 
             String sldBody = sw.toString();
-            return publisher.publishStyle(sldBody);
+            return sldBody;
+
         } catch (TemplateException e) {
             e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return false;
-
+        return null;
     }
 
 }

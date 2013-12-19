@@ -5,11 +5,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.EventObject;
-import org.esp.upload.UnknownCRSException;
+
+import org.esp.upload.old.UnknownCRSException;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.operation.TransformException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.vaadin.easyuploads.UploadField;
+import org.vaadin.easyuploads.UploadField.FieldType;
 
 import com.google.common.io.Files;
 import com.google.common.net.MediaType;
@@ -25,22 +28,18 @@ public class TiffUploader extends Panel implements Upload.FinishedListener, Uplo
 
     private static final int FILE_SIZE_LIMIT = 157286400;
 
-    private static final String GEOTIFF_ERROR_MSG = "Please ensure this is a GeoTiff with a valid Coordinate Reference System defined.";
+    private static final String UPLOAD_MESSAGE = "Choose a GeoTiff file to upload.  The file size limit is 150 Megabytes.";
 
     Logger logger = LoggerFactory.getLogger(TiffUploader.class);
 
     private static final String UPLOAD_BUTTON_CAPTION = "Upload";
     
-    private static final String UPLOAD_MESSAGE = "Choose a GeoTiff file to upload.  The file size limit is 150 Megabytes.";
 
     private VerticalLayout root;
     
     private File file;
 
-    private TiffMetadataExtractor tme;
-
     private ProcessingCompleteListener processingCompleteListener;
-
 
     /**
      * Used to capture completed processing jobs
@@ -50,14 +49,14 @@ public class TiffUploader extends Panel implements Upload.FinishedListener, Uplo
      */
     public class ProcessingCompleteEvent extends EventObject {
 
-        private TiffMeta results;
+        private File results;
 
-        public ProcessingCompleteEvent(Object source, TiffMeta tiffMeta) {
+        public ProcessingCompleteEvent(Object source, File file) {
             super(source);
-            this.results = tiffMeta;
+            this.results = file;
         }
 
-        public TiffMeta getResults() {
+        public File getResults() {
             return results;
         }
     }
@@ -66,12 +65,12 @@ public class TiffUploader extends Panel implements Upload.FinishedListener, Uplo
         public void processingComplete(ProcessingCompleteEvent event);
     }
 
-    @Inject
-    public TiffUploader(TiffMetadataExtractor tme) {
+    public TiffUploader() {
         
-        this.tme = tme;
-
         root = new VerticalLayout();
+
+        TiffUploadField uploadField = new TiffUploadField();
+        root.addComponent(uploadField);
 
         /*
          * The upload component
@@ -136,30 +135,12 @@ public class TiffUploader extends Panel implements Upload.FinishedListener, Uplo
          */
         
         if (mt.is(MediaType.TIFF)) {
-            try {
                 
-                TiffMeta tiffMeta = new TiffMeta();
 
-                tme.extractTiffMetadata(file, tiffMeta);
-                
                 if (processingCompleteListener != null) {
-                    processingCompleteListener.processingComplete(new ProcessingCompleteEvent(this, tiffMeta));
+                    processingCompleteListener.processingComplete(new ProcessingCompleteEvent(this, file));
                 }
                 
-                
-            } catch (FactoryException e) {
-                Notification
-                        .show(GEOTIFF_ERROR_MSG);
-            } catch (IOException e) {
-                Notification
-                        .show(GEOTIFF_ERROR_MSG);
-            } catch (TransformException e) {
-                Notification
-                        .show(GEOTIFF_ERROR_MSG);
-            } catch (UnknownCRSException e) {
-                Notification
-                        .show(e.getMessage());
-            }
 
         }
 

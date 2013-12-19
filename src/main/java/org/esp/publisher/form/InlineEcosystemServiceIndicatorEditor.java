@@ -4,11 +4,7 @@ import it.jrc.auth.RoleManager;
 
 import java.util.List;
 
-import javax.persistence.metamodel.SingularAttribute;
-
-import org.apache.shiro.authz.UnauthorizedException;
 import org.esp.domain.blueprint.ArealUnit_;
-import org.esp.domain.blueprint.DataSource;
 import org.esp.domain.blueprint.EcosystemService;
 import org.esp.domain.blueprint.EcosystemServiceIndicator;
 import org.esp.domain.blueprint.EcosystemServiceIndicator_;
@@ -18,44 +14,29 @@ import org.esp.domain.blueprint.Indicator_;
 import org.esp.domain.blueprint.QuantificationUnit_;
 import org.esp.domain.blueprint.Study;
 import org.esp.domain.blueprint.TemporalUnit_;
-import org.esp.upload.GeoserverRest;
-import org.esp.upload.GeoserverUploadField;
+import org.esp.upload.old.GeoserverRest;
 import org.jrc.form.component.SelectionTable;
-import org.jrc.form.editor.BaseEditor;
-import org.jrc.form.editor.EntityTable;
 import org.jrc.form.filter.YearField;
 import org.jrc.persist.Dao;
 import org.jrc.persist.adminunits.Grouping;
 import org.jrc.persist.adminunits.Grouping_;
-import org.vaadin.tokenfield.TokenField;
-import org.vaadin.tokenfield.TokenField.InsertPosition;
 
 import com.google.inject.Inject;
-import com.vaadin.data.util.BeanItemContainer;
-import com.vaadin.data.util.filter.Compare;
-import com.vaadin.data.util.filter.Compare.Equal;
-import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
-import com.vaadin.ui.Button.ClickEvent;
-import com.vaadin.ui.Button.ClickListener;
-import com.vaadin.ui.Component;
-import com.vaadin.ui.Field;
-import com.vaadin.ui.FormLayout;
-import com.vaadin.ui.Notification;
-import com.vaadin.ui.TextArea;
 import com.vaadin.ui.TwinColSelect;
 
 public class InlineEcosystemServiceIndicatorEditor extends CutDownBaseEditor<EcosystemServiceIndicator> {
 
     private Study study;
-    private GeoserverUploadField geoserverUpload;
     private RoleManager roleManager;
+    private GeoserverRest gsr;
 
     @Inject
-    public InlineEcosystemServiceIndicatorEditor(Dao dao, RoleManager roleManager) {
+    public InlineEcosystemServiceIndicatorEditor(Dao dao, RoleManager roleManager, GeoserverRest gsr) {
         
         super(EcosystemServiceIndicator.class, dao);
         
         this.roleManager = roleManager;
+        this.gsr = gsr;
 
         SelectionTable<EcosystemService> st = ff.addSelectionTable(EcosystemServiceIndicator_.ecosystemService);
         st.addColumn(EcosystemService_.label, "Name");
@@ -133,7 +114,6 @@ public class InlineEcosystemServiceIndicatorEditor extends CutDownBaseEditor<Eco
     protected void doPostDelete(EcosystemServiceIndicator entity) {
         IndicatorSurface indicatorSurface = entity.getIndicatorSurface();
         if (indicatorSurface != null) {
-            GeoserverRest gsr = geoserverUpload.getGsr();
             gsr.removeStore(indicatorSurface);
         }
         super.doPostDelete(entity);

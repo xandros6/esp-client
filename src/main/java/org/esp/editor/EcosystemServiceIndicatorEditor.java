@@ -10,13 +10,10 @@ import org.esp.domain.blueprint.EcosystemService;
 import org.esp.domain.blueprint.EcosystemServiceIndicator;
 import org.esp.domain.blueprint.EcosystemServiceIndicator_;
 import org.esp.domain.blueprint.EcosystemService_;
-import org.esp.domain.blueprint.IndicatorSurface;
 import org.esp.domain.blueprint.Indicator_;
 import org.esp.domain.blueprint.QuantificationUnit_;
 import org.esp.domain.blueprint.Study;
 import org.esp.domain.blueprint.TemporalUnit_;
-import org.esp.upload.GeoserverRest;
-import org.esp.upload.GeoserverUploadField;
 import org.jrc.form.component.SelectionTable;
 import org.jrc.form.editor.BaseEditor;
 import org.jrc.form.editor.EntityTable;
@@ -38,20 +35,19 @@ import com.vaadin.ui.Notification;
 import com.vaadin.ui.TextArea;
 import com.vaadin.ui.TwinColSelect;
 
+@Deprecated
 public class EcosystemServiceIndicatorEditor extends
         BaseEditor<EcosystemServiceIndicator> {
 
     private Study study;
     private ESIEditorUI theView;
-    private GeoserverUploadField geoserverUpload;
     private RoleManager roleManager;
 
     @Inject
-    public EcosystemServiceIndicatorEditor(Dao dao, GeoserverUploadField geoserverUpload, final InlineStudyEditor editor, RoleManager roleManager) {
+    public EcosystemServiceIndicatorEditor(Dao dao, final InlineStudyEditor editor, RoleManager roleManager) {
         
         super(EcosystemServiceIndicator.class, dao);
         
-        this.geoserverUpload = geoserverUpload;
         this.roleManager = roleManager;
         
         EntityTable<EcosystemServiceIndicator> table = buildTable();
@@ -97,7 +93,7 @@ public class EcosystemServiceIndicatorEditor extends
         addFieldGroup("Model and data");
         
         ff.addField(EcosystemServiceIndicator_.minimumMappingUnit);
-        ff.addField(EcosystemServiceIndicator_.indicatorSurface, new IndicatorSurfaceField(geoserverUpload));
+//        ff.addField(EcosystemServiceIndicator_.indicatorSurface, new IndicatorSurfaceField(geoserverUpload));
         
         addFieldGroup("Spatial data");
         
@@ -131,26 +127,26 @@ public class EcosystemServiceIndicatorEditor extends
         /*
          * Build the relationships
          */
-        entity.setStudy(study);
-        IndicatorSurface indicatorSurface = geoserverUpload.getValue();
+//        entity.setStudy(study);
+//        IndicatorSurface indicatorSurface = geoserverUpload.getValue();
         
-        if (entity.getId() == null) {
-            
-            dao.getEntityManager().persist(entity);
-            indicatorSurface.setEcosystemServiceIndicator(entity);
-            dao.getEntityManager().persist(indicatorSurface);
-            entity.setIndicatorSurface(indicatorSurface);
-        }
+//        if (entity.getId() == null) {
+//            
+//            dao.getEntityManager().persist(entity);
+//            indicatorSurface.setEcosystemServiceIndicator(entity);
+//            dao.getEntityManager().persist(indicatorSurface);
+//            entity.setIndicatorSurface(indicatorSurface);
+//        }
     }
     
     @Override
     protected void doPostDelete(EcosystemServiceIndicator entity) {
-        IndicatorSurface indicatorSurface = entity.getIndicatorSurface();
-        if (indicatorSurface != null) {
-            GeoserverRest gsr = geoserverUpload.getGsr();
-            gsr.removeStore(indicatorSurface);
-        }
-        super.doPostDelete(entity);
+//        IndicatorSurface indicatorSurface = entity.getIndicatorSurface();
+//        if (indicatorSurface != null) {
+//            GeoserverRest gsr = geoserverUpload.getGsr();
+//            gsr.removeStore(indicatorSurface);
+//        }
+//        super.doPostDelete(entity);
     }
     
     

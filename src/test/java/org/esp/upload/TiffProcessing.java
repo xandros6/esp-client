@@ -4,6 +4,9 @@ import java.io.File;
 import java.io.IOException;
 
 import org.esp.domain.blueprint.IndicatorSurface;
+import org.esp.upload.old.GeoserverRest;
+import org.esp.upload.old.TiffMetaEx;
+import org.esp.upload.old.UnknownCRSException;
 import org.junit.Test;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.operation.TransformException;

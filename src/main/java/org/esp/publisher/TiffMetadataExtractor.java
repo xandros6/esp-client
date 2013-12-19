@@ -8,7 +8,7 @@ import javax.media.jai.RenderedOp;
 import javax.media.jai.operator.ExtremaDescriptor;
 import javax.persistence.Query;
 
-import org.esp.upload.UnknownCRSException;
+import org.esp.upload.old.UnknownCRSException;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.geometry.GeneralEnvelope;
@@ -76,7 +76,7 @@ public class TiffMetadataExtractor {
 
             RenderedImage img = coverage.getRenderedImage();
 
-            RenderedOp extremaOp = ExtremaDescriptor.create(img, null, 5, 5,
+            RenderedOp extremaOp = ExtremaDescriptor.create(img, null, 10, 10,
                     false, 1, null);
             double[] allMins = (double[]) extremaOp.getProperty("minimum");
             min = Doubles.min(allMins);

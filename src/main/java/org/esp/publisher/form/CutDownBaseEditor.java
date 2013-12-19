@@ -98,17 +98,19 @@ public abstract class CutDownBaseEditor<T> extends Panel {
     public void init(CssLayout view) {
 
         this.setContent(view);
-//        this.getContent().setSizeUndefined();
 
         buildForm(view);
 
         Component submitPanel = buildSubmitPanel();
         view.addComponent(submitPanel);
 
-//        Button button = view.getCreateButton();
-        
     }
 
+    public void init(CssLayout view, Button b) {
+        this.setContent(view);
+        buildForm(view);
+        view.addComponent(b);
+    }
 
     private void buildForm(CssLayout view) {
 
@@ -196,14 +198,14 @@ public abstract class CutDownBaseEditor<T> extends Panel {
         return ff;
     }
 
-    private void commitForm() {
+    protected boolean commitForm() {
 
         T entity = fgm.getEntity();
 
         boolean x = fgm.isValid();
         if (x == false) {
             Notification.show("Validation failed");
-            return;
+            return false;
         }
 
         try {
@@ -211,7 +213,7 @@ public abstract class CutDownBaseEditor<T> extends Panel {
         } catch (CommitException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-            return;
+            return false;
         }
 
         /*
@@ -231,6 +233,7 @@ public abstract class CutDownBaseEditor<T> extends Panel {
         doPostCommit(entity);
 
         editComplete();
+        return true;
     }
 
     /**
@@ -256,6 +259,10 @@ public abstract class CutDownBaseEditor<T> extends Panel {
 
     public void doUpdate(T entity) {
         fgm.setEntity(entity);
+    }
+    
+    public void doRefresh() {
+        fgm.setEntity(fgm.getEntity());
     }
     
     private void doDelete() {

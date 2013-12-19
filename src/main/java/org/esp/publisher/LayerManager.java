@@ -4,13 +4,9 @@ import org.esp.domain.blueprint.IndicatorSurface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vaadin.addon.leaflet.LMap;
-import org.vaadin.addon.leaflet.LTileLayer;
 import org.vaadin.addon.leaflet.LWmsLayer;
-import org.vaadin.addon.leaflet.shared.Bounds;
 
 import com.vaadin.ui.Component;
-import com.vaadin.ui.Panel;
-import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Polygon;
 
 /**
@@ -19,7 +15,7 @@ import com.vividsolutions.jts.geom.Polygon;
  * @author Will Temperley
  * 
  */
-public class LayerViewer extends Panel {
+public class LayerManager {
 
     private Logger logger = LoggerFactory.getLogger(MapPublisher.class);
 
@@ -27,15 +23,15 @@ public class LayerViewer extends Panel {
 
     private LWmsLayer singleLayer;
 
-    public LayerViewer() {
+    public LayerManager(LMap map) {
 
-        LTileLayer bl = new LTileLayer(
-                "http://{s}.tile.osm.org/{z}/{x}/{y}.png");
-        // bl.setZIndex(0);
-        bl.setAttributionString("&copy; <a href='http://osm.org/copyright'>OpenStreetMap</a> contributors");
-        map = new LMap();
-        setContent(map);
-        map.addBaseLayer(bl, "OSM");
+        this.map = map;
+
+//        LTileLayer bl = new LTileLayer(
+//                "http://{s}.tile.osm.org/{z}/{x}/{y}.png");
+//        bl.setAttributionString("&copy; <a href='http://osm.org/copyright'>OpenStreetMap</a> contributors");
+//        setContent(map);
+//        map.addBaseLayer(bl, "OSM");
 
     }
 
@@ -63,11 +59,11 @@ public class LayerViewer extends Panel {
 
     }
 
-    public void addWmsLayer(String layerName) {
-
-        LWmsLayer l = createDefaultWMSLayer(layerName);
-        map.addOverlay(l, layerName);
-    }
+//    public void addWmsLayer(String layerName) {
+//
+//        LWmsLayer l = createDefaultWMSLayer(layerName);
+//        map.addOverlay(l, layerName);
+//    }
 
     private LWmsLayer createDefaultWMSLayer(String layerName) {
         LWmsLayer l = new LWmsLayer();

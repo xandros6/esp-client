@@ -1,69 +1,31 @@
 package org.esp.publisher;
 
-
 import com.vividsolutions.jts.geom.Polygon;
 
-public class TiffMeta {
+public interface TiffMeta {
 
+    public abstract Double getMaxVal();
 
-    private Double maxVal;
+    public abstract void setMaxVal(Double maxVal);
 
-    public Double getMaxVal() {
-        return maxVal;
-    }
+    public abstract Polygon getEnvelope();
 
-    public void setMaxVal(Double maxVal) {
-        this.maxVal = maxVal;
-    }
+    public abstract void setEnvelope(Polygon envelope);
 
-    private Polygon envelope;
+    public abstract String getSrid();
 
-    public Polygon getEnvelope() {
-        return envelope;
-    }
+    public abstract void setSrid(String srid);
 
-    public void setEnvelope(Polygon envelope) {
-        this.envelope = envelope;
-    }
+    public abstract Double getPixelSizeY();
 
-    private String srid;
+    public abstract void setPixelSizeY(Double pixelSizeY);
 
-    public String getSrid() {
-        return srid;
-    }
+    public abstract Double getPixelSizeX();
 
-    public void setSrid(String srid) {
-        this.srid = srid;
-    }
+    public abstract void setPixelSizeX(Double pixelSizeX);
 
-    private Double pixelSizeY;
+    public abstract Double getMinVal();
 
-    public Double getPixelSizeY() {
-        return pixelSizeY;
-    }
+    public abstract void setMinVal(Double minVal);
 
-    public void setPixelSizeY(Double pixelSizeY) {
-        this.pixelSizeY = pixelSizeY;
-    }
-
-    private Double pixelSizeX;
-
-    public Double getPixelSizeX() {
-        return pixelSizeX;
-    }
-
-    public void setPixelSizeX(Double pixelSizeX) {
-        this.pixelSizeX = pixelSizeX;
-    }
-
-    private Double minVal;
-
-    public Double getMinVal() {
-        return minVal;
-    }
-
-    public void setMinVal(Double minVal) {
-        this.minVal = minVal;
-    }
-    
 }

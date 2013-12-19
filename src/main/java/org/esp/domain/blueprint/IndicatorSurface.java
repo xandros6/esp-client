@@ -13,13 +13,14 @@ import javax.persistence.ManyToOne;
 import javax.persistence.JoinColumn;
 
 import org.esp.domain.publisher.ColourMap;
+import org.esp.publisher.TiffMeta;
 import org.hibernate.annotations.Type;
 
 import com.vividsolutions.jts.geom.Polygon;
 
 @Entity
 @Table(schema = "blueprint", name = "indicator_surface")
-public class IndicatorSurface {
+public class IndicatorSurface implements TiffMeta {
 
     private Long id;
 

@@ -5,6 +5,7 @@ import java.util.List;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -42,21 +43,21 @@ public class ColourMap {
         this.label = label;
     }
 
-    private String styleName;
-
-    @Column(name = "style_name")
-    @NotNull
-    public String getStyleName() {
-        return styleName;
-    }
-
-    public void setStyleName(String styleName) {
-        this.styleName = styleName;
-    }
+//    private String styleName;
+//
+//    @Column(name = "style_name")
+//    @NotNull
+//    public String getStyleName() {
+//        return styleName;
+//    }
+//
+//    public void setStyleName(String styleName) {
+//        this.styleName = styleName;
+//    }
 
     private List<ColourMapEntry> colourMapEntries;
 
-    @OneToMany(mappedBy = "colourMap", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "colourMap", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     public List<ColourMapEntry> getColourMapEntries() {
         return colourMapEntries;
     }
