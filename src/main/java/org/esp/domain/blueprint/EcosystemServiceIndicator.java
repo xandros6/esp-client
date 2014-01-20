@@ -8,6 +8,7 @@ import javax.persistence.Id;
 import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 import javax.persistence.ManyToOne;
 import javax.persistence.JoinColumn;
@@ -15,13 +16,18 @@ import javax.persistence.ManyToMany;
 import javax.persistence.JoinTable;
 import javax.persistence.CascadeType;
 
+import org.esp.domain.publisher.ColourMap;
+import org.esp.publisher.TiffMeta;
+import org.hibernate.annotations.Type;
 import org.jrc.persist.adminunits.Grouping;
+
+import com.vividsolutions.jts.geom.Polygon;
 
 import java.util.Set;
 
 @Entity
 @Table(schema = "blueprint", name = "ecosystem_service_indicator")
-public class EcosystemServiceIndicator {
+public class EcosystemServiceIndicator  {
 
     private Long id;
 
@@ -38,6 +44,7 @@ public class EcosystemServiceIndicator {
 
     private EcosystemService ecosystemService;
 
+    @NotNull
     @ManyToOne
     @JoinColumn(name = "ecosystem_service_id")
     public EcosystemService getEcosystemService() {
@@ -111,6 +118,7 @@ public class EcosystemServiceIndicator {
 
     private Indicator indicator;
 
+    @NotNull
     @ManyToOne
     @JoinColumn(name = "indicator_id")
     public Indicator getIndicator() {
@@ -251,17 +259,6 @@ public class EcosystemServiceIndicator {
         this.groupings = groupings;
     }
 
-    private IndicatorSurface indicatorSurface;
-
-    @OneToOne(mappedBy = "ecosystemServiceIndicator", cascade = CascadeType.ALL)
-    public IndicatorSurface getIndicatorSurface() {
-        return indicatorSurface;
-    }
-
-    public void setIndicatorSurface(IndicatorSurface indicatorSurface) {
-        this.indicatorSurface = indicatorSurface;
-    }
-
     private Set<DataSource> dataSources;
 
     @ManyToMany
@@ -272,6 +269,108 @@ public class EcosystemServiceIndicator {
 
     public void setDataSources(Set<DataSource> dataSources) {
         this.dataSources = dataSources;
+    }
+
+    private SpatialDataType spatialDataType;
+
+    @ManyToOne
+    @JoinColumn(name="spatial_data_type_id")
+    public SpatialDataType getSpatialDataType() {
+        return spatialDataType;
+    }
+
+    public void setSpatialDataType(SpatialDataType spatialDataType) {
+        this.spatialDataType = spatialDataType;
+    }
+
+    private Double maxVal;
+
+    @Column(name="max_val")
+    public Double getMaxVal() {
+        return maxVal;
+    }
+
+    public void setMaxVal(Double maxVal) {
+        this.maxVal = maxVal;
+    }
+
+    private Polygon envelope;
+
+    @Column
+    @Type(type = "org.hibernate.spatial.GeometryType")
+    public Polygon getEnvelope() {
+        return envelope;
+    }
+
+    public void setEnvelope(Polygon envelope) {
+        this.envelope = envelope;
+    }
+
+    private String layerName;
+
+    @Column(name="layer_name")
+    public String getLayerName() {
+        return layerName;
+    }
+
+    public void setLayerName(String layerName) {
+        this.layerName = layerName;
+    }
+
+    private String srid;
+
+    @Column
+    public String getSrid() {
+        return srid;
+    }
+
+    public void setSrid(String srid) {
+        this.srid = srid;
+    }
+
+    private Double pixelSizeY;
+
+    @Column(name="pixel_size_y")
+    public Double getPixelSizeY() {
+        return pixelSizeY;
+    }
+
+    public void setPixelSizeY(Double pixelSizeY) {
+        this.pixelSizeY = pixelSizeY;
+    }
+
+    private Double pixelSizeX;
+
+    @Column(name="pixel_size_x")
+    public Double getPixelSizeX() {
+        return pixelSizeX;
+    }
+
+    public void setPixelSizeX(Double pixelSizeX) {
+        this.pixelSizeX = pixelSizeX;
+    }
+
+    private Double minVal;
+
+    @Column(name="min_val")
+    public Double getMinVal() {
+        return minVal;
+    }
+
+    public void setMinVal(Double minVal) {
+        this.minVal = minVal;
+    }
+    
+    private ColourMap colourMap;
+
+    @ManyToOne
+    @JoinColumn(name = "colour_map_id")
+    public ColourMap getColourMap() {
+        return colourMap;
+    }
+
+    public void setColourMap(ColourMap colourMap) {
+        this.colourMap = colourMap;
     }
 
     @Override

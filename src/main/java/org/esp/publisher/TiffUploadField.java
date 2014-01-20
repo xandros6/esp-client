@@ -4,6 +4,10 @@ import java.io.File;
 
 import org.vaadin.easyuploads.UploadField;
 
+import com.google.common.net.MediaType;
+import com.vaadin.ui.Notification;
+import com.vaadin.ui.Upload.FinishedEvent;
+
 public class TiffUploadField extends UploadField {
 
     private static final String UPLOAD_MESSAGE = "Choose a GeoTiff file to upload.  The file size limit is 150 Megabytes.";
@@ -14,8 +18,10 @@ public class TiffUploadField extends UploadField {
         setFieldType(FieldType.FILE);
         setCaption(UPLOAD_MESSAGE);
     }
-    
-    
+
+    private File file;
+    private MediaType mt;
+
     @Override
     protected String getDisplayDetails() {
 
@@ -26,16 +32,30 @@ public class TiffUploadField extends UploadField {
 
     }
 
+    public void uploadFinished(FinishedEvent event) {
+
+        super.uploadFinished(event);
+
+        String mimeType = event.getMIMEType();
+        mt = MediaType.parse(mimeType);
+
+    }
+
     public File getFile() {
-        
+
         if (getValue() != null) {
-            return (File) getValue();
+
+            File file = (File) getValue();
+            if (file.length() > FILE_SIZE_LIMIT) {
+                Notification
+                        .show("The file size exceeds the limit of 150 Megabytes. Processing aborted.");
+                return null;
+            }
+        }
+
+        if (mt != null && mt.is(MediaType.TIFF)) {
+            return file;
         }
         return null;
-//        String lastFileName = getLastFileName();
-//        if (lastFileName != null) {
-//            return new File(lastFileName); 
-//        }
-//        return null;
     }
 }

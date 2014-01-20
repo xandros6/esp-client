@@ -11,12 +11,16 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.esp.domain.publisher.ColourMapEntry;
 import org.jrc.persist.Dao;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
@@ -27,6 +31,8 @@ public class GeoserverRestApi {
     private GeoServerRESTPublisher publisher;
 
     private Configuration configuration;
+    
+    private Logger logger = LoggerFactory.getLogger(GeoserverRestApi.class);
 
     Dao dao;
 
@@ -64,6 +70,8 @@ public class GeoserverRestApi {
             String layerAndStoreName)
             throws FileNotFoundException, IllegalArgumentException {
 
+        logger.info("Publishing Geotiff");
+
         return publisher.publishGeoTIFF(workspace, layerAndStoreName,
                 layerAndStoreName, geotiff, srs, ProjectionPolicy.NONE,
                 layerAndStoreName, null);
@@ -95,16 +103,24 @@ public class GeoserverRestApi {
      * @return
      */
     public boolean removeRasterStore(String storeName) {
+
+        logger.info("Removing raster store");
+
         return publisher.removeCoverageStore(workspace, storeName, true);
+
     }
 
     public boolean updateStyle(String styleName, List<ColourMapEntry> cmes) {
+
+        logger.info("Updating style: " + styleName);
 
         String sldBody = buildSLDBody(styleName, cmes);
         return publisher.updateStyle(sldBody, styleName);
     }
 
     public boolean publishStyle(String styleName, List<ColourMapEntry> cmes) {
+
+        logger.info("Publishing style: " + styleName);
 
         String sldBody = buildSLDBody(styleName, cmes);
         return publisher.publishStyle(sldBody);
@@ -118,6 +134,7 @@ public class GeoserverRestApi {
 
             root.put("styleName", styleName);
             root.put("colourMapEntries", cmes);
+//            root.put("publishDate", new Date());
 
             StringWriter sw = new StringWriter();
             template.process(root, sw);

@@ -9,12 +9,11 @@ import org.esp.domain.blueprint.EcosystemService;
 import org.esp.domain.blueprint.EcosystemServiceIndicator;
 import org.esp.domain.blueprint.EcosystemServiceIndicator_;
 import org.esp.domain.blueprint.EcosystemService_;
-import org.esp.domain.blueprint.IndicatorSurface;
 import org.esp.domain.blueprint.Indicator_;
 import org.esp.domain.blueprint.QuantificationUnit_;
 import org.esp.domain.blueprint.Study;
 import org.esp.domain.blueprint.TemporalUnit_;
-import org.esp.upload.old.GeoserverRest;
+import org.esp.publisher.GeoserverRestApi;
 import org.jrc.form.component.SelectionTable;
 import org.jrc.form.filter.YearField;
 import org.jrc.persist.Dao;
@@ -24,14 +23,14 @@ import org.jrc.persist.adminunits.Grouping_;
 import com.google.inject.Inject;
 import com.vaadin.ui.TwinColSelect;
 
-public class InlineEcosystemServiceIndicatorEditor extends CutDownBaseEditor<EcosystemServiceIndicator> {
+public class IndicatorEditor extends CutDownBaseEditor<EcosystemServiceIndicator> {
 
     private Study study;
     private RoleManager roleManager;
-    private GeoserverRest gsr;
+    private GeoserverRestApi gsr;
 
     @Inject
-    public InlineEcosystemServiceIndicatorEditor(Dao dao, RoleManager roleManager, GeoserverRest gsr) {
+    public IndicatorEditor(Dao dao, RoleManager roleManager, GeoserverRestApi gsr) {
         
         super(EcosystemServiceIndicator.class, dao);
         
@@ -92,32 +91,13 @@ public class InlineEcosystemServiceIndicatorEditor extends CutDownBaseEditor<Eco
         addFieldGroup("Other");
         
     }
-
-    @Override
-    protected void doPreCommit(EcosystemServiceIndicator entity) {
-        /*
-         * Build the relationships
-         */
-//        entity.setStudy(study);
-//        IndicatorSurface indicatorSurface = geoserverUpload.getValue();
-//        
-//        if (entity.getId() == null) {
-//            
-//            dao.getEntityManager().persist(entity);
-//            indicatorSurface.setEcosystemServiceIndicator(entity);
-//            dao.getEntityManager().persist(indicatorSurface);
-//            entity.setIndicatorSurface(indicatorSurface);
-//        }
-    }
+    
+    
     
     @Override
     protected void doPostDelete(EcosystemServiceIndicator entity) {
-        IndicatorSurface indicatorSurface = entity.getIndicatorSurface();
-        if (indicatorSurface != null) {
-            gsr.removeStore(indicatorSurface);
-        }
+        gsr.removeRasterStore(entity.getLayerName());
         super.doPostDelete(entity);
     }
-
     
 }

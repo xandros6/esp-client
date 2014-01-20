@@ -1,6 +1,6 @@
 package org.esp.domain.publisher;
 
-import javax.persistence.metamodel.SetAttribute;
+import javax.persistence.metamodel.ListAttribute;
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;
 
@@ -11,6 +11,6 @@ public abstract class ColourMap_ {
 
     public static volatile SingularAttribute<ColourMap,Long> id;
     
-    public static volatile SetAttribute<ColourMap, ColourMapEntry> colourMapEntries;
+    public static volatile ListAttribute<ColourMap, ColourMapEntry> colourMapEntries;
 
 }

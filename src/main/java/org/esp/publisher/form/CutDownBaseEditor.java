@@ -8,7 +8,6 @@ import org.jrc.form.FieldGroupManager;
 import org.jrc.form.FieldGroupMeta;
 import org.jrc.form.JpaFieldFactory;
 import org.jrc.form.editor.BaseEditor;
-import org.jrc.form.editor.EditFormUI;
 import org.jrc.form.editor.SubmitPanel;
 import org.jrc.form.filter.FilterPanel;
 import org.jrc.persist.ContainerManager;
@@ -17,14 +16,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vaadin.dialogs.ConfirmDialog;
 
-import com.vaadin.data.Property;
 import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.fieldgroup.BeanFieldGroup;
 import com.vaadin.data.fieldgroup.FieldGroup.CommitException;
-import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
-import com.vaadin.ui.Button.ClickListener;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.CssLayout;
 import com.vaadin.ui.Field;
@@ -44,6 +40,7 @@ import com.vaadin.ui.UI;
 public abstract class CutDownBaseEditor<T> extends Panel {
 
     private static final String EDITING_FORMAT_STRING = "Editing: %s";
+
     private static final String SAVE_MESSAGE = "Saved successfully.";
 
     private Logger logger = LoggerFactory.getLogger(CutDownBaseEditor.class);
@@ -61,7 +58,6 @@ public abstract class CutDownBaseEditor<T> extends Panel {
 
     protected ContainerManager<T> containerManager;
 
-
     public CutDownBaseEditor(final Class<T> clazz, final Dao dao) {
 
         this.dao = dao;
@@ -76,7 +72,6 @@ public abstract class CutDownBaseEditor<T> extends Panel {
 
     }
 
-
     protected void fireObjectSelected(ValueChangeEvent event) {
 
         Object id = event.getProperty().getValue();
@@ -89,29 +84,37 @@ public abstract class CutDownBaseEditor<T> extends Panel {
     }
 
     /**
-     * Performs the form construction, which is currently done
-     * post-construction.
-     * 
-     * ... TODO move all subclass construction to init
-     * 
+     * Performs the form construction.
      */
-    public void init(CssLayout view) {
+//    public void init(CssLayout view) {
+//
+//        this.setContent(view);
+//
+//        buildForm(view);
+//
+//        Component submitPanel = buildSubmitPanel();
+//
+//        view.addComponent(submitPanel);
+//
+//    }
+
+    public void init(IEditorView<T> view) {
 
         this.setContent(view);
 
-        buildForm(view);
+        view.buildForm(fgm.getFieldGroupReprs());
 
-        Component submitPanel = buildSubmitPanel();
-        view.addComponent(submitPanel);
+        view.setSubmitPanel(buildSubmitPanel());
 
     }
 
-    public void init(CssLayout view, Button b) {
-        this.setContent(view);
-        buildForm(view);
-        view.addComponent(b);
-    }
-
+    /**
+     * 
+     * use {@link IEditorView}
+     * 
+     * @param view
+     */
+    @Deprecated
     private void buildForm(CssLayout view) {
 
         List<FieldGroupMeta<T>> fgrs = fgm.getFieldGroupReprs();
@@ -128,21 +131,18 @@ public abstract class CutDownBaseEditor<T> extends Panel {
             for (Field<?> field : fields) {
                 formLayout.addComponent(field);
             }
-//            view.addComponent(formLayout, fieldGroupMeta.getLabel(),
-//                    fieldGroupMeta.getDescription());
+            // view.addComponent(formLayout, fieldGroupMeta.getLabel(),
+            // fieldGroupMeta.getDescription());
             view.addComponent(formLayout);
 
         }
     }
-    
 
     protected void addFieldGroup(String name) {
         FieldGroupMeta<T> fieldGroupMeta = new FieldGroupMeta<T>(
                 ff.getFieldGroup(), name, null);
         fgm.add(fieldGroupMeta);
     }
-
-
 
     private Component buildSubmitPanel() {
         /*
@@ -179,7 +179,6 @@ public abstract class CutDownBaseEditor<T> extends Panel {
                         });
             }
         });
-
 
         SubmitPanel submitPanel = new SubmitPanel();
         submitPanel.addLeft(commit);
@@ -224,7 +223,7 @@ public abstract class CutDownBaseEditor<T> extends Panel {
         Object id = containerManager.addEntity(entity);
 
         Notification.show(SAVE_MESSAGE);
-        
+
         entity = containerManager.findEntity(id);
 
         /*
@@ -253,18 +252,14 @@ public abstract class CutDownBaseEditor<T> extends Panel {
         }
     }
 
-    private void doCreate() {
+    public void doCreate() {
         fgm.setEntity(containerManager.newEntity());
     }
 
     public void doUpdate(T entity) {
         fgm.setEntity(entity);
     }
-    
-    public void doRefresh() {
-        fgm.setEntity(fgm.getEntity());
-    }
-    
+
     private void doDelete() {
         T entity = fgm.getEntity();
         if (entity == null) {
@@ -278,10 +273,11 @@ public abstract class CutDownBaseEditor<T> extends Panel {
 
     /**
      * Called after deletion for any cleanup that may be required.
-     * @param entity 
+     * 
+     * @param entity
      */
     protected void doPostDelete(T entity) {
-        containerManager.refresh();
+        // containerManager.refresh();
     }
 
     /**
@@ -319,4 +315,7 @@ public abstract class CutDownBaseEditor<T> extends Panel {
         containerManager.refresh();
     }
 
+    public T getEntity() {
+        return fgm.getEntity();
+    }
 }

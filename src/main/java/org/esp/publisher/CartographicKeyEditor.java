@@ -46,7 +46,7 @@ public class CartographicKeyEditor extends HorizontalLayout {
 //        bic.addAll(dao.all(ColourMapEntry.class));
         //TODO temp
 
-        t.setVisibleColumns("label", "value");
+        t.setVisibleColumns("label");
 
         t.setPageLength(2);
 

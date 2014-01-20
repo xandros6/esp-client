@@ -8,7 +8,7 @@ import javax.media.jai.RenderedOp;
 import javax.media.jai.operator.ExtremaDescriptor;
 import javax.persistence.Query;
 
-import org.esp.domain.blueprint.IndicatorSurface;
+import org.esp.publisher.TiffMeta;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.geometry.GeneralEnvelope;
@@ -43,7 +43,7 @@ public class TiffMetaEx {
         this.dao = dao;
     }
 
-    public boolean extractTiffMetadata(File tifFile, IndicatorSurface surface)
+    public boolean extractTiffMetadata(File tifFile, TiffMeta surface)
             throws FactoryException, IOException, TransformException,
             UnknownCRSException {
             

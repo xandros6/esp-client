@@ -1,16 +1,13 @@
 package org.esp.publisher;
 
-import org.esp.domain.blueprint.IndicatorSurface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vaadin.addon.leaflet.LMap;
 import org.vaadin.addon.leaflet.LTileLayer;
 import org.vaadin.addon.leaflet.LWmsLayer;
-import org.vaadin.addon.leaflet.shared.Bounds;
 
 import com.vaadin.ui.Component;
 import com.vaadin.ui.Panel;
-import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Polygon;
 
 /**
@@ -19,6 +16,7 @@ import com.vividsolutions.jts.geom.Polygon;
  * @author Will Temperley
  * 
  */
+@Deprecated
 public class LayerViewer extends Panel {
 
     private Logger logger = LoggerFactory.getLogger(MapPublisher.class);
@@ -39,29 +37,29 @@ public class LayerViewer extends Panel {
 
     }
 
-    public void setIndicatorSurface(IndicatorSurface surface) {
-
-        if (surface.getEnvelope() != null) {
-            map.zoomToExtent(surface.getEnvelope());
-        } else {
-            logger.info("Missing envelope");
-        }
-
-        if (surface.getLayerName() != null) {
-            if (singleLayer == null) {
-                singleLayer = createDefaultWMSLayer(surface.getLayerName());
-                map.addOverlay(singleLayer, surface.getLayerName());
-            } else {
-                singleLayer.setLayers(surface.getLayerName());
-            }
-        } else {
-            logger.info("Missing layer name");
-        }
-
-        logger.info("Surface: " + surface.getLayerName());
-        logger.info("Leaflet layer: " + singleLayer);
-
-    }
+//    public void setIndicatorSurface(IndicatorSurface surface) {
+//
+//        if (surface.getEnvelope() != null) {
+//            map.zoomToExtent(surface.getEnvelope());
+//        } else {
+//            logger.info("Missing envelope");
+//        }
+//
+//        if (surface.getLayerName() != null) {
+//            if (singleLayer == null) {
+//                singleLayer = createDefaultWMSLayer(surface.getLayerName());
+//                map.addOverlay(singleLayer, surface.getLayerName());
+//            } else {
+//                singleLayer.setLayers(surface.getLayerName());
+//            }
+//        } else {
+//            logger.info("Missing layer name");
+//        }
+//
+//        logger.info("Surface: " + surface.getLayerName());
+//        logger.info("Leaflet layer: " + singleLayer);
+//
+//    }
 
     public void addWmsLayer(String layerName) {
 

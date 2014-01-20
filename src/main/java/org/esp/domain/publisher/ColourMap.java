@@ -43,18 +43,6 @@ public class ColourMap {
         this.label = label;
     }
 
-//    private String styleName;
-//
-//    @Column(name = "style_name")
-//    @NotNull
-//    public String getStyleName() {
-//        return styleName;
-//    }
-//
-//    public void setStyleName(String styleName) {
-//        this.styleName = styleName;
-//    }
-
     private List<ColourMapEntry> colourMapEntries;
 
     @OneToMany(mappedBy = "colourMap", cascade = CascadeType.ALL, fetch = FetchType.EAGER)

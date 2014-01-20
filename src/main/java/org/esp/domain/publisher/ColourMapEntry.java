@@ -93,8 +93,7 @@ public class ColourMapEntry {
     
     private Double value = 0d;
     
-    @NotNull
-    @Column
+    @Transient
     public Double getValue() {
         return value;
     }

@@ -3,9 +3,7 @@ package org.esp.upload;
 import java.io.File;
 import java.io.IOException;
 
-import org.esp.domain.blueprint.IndicatorSurface;
-import org.esp.upload.old.GeoserverRest;
-import org.esp.upload.old.TiffMetaEx;
+import org.esp.publisher.GeoserverRestApi;
 import org.esp.upload.old.UnknownCRSException;
 import org.junit.Test;
 import org.opengis.referencing.FactoryException;
@@ -17,11 +15,11 @@ public class TiffProcessing {
 
     @Test(expected=UnknownCRSException.class)
     public void test() throws FactoryException, IOException, TransformException, UnknownCRSException {
-        TiffMetaEx gsr = new GeoserverRest(null, null, null, null, null);
+        GeoserverRestApi gsr = new GeoserverRestApi(null, null, null, null, null, null);
 
-        IndicatorSurface surface = new IndicatorSurface();
 
-        gsr.extractTiffMetadata(tifFile, surface);
+//        Object surface;
+//        gsr.extractTiffMetadata(tifFile, surface);
 
     }
 

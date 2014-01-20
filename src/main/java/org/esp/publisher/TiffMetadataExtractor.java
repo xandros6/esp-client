@@ -47,9 +47,7 @@ public class TiffMetadataExtractor {
         }
     }
 
-    public boolean extractTiffMetadata(File tifFile, TiffMeta surface)
-            throws FactoryException, IOException, TransformException,
-            UnknownCRSException {
+    public boolean extractTiffMetadata(File tifFile, TiffMeta surface) throws Exception, UnknownCRSException {
 
         GeoTiffReader gtr = new GeoTiffReader(tifFile);
 

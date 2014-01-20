@@ -27,5 +27,6 @@ public interface TiffMeta {
     public abstract Double getMinVal();
 
     public abstract void setMinVal(Double minVal);
+    
 
 }

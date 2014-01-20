@@ -1,4 +1,4 @@
-package org.esp.publisher;
+package org.esp.upload.old;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.EventObject;
 
-import org.esp.upload.old.UnknownCRSException;
+import org.esp.publisher.TiffUploadField;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.operation.TransformException;
 import org.slf4j.Logger;

@@ -3,11 +3,10 @@ package org.esp.editor;
 import java.util.Set;
 
 import org.esp.domain.blueprint.EcosystemServiceIndicator;
-import org.esp.domain.blueprint.IndicatorSurface;
 import org.esp.domain.blueprint.Study;
 import org.esp.domain.blueprint.Study_;
+import org.esp.publisher.GeoserverRestApi;
 import org.esp.ui.ViewModule;
-import org.esp.upload.old.GeoserverRest;
 import org.jrc.form.editor.BaseEditor;
 import org.jrc.persist.Dao;
 
@@ -15,10 +14,10 @@ import com.google.inject.Inject;
 
 public class InlineStudyEditor extends BaseEditor<Study> {
 
-    private GeoserverRest gsr;
+    private GeoserverRestApi gsr;
 
     @Inject
-    public InlineStudyEditor(final Dao dao, GeoserverRest gsr) {
+    public InlineStudyEditor(final Dao dao, GeoserverRestApi gsr) {
 
         super(Study.class, dao);
 
@@ -47,10 +46,10 @@ public class InlineStudyEditor extends BaseEditor<Study> {
                 .getEcosystemServiceIndicators();
         if (esis != null) {
             for (EcosystemServiceIndicator ecosystemServiceIndicator : esis) {
-                IndicatorSurface surface = ecosystemServiceIndicator
-                        .getIndicatorSurface();
-                if (surface != null) {
-                    gsr.removeStore(surface);
+
+                String layerName = ecosystemServiceIndicator.getLayerName();
+                if (layerName != null) {
+                    gsr.removeRasterStore(layerName);
                 }
             }
         }

@@ -1,9 +1,9 @@
 package org.esp.publisher;
 
-import org.esp.domain.blueprint.IndicatorSurface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vaadin.addon.leaflet.LMap;
+import org.vaadin.addon.leaflet.LTileLayer;
 import org.vaadin.addon.leaflet.LWmsLayer;
 
 import com.vaadin.ui.Component;
@@ -27,36 +27,24 @@ public class LayerManager {
 
         this.map = map;
 
-//        LTileLayer bl = new LTileLayer(
-//                "http://{s}.tile.osm.org/{z}/{x}/{y}.png");
-//        bl.setAttributionString("&copy; <a href='http://osm.org/copyright'>OpenStreetMap</a> contributors");
-//        setContent(map);
-//        map.addBaseLayer(bl, "OSM");
+        LTileLayer bl = new LTileLayer(
+                "http://{s}.tile.osm.org/{z}/{x}/{y}.png");
+        bl.setAttributionString("&copy; <a href='http://osm.org/copyright'>OpenStreetMap</a> contributors");
+        map.addBaseLayer(bl, "OSM");
 
     }
 
-    public void setIndicatorSurface(IndicatorSurface surface) {
+    public void setSurfaceLayerName(String layerName) {
 
-        if (surface.getEnvelope() != null) {
-            map.zoomToExtent(surface.getEnvelope());
-        } else {
-            logger.info("Missing envelope");
-        }
-
-        if (surface.getLayerName() != null) {
             if (singleLayer == null) {
-                singleLayer = createDefaultWMSLayer(surface.getLayerName());
-                map.addOverlay(singleLayer, surface.getLayerName());
+                singleLayer = createDefaultWMSLayer(layerName);
+                map.addOverlay(singleLayer, layerName);
             } else {
-                singleLayer.setLayers(surface.getLayerName());
+                singleLayer.setLayers(layerName);
+                map.removeComponent(singleLayer);
+                map.addOverlay(singleLayer, layerName);
             }
-        } else {
-            logger.info("Missing layer name");
-        }
-
-        logger.info("Surface: " + surface.getLayerName());
-        logger.info("Leaflet layer: " + singleLayer);
-
+        
     }
 
 //    public void addWmsLayer(String layerName) {
@@ -79,6 +67,9 @@ public class LayerManager {
     }
 
     public void zoomTo(Polygon p) {
+        if (p == null) {
+            return;
+        }
         map.zoomToExtent(p);
     }
 

@@ -2,7 +2,6 @@ package org.esp.ui;
 
 import org.esp.domain.blueprint.EcosystemServiceIndicator;
 import org.esp.domain.blueprint.EcosystemServiceIndicator_;
-import org.esp.domain.blueprint.IndicatorSurface;
 import org.esp.publisher.LayerViewer;
 import org.jrc.form.editor.EntityTable;
 import org.jrc.form.filter.FilterPanel;
@@ -23,6 +22,7 @@ import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.GridLayout;
 import com.vaadin.ui.HorizontalLayout;
+import com.vaadin.ui.Label;
 import com.vaadin.ui.Panel;
 import com.vaadin.ui.Table;
 import com.vaadin.ui.VerticalLayout;
@@ -105,8 +105,11 @@ public class SearchView extends TwinPanelView implements View {
                 Object columnId) {
             JPAContainerItem<?> item = (JPAContainerItem<?>) source
                     .getItem(itemId);
-            final EcosystemServiceIndicator si = (EcosystemServiceIndicator) item
-                    .getEntity();
+            if (item == null ){
+                return new ESIViz(null);
+            }
+            Object entity = item.getEntity();
+            final EcosystemServiceIndicator si = (EcosystemServiceIndicator) entity;
             return new ESIViz(si);
         }
     }
@@ -180,18 +183,14 @@ public class SearchView extends TwinPanelView implements View {
             return;
         }
         
-        IndicatorSurface indicatorSurface = entity.getIndicatorSurface();
-        if (indicatorSurface != null) {
-            String layerName = indicatorSurface.getLayerName();
-            if (layerName != null) {
-                layerViewer.addWmsLayer(layerName);
-            }
+        String layerName = entity.getLayerName();
+        if (layerName != null) {
+            layerViewer.addWmsLayer(layerName);
+        }
             
-            Polygon env = indicatorSurface.getEnvelope();
-            if (env != null) {
-                layerViewer.zoomTo(env);
-            }
-            
+        Polygon env = entity.getEnvelope();
+        if (env != null) {
+            layerViewer.zoomTo(env);
         }
         
 //        gl.addComponent(new Label(entity.getEcosystemService().toString()), 0,0);
