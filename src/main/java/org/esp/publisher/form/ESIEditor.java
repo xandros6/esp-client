@@ -16,6 +16,7 @@ import org.esp.domain.blueprint.TemporalUnit_;
 import org.esp.domain.publisher.ColourMap;
 import org.esp.domain.publisher.ColourMapEntry;
 import org.esp.publisher.GeoserverRestApi;
+import org.esp.publisher.TiffMeta;
 import org.esp.publisher.TiffMetaImpl;
 import org.esp.publisher.TiffMetadataExtractor;
 import org.esp.publisher.TiffUploadField;
@@ -34,6 +35,7 @@ import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.data.util.converter.Converter;
 import com.vaadin.data.util.converter.StringToDoubleConverter;
+import com.vaadin.data.util.converter.StringToIntegerConverter;
 import com.vaadin.ui.Notification;
 import com.vaadin.ui.Notification.Type;
 import com.vaadin.ui.TextField;
@@ -49,13 +51,15 @@ public class ESIEditor extends CutDownBaseEditor<EcosystemServiceIndicator> {
 
     private PolygonField f;
     private TiffMetadataExtractor tme;
-    private TextField minVal;
-    private TextField maxVal;
+    private TextField minValField;
+    private TextField maxValField;
     private ColourMapField cmf;
 
     private GeoserverRestApi gsr;
 
     private LayerPublishedListener listener;
+
+    private TextField sridField;
 
     @Inject
     public ESIEditor(Dao dao, RoleManager roleManager,
@@ -96,9 +100,9 @@ public class ESIEditor extends CutDownBaseEditor<EcosystemServiceIndicator> {
             @Override
             public void valueChange(ValueChangeEvent event) {
                 File f = (File) event.getProperty().getValue();
-                extractTiffMetaData(f);
-                doPublish();
+                publishFile(f);
             }
+
         });
 
         ff.addField("file", uploadField);
@@ -106,13 +110,14 @@ public class ESIEditor extends CutDownBaseEditor<EcosystemServiceIndicator> {
         cmf = new ColourMapField(dao);
         ff.addField(EcosystemServiceIndicator_.colourMap, cmf);
 
-        this.minVal = ff.addTextField(EcosystemServiceIndicator_.minVal);
-        this.maxVal = ff.addTextField(EcosystemServiceIndicator_.maxVal);
+        this.minValField = ff.addTextField(EcosystemServiceIndicator_.minVal);
+        this.maxValField = ff.addTextField(EcosystemServiceIndicator_.maxVal);
         StringToDoubleConverter std = new StringToDoubleConverter();
-        minVal.setConverter(std);
-        maxVal.setConverter(std);
+        minValField.setConverter(std);
+        maxValField.setConverter(std);
 
-        // ff.addField(EcosystemServiceIndicator_.layerName);
+        this.sridField = ff.addTextField(EcosystemServiceIndicator_.srid);
+        sridField.setConverter(new StringToIntegerConverter());
         // ff.addField(EcosystemServiceIndicator_.pixelSizeX);
         // ff.addField(EcosystemServiceIndicator_.pixelSizeY);
 
@@ -287,8 +292,8 @@ public class ESIEditor extends CutDownBaseEditor<EcosystemServiceIndicator> {
 
         List<ColourMapEntry> list = cm.getColourMapEntries();
 
-        Double minVald = (Double) minVal.getPropertyDataSource().getValue();
-        Double maxVald = (Double) maxVal.getPropertyDataSource().getValue();
+        Double minVald = (Double) minValField.getPropertyDataSource().getValue();
+        Double maxVald = (Double) maxValField.getPropertyDataSource().getValue();
 
         list.get(0).setValue(minVald);
         list.get(1).setValue(maxVald);
@@ -296,25 +301,13 @@ public class ESIEditor extends CutDownBaseEditor<EcosystemServiceIndicator> {
         return cm;
     }
 
-    public void extractTiffMetaData(File tiffFile) {
-        try {
-
-            TiffMetaImpl tmi = new TiffMetaImpl();
-            tme.extractTiffMetadata(tiffFile, tmi);
-
-            minVal.setValue(tmi.getMinVal().toString());
-            maxVal.setValue(tmi.getMaxVal().toString());
-
-            System.out.println("Extracting tiff");
-
-        } catch (UnknownCRSException e) {
-            Notification.show("Unknown CRS found.", Type.ERROR_MESSAGE);
-            e.printStackTrace();
-        } catch (Exception e) {
-            Notification.show(e.getLocalizedMessage(), Type.ERROR_MESSAGE);
-            e.printStackTrace();
-        }
-
+    /**
+     * 
+     * @param f
+     */
+    private void publishFile(File f) {
+        extractTiffMetaData(f);
+        doPublish();
     }
 
     private void doPublish() {
@@ -397,6 +390,34 @@ public class ESIEditor extends CutDownBaseEditor<EcosystemServiceIndicator> {
 
     }
 
+    private void extractTiffMetaData(File tiffFile) {
+        try {
+    
+            TiffMetaImpl tmi = new TiffMetaImpl();
+            tme.extractTiffMetadata(tiffFile, tmi);
+            
+            Double minVal = tmi.getMinVal();
+
+            //A bit hacky but there's no good way to determine real no-data values.
+            if (minVal < 0) {
+                minValField.setValue("0");
+            }
+            maxValField.setValue(tmi.getMaxVal().toString());
+            
+            sridField.setValue(tmi.getSrid().toString());
+    
+            f.setValue((LinearRing) tmi.getEnvelope().getBoundary());
+
+        } catch (UnknownCRSException e) {
+            Notification.show("Unknown CRS found.", Type.ERROR_MESSAGE);
+            e.printStackTrace();
+        } catch (Exception e) {
+            Notification.show(e.getLocalizedMessage(), Type.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    
+    }
+
     private boolean publishTiff(ColourMap cm, File f) {
 
         EcosystemServiceIndicator surface = getEntity();
@@ -435,6 +456,7 @@ public class ESIEditor extends CutDownBaseEditor<EcosystemServiceIndicator> {
     public void setPublishEventListener(LayerPublishedListener listener) {
         this.listener = listener;
     }
+
 
     /**
      * Publish event

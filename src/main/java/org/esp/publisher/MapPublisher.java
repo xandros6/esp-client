@@ -1,16 +1,10 @@
 package org.esp.publisher;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.List;
-
 import org.esp.domain.blueprint.EcosystemServiceIndicator;
-import org.esp.domain.publisher.ColourMap;
-import org.esp.domain.publisher.ColourMapEntry;
 import org.esp.publisher.form.ESIEditor;
+import org.esp.publisher.form.LayerPublishedListener;
 import org.esp.publisher.form.ViewToRename;
 import org.jrc.persist.Dao;
-import org.jrc.ui.SimpleHtmlHeader;
 import org.jrc.ui.SimplePanel;
 import org.jrc.ui.baseview.TwinPanelView;
 import org.slf4j.Logger;
@@ -18,17 +12,12 @@ import org.slf4j.LoggerFactory;
 import org.vaadin.addon.leaflet.LMap;
 
 import com.google.inject.Inject;
-import com.vaadin.data.Property;
-import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
-import com.vaadin.ui.Button;
-import com.vaadin.ui.Button.ClickEvent;
-import com.vaadin.ui.CssLayout;
 import com.vaadin.ui.Notification;
-import com.vaadin.ui.Notification.Type;
 import com.vaadin.ui.TabSheet;
 import com.vaadin.ui.VerticalLayout;
+import com.vividsolutions.jts.geom.Polygon;
 
 /***
  * Interface for publishing maps.
@@ -68,6 +57,15 @@ public class MapPublisher extends TwinPanelView implements View {
         this.dao = dao;
 
         this.surfaceEditor = surfaceEditor;
+        
+        surfaceEditor.setPublishEventListener(new LayerPublishedListener() {
+
+            @Override
+            public void onLayerPublished(String layerName, Polygon extent) {
+                layerManager.setSurfaceLayerName(layerName);
+                layerManager.zoomTo(extent);
+            }
+        });
 
         {
             VerticalLayout vl = new VerticalLayout();
@@ -90,153 +88,15 @@ public class MapPublisher extends TwinPanelView implements View {
             tabSheet.setSizeFull();
             replaceComponent(rightPanel, tabSheet);
 
-            tabSheet.addTab(addPublishingComponents(), "Maps");
+
+            ViewToRename displayPanel = new ViewToRename();
+
+            surfaceEditor.init(displayPanel);
+
+            tabSheet.addTab(displayPanel, "Maps");
         }
     }
 
-
-    /**
-     * Currently a bit of a mess
-     * 
-     * [ ] Update the state based on {@link IndicatorSurface} values [ ]
-     * Potentially use polymorphic surface entities
-     * 
-     * @return
-     */
-    private CssLayout addPublishingComponents() {
-
-        ViewToRename displayPanel = new ViewToRename();
-
-
-        /*
-         * Custom button passed to editor
-         */
-        Button publish = new Button("Publish");
-        publish.addClickListener(new Button.ClickListener() {
-            @Override
-            public void buttonClick(ClickEvent event) {
-                doPublish();
-            }
-        });
-
-//        displayPanel.addComponent(new SimpleHtmlHeader("Upload"));
-//        displayPanel.addComponent(uploadField);
-
-        surfaceEditor.init(displayPanel);
-
-        return displayPanel;
-    }
-
-    /**
-     * Potential actions:
-     * 
-     * 
-     * 1. New layer 2. Update layer data 3. Update layer style
-     * 
-     * 
-     */
-    private void doPublish() {
-        
-        /*
-         * Save the surface
-         */
-        if (!surfaceEditor.commit()) {
-            logger.info("Could not save form");
-            return;
-        }
-
-        if (surfaceEditor.getColourMap() == null) {
-            showError("Null colourmap");
-            return;
-        }
-
-        ColourMap cm = surfaceEditor.getColourMap();
-
-        List<ColourMapEntry> cmes = cm.getColourMapEntries();
-        if (cmes.isEmpty()) {
-           showError("Invalid colour map.");
-           return;
-        }
-
-        /*
-         * Key section
-         * 
-         * If we have no layer, create a style and a name
-         * 
-         */
-        if (surfaceEditor.getLayerName() == null) {
-
-            /*
-             * New layer required
-             */
-            String layerName = generateLayerName();
-            surfaceEditor.setLayerName(layerName);
-
-            boolean stylePublished = gsr.publishStyle(layerName, surfaceEditor.getColourMap().getColourMapEntries());
-            logger.info("Style published: " + stylePublished);
-
-            /*
-             * Publish new data
-             */
-            File f = uploadField.getFile();
-            boolean tiffPublished = publishTiff(cm, f);
-
-            logger.info("Tiff published: " + tiffPublished);
-
-            if (tiffPublished) {
-                boolean surfaceSaved = surfaceEditor.commit();
-                logger.info("Surface saved: " + surfaceSaved);
-
-                layerManager.setSurfaceLayerName(surfaceEditor.getLayerName());
-                layerManager.zoomTo(surfaceEditor.getEntity().getEnvelope());
-            }
-
-        } else {
-
-            /*
-             * We have the layer already
-             */
-            File f = uploadField.getFile();
-
-            /*
-             * Always publishing the SLD. a little redundant but simpler.
-             */
-            gsr.updateStyle(surfaceEditor.getLayerName(), surfaceEditor.getColourMap().getColourMapEntries());
-
-            /*
-             * User wants to change the data.
-             */
-            if (f != null) {
-                gsr.removeRasterStore(surfaceEditor.getLayerName());
-                publishTiff(cm, f);
-                layerManager.setSurfaceLayerName(surfaceEditor.getLayerName());
-            }
-        }
-
-    }
-
-    private boolean publishTiff(ColourMap cm, File f) {
-        
-        EcosystemServiceIndicator surface = surfaceEditor.getEntity();
-        try {
-            if (f == null) {
-                Notification.show("File not uploaded yet.");
-                return false;
-            }
-            return gsr.publishTiff(f, surface.getSrid(), surface.getLayerName());
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            showError(e.getMessage());
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-            showError(e.getMessage());
-        }
-        return false;
-    }
-
-    private void showError(String message) {
-        Notification.show(message, Type.ERROR_MESSAGE);
-    }
 
     @Override
     public void enter(ViewChangeEvent event) {
@@ -277,10 +137,5 @@ public class MapPublisher extends TwinPanelView implements View {
         } catch (NumberFormatException e) {
             Notification.show("This isn't a valid id: " + stringId);
         }
-    }
-
-    private String generateLayerName() {
-        return "esp-layer-"
-                + dao.getNextValueInSequence("blueprint.geoserver_layer");
     }
 }
