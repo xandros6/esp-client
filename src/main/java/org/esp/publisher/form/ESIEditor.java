@@ -3,23 +3,23 @@ package org.esp.publisher.form;
 import it.jrc.auth.RoleManager;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.List;
 import java.util.Locale;
 
 import org.esp.domain.blueprint.ArealUnit_;
-import org.esp.domain.blueprint.EcosystemService;
 import org.esp.domain.blueprint.EcosystemServiceIndicator;
 import org.esp.domain.blueprint.EcosystemServiceIndicator_;
-import org.esp.domain.blueprint.EcosystemService_;
 import org.esp.domain.blueprint.Indicator_;
 import org.esp.domain.blueprint.QuantificationUnit_;
 import org.esp.domain.blueprint.TemporalUnit_;
 import org.esp.domain.publisher.ColourMap;
 import org.esp.domain.publisher.ColourMapEntry;
+import org.esp.publisher.GeoserverRestApi;
 import org.esp.publisher.TiffMetaImpl;
 import org.esp.publisher.TiffMetadataExtractor;
+import org.esp.publisher.TiffUploadField;
 import org.esp.upload.old.UnknownCRSException;
-import org.jrc.form.component.SelectionTable;
 import org.jrc.form.filter.YearField;
 import org.jrc.persist.Dao;
 import org.jrc.persist.adminunits.Grouping;
@@ -30,6 +30,8 @@ import org.vaadin.addon.leaflet.LMap;
 import org.vaadin.addon.leaflet.util.CRSTranslator;
 
 import com.google.inject.Inject;
+import com.vaadin.data.Property.ValueChangeEvent;
+import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.data.util.converter.Converter;
 import com.vaadin.data.util.converter.StringToDoubleConverter;
 import com.vaadin.ui.Notification;
@@ -41,10 +43,9 @@ import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.LinearRing;
 import com.vividsolutions.jts.geom.Polygon;
 
-public class InlineIndicatorSurfaceEditor extends
-        CutDownBaseEditor<EcosystemServiceIndicator> {
-    
-    Logger logger = LoggerFactory.getLogger(IndicatorEditor.class);
+public class ESIEditor extends CutDownBaseEditor<EcosystemServiceIndicator> {
+
+    Logger logger = LoggerFactory.getLogger(ESIEditor.class);
 
     private PolygonField f;
     private TiffMetadataExtractor tme;
@@ -52,26 +53,55 @@ public class InlineIndicatorSurfaceEditor extends
     private TextField maxVal;
     private ColourMapField cmf;
 
+    private GeoserverRestApi gsr;
+
+    private LayerPublishedListener listener;
 
     @Inject
-    public InlineIndicatorSurfaceEditor(Dao dao, RoleManager roleManager,
-            TiffMetadataExtractor tme) {
+    public ESIEditor(Dao dao, RoleManager roleManager,
+            TiffMetadataExtractor tme, GeoserverRestApi gsr) {
 
         super(EcosystemServiceIndicator.class, dao);
 
         this.tme = tme;
-        
+        this.gsr = gsr;
+
         buildPublishForm();
 
         buildMetaForm();
     }
 
-
     private void buildPublishForm() {
 
         ff.addField(EcosystemServiceIndicator_.ecosystemService);
-        ff.addSelectAndCreateField(EcosystemServiceIndicator_.indicator, Indicator_.label);
+        ff.addSelectAndCreateField(EcosystemServiceIndicator_.indicator,
+                Indicator_.label);
         ff.addField(EcosystemServiceIndicator_.study);
+
+        addFieldGroup("The Ecosystem Service");
+
+        TiffUploadField uploadField = new TiffUploadField();
+        
+        /*
+         * TODO
+         * 
+         * Lots of publish events ... like
+         * 
+         * Change in value of colour map
+         * 
+         */
+
+        uploadField.addListener(new ValueChangeListener() {
+
+            @Override
+            public void valueChange(ValueChangeEvent event) {
+                File f = (File) event.getProperty().getValue();
+                extractTiffMetaData(f);
+                doPublish();
+            }
+        });
+
+        ff.addField("file", uploadField);
 
         cmf = new ColourMapField(dao);
         ff.addField(EcosystemServiceIndicator_.colourMap, cmf);
@@ -82,9 +112,9 @@ public class InlineIndicatorSurfaceEditor extends
         minVal.setConverter(std);
         maxVal.setConverter(std);
 
-//        ff.addField(EcosystemServiceIndicator_.layerName);
-//        ff.addField(EcosystemServiceIndicator_.pixelSizeX);
-//        ff.addField(EcosystemServiceIndicator_.pixelSizeY);
+        // ff.addField(EcosystemServiceIndicator_.layerName);
+        // ff.addField(EcosystemServiceIndicator_.pixelSizeX);
+        // ff.addField(EcosystemServiceIndicator_.pixelSizeY);
 
         getGeometryField();
 
@@ -92,34 +122,41 @@ public class InlineIndicatorSurfaceEditor extends
         ff.addField(EcosystemServiceIndicator_.envelope, f);
         f.setVisible(false);
 
-        addFieldGroup("Other");
+        addFieldGroup("Geospatial data");
     }
-    
-    
+
     private void buildMetaForm() {
 
-//        SelectionTable<EcosystemService> st = ff.addSelectionTable(EcosystemServiceIndicator_.ecosystemService);
-//        st.addColumn(EcosystemService_.label, "Name");
-//        st.addFilterField(EcosystemService_.ecosystemServiceCategory, "Filter by category");
-        
-//        ff.addField(EcosystemServiceIndicator_.study);
+        // SelectionTable<EcosystemService> st =
+        // ff.addSelectionTable(EcosystemServiceIndicator_.ecosystemService);
+        // st.addColumn(EcosystemService_.label, "Name");
+        // st.addFilterField(EcosystemService_.ecosystemServiceCategory,
+        // "Filter by category");
 
+        // ff.addField(EcosystemServiceIndicator_.study);
+
+        ff.addField(EcosystemServiceIndicator_.status);
         ff.addField(EcosystemServiceIndicator_.ecosystemServiceAccountingType);
         ff.addField(EcosystemServiceIndicator_.ecosystemServiceBenefitType);
-        
-//        addFieldGroup("The Ecosystem Service");
-        
-        ff.addSelectAndCreateField(EcosystemServiceIndicator_.quantificationUnit, QuantificationUnit_.label, QuantificationUnit_.quantificationUnitCategory);
-        ff.addSelectAndCreateField(EcosystemServiceIndicator_.arealUnit, ArealUnit_.label);
-        ff.addSelectAndCreateField(EcosystemServiceIndicator_.temporalUnit, TemporalUnit_.label);
-        
-//        addFieldGroup("Quantification");
-        
+
+        addFieldGroup("Accounting");
+
+        ff.addSelectAndCreateField(
+                EcosystemServiceIndicator_.quantificationUnit,
+                QuantificationUnit_.label,
+                QuantificationUnit_.quantificationUnitCategory);
+        ff.addSelectAndCreateField(EcosystemServiceIndicator_.arealUnit,
+                ArealUnit_.label);
+        ff.addSelectAndCreateField(EcosystemServiceIndicator_.temporalUnit,
+                TemporalUnit_.label);
+
+        addFieldGroup("Quantification");
+
         ff.addField(EcosystemServiceIndicator_.startYear, new YearField());
         ff.addField(EcosystemServiceIndicator_.endYear, new YearField());
         ff.addField(EcosystemServiceIndicator_.spatialLevel);
-        
-        //Quick hack to get a filtered TwinColSelect
+
+        // Quick hack to get a filtered TwinColSelect
         TwinColSelect groupingField = new TwinColSelect();
         ff.addField(EcosystemServiceIndicator_.groupings, groupingField);
         List<Grouping> groupings = dao.all(Grouping.class, Grouping_.id);
@@ -129,28 +166,27 @@ public class InlineIndicatorSurfaceEditor extends
             }
         }
         groupingField.setCaption("Regions");
-        
-//        addFieldGroup("Spatio-temporal");
-        
+
+        addFieldGroup("Spatio-temporal");
+
         ff.addField(EcosystemServiceIndicator_.quantificationMethod);
 
         ff.addField(EcosystemServiceIndicator_.dataSources);
-        
-//        addFieldGroup("Model and data");
-        
+
+        addFieldGroup("Model and data");
+
         ff.addField(EcosystemServiceIndicator_.minimumMappingUnit);
-        
-//        addFieldGroup("Spatial data");
-        
+
+        addFieldGroup("Spatial data");
+
         ff.addField(EcosystemServiceIndicator_.biomes);
 
         ff.addField(EcosystemServiceIndicator_.studyObjectiveMet);
         ff.addTextArea(EcosystemServiceIndicator_.comments);
 
         addFieldGroup("Other");
-        
+
     }
-    
 
     /**
      * TODO all JTS Field stuff should be refactored
@@ -228,10 +264,12 @@ public class InlineIndicatorSurfaceEditor extends
         return commitForm();
     }
 
+    @Deprecated
     public String getLayerName() {
         return getEntity().getLayerName();
     }
 
+    @Deprecated
     public void setLayerName(String layerName) {
         getEntity().setLayerName(layerName);
     }
@@ -244,12 +282,11 @@ public class InlineIndicatorSurfaceEditor extends
     @Deprecated
     public ColourMap getColourMap() {
 
-
         ColourMap cm = cmf.getValue();
         logger.info("CM: " + cm.getLabel());
-        
+
         List<ColourMapEntry> list = cm.getColourMapEntries();
-        
+
         Double minVald = (Double) minVal.getPropertyDataSource().getValue();
         Double maxVald = (Double) maxVal.getPropertyDataSource().getValue();
 
@@ -261,7 +298,7 @@ public class InlineIndicatorSurfaceEditor extends
 
     public void extractTiffMetaData(File tiffFile) {
         try {
-            
+
             TiffMetaImpl tmi = new TiffMetaImpl();
             tme.extractTiffMetadata(tiffFile, tmi);
 
@@ -277,7 +314,138 @@ public class InlineIndicatorSurfaceEditor extends
             Notification.show(e.getLocalizedMessage(), Type.ERROR_MESSAGE);
             e.printStackTrace();
         }
-        
+
     }
 
+    private void doPublish() {
+
+        /*
+         * Save the surface
+         */
+        if (!commit()) {
+            logger.info("Ensure form is valid.");
+            return;
+        }
+
+        if (getColourMap() == null) {
+            showError("Null colourmap");
+            return;
+        }
+
+        ColourMap cm = getColourMap();
+
+        List<ColourMapEntry> cmes = cm.getColourMapEntries();
+        if (cmes.isEmpty()) {
+            showError("Invalid colour map.");
+            return;
+        }
+
+        /*
+         * Key section
+         * 
+         * If we have no layer, create a style and a name
+         */
+        if (getLayerName() == null) {
+
+            /*
+             * New layer required
+             */
+            String layerName = generateLayerName();
+            setLayerName(layerName);
+
+            boolean stylePublished = gsr.publishStyle(layerName, getColourMap()
+                    .getColourMapEntries());
+            logger.info("Style published: " + stylePublished);
+
+            /*
+             * Publish new data
+             */
+            File f = getEntity().getFile();
+            boolean tiffPublished = publishTiff(cm, f);
+
+            logger.info("Tiff published: " + tiffPublished);
+
+            if (tiffPublished) {
+                boolean surfaceSaved = commit();
+                logger.info("Surface saved: " + surfaceSaved);
+
+                firePublishEvent();
+            }
+
+        } else {
+
+            /*
+             * We have the layer already
+             */
+            File f = getEntity().getFile();
+
+            /*
+             * Always publishing the SLD. a little redundant but simpler.
+             */
+            gsr.updateStyle(getLayerName(), getColourMap()
+                    .getColourMapEntries());
+
+            /*
+             * User wants to change the data.
+             */
+            if (f != null) {
+                gsr.removeRasterStore(getLayerName());
+                publishTiff(cm, f);
+                firePublishEvent();
+            }
+        }
+
+    }
+
+    private boolean publishTiff(ColourMap cm, File f) {
+
+        EcosystemServiceIndicator surface = getEntity();
+        try {
+            if (f == null) {
+                Notification.show("File not uploaded yet.");
+                return false;
+            }
+            return gsr
+                    .publishTiff(f, surface.getSrid(), surface.getLayerName());
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            showError(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+            showError(e.getMessage());
+        }
+        return false;
+    }
+
+    private void showError(String message) {
+        Notification.show(message, Type.ERROR_MESSAGE);
+    }
+
+    @Override
+    protected void doPostDelete(EcosystemServiceIndicator entity) {
+        gsr.removeRasterStore(entity.getLayerName());
+        super.doPostDelete(entity);
+    }
+
+    private String generateLayerName() {
+        return "esp-layer-"
+                + dao.getNextValueInSequence("blueprint.geoserver_layer");
+    }
+
+    public void setPublishEventListener(LayerPublishedListener listener) {
+        this.listener = listener;
+    }
+
+    /**
+     * Publish event
+     */
+    private void firePublishEvent() {
+        if (listener == null) {
+            logger.error("Null listener");
+        } else {
+            listener.onLayerPublished(getLayerName(), getEntity().getEnvelope());
+//                layerManager.setSurfaceLayerName(getLayerName());
+//                layerManager.zoomTo(getEntity().getEnvelope());
+        }
+    }
 }

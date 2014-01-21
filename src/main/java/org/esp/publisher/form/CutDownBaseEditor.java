@@ -21,7 +21,6 @@ import com.vaadin.data.fieldgroup.BeanFieldGroup;
 import com.vaadin.data.fieldgroup.FieldGroup.CommitException;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
-import com.vaadin.ui.Component;
 import com.vaadin.ui.CssLayout;
 import com.vaadin.ui.Field;
 import com.vaadin.ui.FormLayout;
@@ -83,28 +82,13 @@ public abstract class CutDownBaseEditor<T> extends Panel {
 
     }
 
-    /**
-     * Performs the form construction.
-     */
-//    public void init(CssLayout view) {
-//
-//        this.setContent(view);
-//
-//        buildForm(view);
-//
-//        Component submitPanel = buildSubmitPanel();
-//
-//        view.addComponent(submitPanel);
-//
-//    }
-
     public void init(IEditorView<T> view) {
 
         this.setContent(view);
 
         view.buildForm(fgm.getFieldGroupReprs());
 
-        view.setSubmitPanel(buildSubmitPanel());
+        buildSubmitPanel(view.getSubmitPanel());
 
     }
 
@@ -144,13 +128,13 @@ public abstract class CutDownBaseEditor<T> extends Panel {
         fgm.add(fieldGroupMeta);
     }
 
-    private Component buildSubmitPanel() {
+    private void buildSubmitPanel(SubmitPanel submitPanel) {
         /*
          * Submit panel
          */
         Button commit = ButtonFactory.getButton(
                 ButtonFactory.SAVE_BUTTON_CAPTION, ButtonFactory.SAVE_ICON);
-        commit.setEnabled(containerManager.canCreate());
+        commit.setEnabled(containerManager.canUpdate());
 
         commit.addClickListener(new Button.ClickListener() {
             public void buttonClick(ClickEvent event) {
@@ -180,10 +164,8 @@ public abstract class CutDownBaseEditor<T> extends Panel {
             }
         });
 
-        SubmitPanel submitPanel = new SubmitPanel();
         submitPanel.addLeft(commit);
         submitPanel.addRight(delete);
-        return submitPanel;
     }
 
     /**

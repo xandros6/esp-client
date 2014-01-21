@@ -3,6 +3,7 @@ package org.esp.publisher.form;
 import java.util.List;
 
 import org.jrc.form.FieldGroupMeta;
+import org.jrc.form.editor.SubmitPanel;
 
 import com.vaadin.ui.Component;
 
@@ -15,7 +16,7 @@ import com.vaadin.ui.Component;
 public interface IEditorView<T> extends Component {
     
 
-    public void setSubmitPanel(Component panel);
+    public SubmitPanel getSubmitPanel();
     
     public void buildForm(List<FieldGroupMeta<T>> fields);
 

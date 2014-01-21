@@ -7,8 +7,7 @@ import java.util.List;
 import org.esp.domain.blueprint.EcosystemServiceIndicator;
 import org.esp.domain.publisher.ColourMap;
 import org.esp.domain.publisher.ColourMapEntry;
-import org.esp.publisher.form.IndicatorEditor;
-import org.esp.publisher.form.InlineIndicatorSurfaceEditor;
+import org.esp.publisher.form.ESIEditor;
 import org.esp.publisher.form.ViewToRename;
 import org.jrc.persist.Dao;
 import org.jrc.ui.SimpleHtmlHeader;
@@ -25,7 +24,6 @@ import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
-import com.vaadin.ui.Component;
 import com.vaadin.ui.CssLayout;
 import com.vaadin.ui.Notification;
 import com.vaadin.ui.Notification.Type;
@@ -53,24 +51,22 @@ public class MapPublisher extends TwinPanelView implements View {
     // private CartographicKeyEditor cartographicKeyEditor;
     
     private GeoserverRestApi gsr;
+
     private Dao dao;
+
     private LayerManager layerManager;
 
-    private IndicatorEditor esiEditor;
-
-    private InlineIndicatorSurfaceEditor surfaceEditor;
+    private ESIEditor surfaceEditor;
 
     private TiffUploadField uploadField;
 
     @Inject
     public MapPublisher(GeoserverRestApi gsr, Dao dao,
-            IndicatorEditor esiEditor,
-            InlineIndicatorSurfaceEditor surfaceEditor) {
+            ESIEditor surfaceEditor) {
 
         this.gsr = gsr;
         this.dao = dao;
 
-        this.esiEditor = esiEditor;
         this.surfaceEditor = surfaceEditor;
 
         {
@@ -98,14 +94,6 @@ public class MapPublisher extends TwinPanelView implements View {
         }
     }
 
-    private Component addMetaComponents() {
-
-        ViewToRename view = new ViewToRename();
-
-        esiEditor.init(view);
-
-        return view;
-    }
 
     /**
      * Currently a bit of a mess
@@ -119,15 +107,6 @@ public class MapPublisher extends TwinPanelView implements View {
 
         ViewToRename displayPanel = new ViewToRename();
 
-        uploadField = new TiffUploadField();
-
-        uploadField.addListener(new Property.ValueChangeListener() {
-            @Override
-            public void valueChange(ValueChangeEvent event) {
-                File f = (File) event.getProperty().getValue();
-                surfaceEditor.extractTiffMetaData(f);
-            }
-        });
 
         /*
          * Custom button passed to editor
@@ -140,8 +119,8 @@ public class MapPublisher extends TwinPanelView implements View {
             }
         });
 
-        displayPanel.addComponent(new SimpleHtmlHeader("Upload"));
-        displayPanel.addComponent(uploadField);
+//        displayPanel.addComponent(new SimpleHtmlHeader("Upload"));
+//        displayPanel.addComponent(uploadField);
 
         surfaceEditor.init(displayPanel);
 
@@ -175,7 +154,7 @@ public class MapPublisher extends TwinPanelView implements View {
 
         List<ColourMapEntry> cmes = cm.getColourMapEntries();
         if (cmes.isEmpty()) {
-           showError("Where are the CMES?");
+           showError("Invalid colour map.");
            return;
         }
 
@@ -268,7 +247,6 @@ public class MapPublisher extends TwinPanelView implements View {
             if (params.equals("new")) {
                 surfaceEditor.doCreate();
                 EcosystemServiceIndicator entity = surfaceEditor.getEntity();
-                esiEditor.doUpdate(entity);
             } else {
                 doEditById(params);
             }
@@ -293,7 +271,6 @@ public class MapPublisher extends TwinPanelView implements View {
             }
 
             surfaceEditor.doUpdate(entity);
-            esiEditor.doUpdate(entity);
             layerManager.setSurfaceLayerName(entity.getLayerName());
             layerManager.zoomTo(entity.getEnvelope());
 

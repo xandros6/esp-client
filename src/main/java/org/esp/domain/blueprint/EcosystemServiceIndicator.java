@@ -23,6 +23,7 @@ import org.jrc.persist.adminunits.Grouping;
 
 import com.vividsolutions.jts.geom.Polygon;
 
+import java.io.File;
 import java.util.Set;
 
 @Entity
@@ -371,6 +372,29 @@ public class EcosystemServiceIndicator  {
 
     public void setColourMap(ColourMap colourMap) {
         this.colourMap = colourMap;
+    }
+    
+    private Status status;
+    
+    @ManyToOne
+    @JoinColumn(name = "status_id")
+    public Status getStatus() {
+        return status;
+    }
+    
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+    
+    private File file;
+    
+    @Transient
+    public File getFile() {
+        return file;
+    }
+    
+    public void setFile(File file) {
+        this.file = file;
     }
 
     @Override

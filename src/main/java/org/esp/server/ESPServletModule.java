@@ -51,9 +51,11 @@ public class ESPServletModule extends AbstractGuiceServletModule {
         
 //        serve("/login").with(AuthServlet.class);
         if (isInProductionMode()) {
-            serve("/login").with(AnonymousAuthServlet.class);
+//            serve("/login").with(AnonymousAuthServlet.class);
+            serve("/login").with(FakeAuthServlet.class);
         } else {
-            serve("/login").with(AnonymousAuthServlet.class);
+//            serve("/login").with(AnonymousAuthServlet.class);
+            serve("/login").with(FakeAuthServlet.class);
         }
 
         /*
