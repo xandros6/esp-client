@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.esp.domain.blueprint.EcosystemServiceIndicator;
-import org.jrc.form.FieldGroupMeta;
+import org.jrc.form.FieldGroup;
 import org.jrc.form.editor.SubmitPanel;
 import org.jrc.ui.SimpleHtmlHeader;
 import org.jrc.ui.SimpleHtmlLabel;
@@ -16,11 +16,13 @@ import com.vaadin.ui.Field;
 import com.vaadin.ui.FormLayout;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.ProgressBar;
+import com.vaadin.ui.VerticalLayout;
 
-public class ViewToRename extends CssLayout implements IEditorView<EcosystemServiceIndicator> {
+public class ViewToRename extends VerticalLayout implements IEditorView<EcosystemServiceIndicator> {
     
     private Label status;
     private SubmitPanel submitPanel;
+    private CssLayout mainPanel;
 
     public ViewToRename() {
         addStyleName("display-panel");
@@ -41,6 +43,12 @@ public class ViewToRename extends CssLayout implements IEditorView<EcosystemServ
         
         SimpleHtmlLabel spacer = new SimpleHtmlLabel("&nbsp;");
         addComponent(spacer);
+        
+        this.mainPanel = new CssLayout();
+        addComponent(mainPanel);
+        
+        mainPanel.setSizeFull();
+        setExpandRatio(mainPanel, 1);
     }
     
     public void setStatus(String statusMessage) {
@@ -53,21 +61,25 @@ public class ViewToRename extends CssLayout implements IEditorView<EcosystemServ
     }
 
     @Override
-    public void buildForm(List<FieldGroupMeta<EcosystemServiceIndicator>> fields) {
-        for (FieldGroupMeta<EcosystemServiceIndicator> fieldGroupMeta : fields) {
+    public void buildForm(List<FieldGroup<EcosystemServiceIndicator>> fields) {
+        for (FieldGroup<EcosystemServiceIndicator> fieldGroupMeta : fields) {
             
             FormLayout formLayout = new FormLayout();
             BeanFieldGroup<EcosystemServiceIndicator> bfg = fieldGroupMeta.getFieldGroup();
 
 //            if (fieldGroupMeta.getDescription() != null) {
-                addComponent(new SimpleHtmlHeader(fieldGroupMeta.getLabel()));
+                mainPanel.addComponent(new SimpleHtmlHeader(fieldGroupMeta.getLabel()));
 //            }
+                
+            if (fieldGroupMeta instanceof ColourMapFieldGroup) {
+                mainPanel.addComponent(((ColourMapFieldGroup)fieldGroupMeta).getContent());
+            }
 
             Collection<Field<?>> fieldGroupFields = bfg.getFields();
             for (Field<?> field : fieldGroupFields) {
-                addComponent(field);
+                mainPanel.addComponent(field);
             }
-            addComponent(new SimpleHtmlLabel("&nbsp;"));
+            mainPanel.addComponent(new SimpleHtmlLabel("&nbsp;"));
             // view.addComponent(formLayout, fieldGroupMeta.getLabel(),
             // fieldGroupMeta.getDescription());
 //            addComponent(formLayout);

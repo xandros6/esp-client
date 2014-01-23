@@ -16,11 +16,12 @@ import org.esp.domain.blueprint.TemporalUnit_;
 import org.esp.domain.publisher.ColourMap;
 import org.esp.domain.publisher.ColourMapEntry;
 import org.esp.publisher.GeoserverRestApi;
-import org.esp.publisher.TiffMeta;
 import org.esp.publisher.TiffMetaImpl;
 import org.esp.publisher.TiffMetadataExtractor;
 import org.esp.publisher.TiffUploadField;
+import org.esp.publisher.form.ColourMapFieldGroup.ColourMapChangeListener;
 import org.esp.upload.old.UnknownCRSException;
+import org.jrc.form.FieldGroup;
 import org.jrc.form.filter.YearField;
 import org.jrc.persist.Dao;
 import org.jrc.persist.adminunits.Grouping;
@@ -45,22 +46,22 @@ import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.LinearRing;
 import com.vividsolutions.jts.geom.Polygon;
 
-public class ESIEditor extends CutDownBaseEditor<EcosystemServiceIndicator> {
+public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
-    Logger logger = LoggerFactory.getLogger(ESIEditor.class);
+    private Logger logger = LoggerFactory.getLogger(ESIEditor.class);
 
     private PolygonField f;
+
     private TiffMetadataExtractor tme;
-    private TextField minValField;
-    private TextField maxValField;
-    private ColourMapField cmf;
+
+    private ColourMapFieldGroup cmf;
 
     private GeoserverRestApi gsr;
 
     private LayerPublishedListener listener;
 
     private TextField sridField;
-
+    
     @Inject
     public ESIEditor(Dao dao, RoleManager roleManager,
             TiffMetadataExtractor tme, GeoserverRestApi gsr) {
@@ -73,6 +74,17 @@ public class ESIEditor extends CutDownBaseEditor<EcosystemServiceIndicator> {
         buildPublishForm();
 
         buildMetaForm();
+    }
+    
+    @Override
+    public void init(IEditorView<EcosystemServiceIndicator> view) {
+        this.setContent(view);
+
+        List<FieldGroup<EcosystemServiceIndicator>> fieldGroups = getFieldGroups();
+        view.buildForm(fieldGroups);
+
+
+        buildSubmitPanel(view.getSubmitPanel());
     }
 
     private void buildPublishForm() {
@@ -107,14 +119,36 @@ public class ESIEditor extends CutDownBaseEditor<EcosystemServiceIndicator> {
 
         ff.addField("file", uploadField);
 
-        cmf = new ColourMapField(dao);
-        ff.addField(EcosystemServiceIndicator_.colourMap, cmf);
+        cmf = new ColourMapFieldGroup(dao);
+        //Is this a hack?
+        getFieldGroups().add(cmf);
+        
+        
+        cmf.setValueChangeListener(new ColourMapChangeListener() {
+            
+            @Override
+            public void onValueChanged(ColourMap colourMap) {
 
-        this.minValField = ff.addTextField(EcosystemServiceIndicator_.minVal);
-        this.maxValField = ff.addTextField(EcosystemServiceIndicator_.maxVal);
-        StringToDoubleConverter std = new StringToDoubleConverter();
-        minValField.setConverter(std);
-        maxValField.setConverter(std);
+                // TODO Auto-generated method stub
+                List<ColourMapEntry> colourMapEntries = colourMap.getColourMapEntries();
+                //Is it published yet?
+                gsr.updateStyle(getLayerName(), colourMapEntries);
+                firePublishEvent();
+                
+            }
+                
+        });
+        
+
+        
+        // need to add field without attaching
+
+//        this.minValField = ff.addTextField(EcosystemServiceIndicator_.minVal);
+//        this.maxValField = ff.addTextField(EcosystemServiceIndicator_.maxVal);
+
+//        StringToDoubleConverter std = new StringToDoubleConverter();
+//        minValField.setConverter(std);
+//        maxValField.setConverter(std);
 
         this.sridField = ff.addTextField(EcosystemServiceIndicator_.srid);
         sridField.setConverter(new StringToIntegerConverter());
@@ -170,6 +204,7 @@ public class ESIEditor extends CutDownBaseEditor<EcosystemServiceIndicator> {
                 groupingField.addItem(grouping);
             }
         }
+
         groupingField.setCaption("Regions");
 
         addFieldGroup("Spatio-temporal");
@@ -265,6 +300,7 @@ public class ESIEditor extends CutDownBaseEditor<EcosystemServiceIndicator> {
         return f.getMap();
     }
 
+    @Deprecated
     public boolean commit() {
         return commitForm();
     }
@@ -279,27 +315,6 @@ public class ESIEditor extends CutDownBaseEditor<EcosystemServiceIndicator> {
         getEntity().setLayerName(layerName);
     }
 
-    /**
-     * FIXME -- to do this we need to ensure all colourmaps have two entries.
-     * 
-     * @return
-     */
-    @Deprecated
-    public ColourMap getColourMap() {
-
-        ColourMap cm = cmf.getValue();
-        logger.info("CM: " + cm.getLabel());
-
-        List<ColourMapEntry> list = cm.getColourMapEntries();
-
-        Double minVald = (Double) minValField.getPropertyDataSource().getValue();
-        Double maxVald = (Double) maxValField.getPropertyDataSource().getValue();
-
-        list.get(0).setValue(minVald);
-        list.get(1).setValue(maxVald);
-
-        return cm;
-    }
 
     /**
      * 
@@ -307,10 +322,6 @@ public class ESIEditor extends CutDownBaseEditor<EcosystemServiceIndicator> {
      */
     private void publishFile(File f) {
         extractTiffMetaData(f);
-        doPublish();
-    }
-
-    private void doPublish() {
 
         /*
          * Save the surface
@@ -320,12 +331,12 @@ public class ESIEditor extends CutDownBaseEditor<EcosystemServiceIndicator> {
             return;
         }
 
-        if (getColourMap() == null) {
+        ColourMap cm = cmf.getColourMap();
+        if (cm == null) {
             showError("Null colourmap");
             return;
         }
 
-        ColourMap cm = getColourMap();
 
         List<ColourMapEntry> cmes = cm.getColourMapEntries();
         if (cmes.isEmpty()) {
@@ -346,14 +357,13 @@ public class ESIEditor extends CutDownBaseEditor<EcosystemServiceIndicator> {
             String layerName = generateLayerName();
             setLayerName(layerName);
 
-            boolean stylePublished = gsr.publishStyle(layerName, getColourMap()
-                    .getColourMapEntries());
+            boolean stylePublished = gsr.publishStyle(layerName, cm.getColourMapEntries());
             logger.info("Style published: " + stylePublished);
 
             /*
              * Publish new data
              */
-            File f = getEntity().getFile();
+//            File f = getEntity().getFile();
             boolean tiffPublished = publishTiff(cm, f);
 
             logger.info("Tiff published: " + tiffPublished);
@@ -370,13 +380,12 @@ public class ESIEditor extends CutDownBaseEditor<EcosystemServiceIndicator> {
             /*
              * We have the layer already
              */
-            File f = getEntity().getFile();
+//            File f = getEntity().getFile();
 
             /*
              * Always publishing the SLD. a little redundant but simpler.
              */
-            gsr.updateStyle(getLayerName(), getColourMap()
-                    .getColourMapEntries());
+            gsr.updateStyle(getLayerName(), cm.getColourMapEntries());
 
             /*
              * User wants to change the data.
@@ -400,9 +409,9 @@ public class ESIEditor extends CutDownBaseEditor<EcosystemServiceIndicator> {
 
             //A bit hacky but there's no good way to determine real no-data values.
             if (minVal < 0) {
-                minValField.setValue("0");
+                cmf.setMinValue("0");
             }
-            maxValField.setValue(tmi.getMaxVal().toString());
+            cmf.setMaxValue(tmi.getMaxVal().toString());
             
             sridField.setValue(tmi.getSrid().toString());
     

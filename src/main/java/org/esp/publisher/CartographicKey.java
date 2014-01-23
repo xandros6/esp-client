@@ -19,26 +19,35 @@ public class CartographicKey extends SimpleHtmlLabel {
     double min;
     double max;
 
+    /*
+     * Allow this as an option - may be useful if values are to be shown on a
+     * key.
+     */
+    boolean showValues = false;
+
     private void update() {
-        
+
         String finalStyle = getStyleString();
-        
-        StringBuilder sb = new StringBuilder(); 
+
+        StringBuilder sb = new StringBuilder();
 
         for (ColourMapEntry cme : colours) {
             Double val = cme.getValue();
             double pc = getPercentage(val);
             double height = 80;
-            sb.append("<div style='position: absolute; left: 30px; top:" + (int) (height * pc)/100 + "px;'>");
-            sb.append(cme.getValue());
-            sb.append("</div>");
+            if (showValues) {
+                sb.append("<div style='position: absolute; left: 30px; top:"
+                        + (int) (height * pc) / 100 + "px;'>");
+                sb.append(cme.getValue());
+                sb.append("</div>");
+            }
         }
-        
+
         String labels = sb.toString();
 
         setValue(String.format(DIV_TEMPLATE, finalStyle, labels));
     }
-    
+
     private String getStyleString() {
 
         min = Double.POSITIVE_INFINITY;
@@ -69,10 +78,14 @@ public class CartographicKey extends SimpleHtmlLabel {
         }
 
         String colourString = Joiner.on(",").join(rgbStrings);
-        
-        String theStyle = String.format("background-image: -webkit-linear-gradient(top, s);"
-                + "background-image: -moz-linear-gradient(top, %s); "
-                + "background-image: linear-gradient(to bottom, %s);", colourString, colourString, colourString);
+
+        String theStyle = String
+                .format(
+                        "filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#fff, endColorstr=#000); " + 
+                          "background-image: -webkit-linear-gradient(top, s); "
+                        + "background-image: -moz-linear-gradient(top, %s); "
+                        + "background-image: linear-gradient(to bottom, %s);",
+                        colourString, colourString, colourString);
 
         String styleTemplate = "position: absolute; %s height:95px; width: 20px;";
         String finalStyle = String.format(styleTemplate, theStyle);
@@ -88,7 +101,7 @@ public class CartographicKey extends SimpleHtmlLabel {
     private int getPercentage(Double value) {
         double diff = max - min;
         double relZero = value - min;
-        
+
         if ((int) relZero == 0) {
             return 0;
         }

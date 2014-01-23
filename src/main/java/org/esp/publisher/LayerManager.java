@@ -40,8 +40,9 @@ public class LayerManager {
                 singleLayer = createDefaultWMSLayer(layerName);
                 map.addOverlay(singleLayer, layerName);
             } else {
-                singleLayer.setLayers(layerName);
                 map.removeComponent(singleLayer);
+                singleLayer = createDefaultWMSLayer(layerName);
+//                singleLayer.setLayers(layerName);
                 map.addOverlay(singleLayer, layerName);
             }
         

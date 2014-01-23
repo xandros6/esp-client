@@ -3,9 +3,10 @@ package org.esp.publisher.form;
 import java.util.Collection;
 import java.util.List;
 
+import org.esp.domain.blueprint.EcosystemServiceIndicator;
 import org.jrc.form.ButtonFactory;
 import org.jrc.form.FieldGroupManager;
-import org.jrc.form.FieldGroupMeta;
+import org.jrc.form.FieldGroup;
 import org.jrc.form.JpaFieldFactory;
 import org.jrc.form.editor.BaseEditor;
 import org.jrc.form.editor.SubmitPanel;
@@ -31,18 +32,18 @@ import com.vaadin.ui.UI;
 
 /**
  * 
- * FIXME a simplified verion of {@link BaseEditor}
+ * A simplified verion of {@link BaseEditor}
  * 
  * Probably do not require all the container stuff.
  * 
  */
-public abstract class CutDownBaseEditor<T> extends Panel {
+public abstract class EditorController<T> extends Panel {
 
     private static final String EDITING_FORMAT_STRING = "Editing: %s";
 
     private static final String SAVE_MESSAGE = "Saved successfully.";
 
-    private Logger logger = LoggerFactory.getLogger(CutDownBaseEditor.class);
+    private Logger logger = LoggerFactory.getLogger(EditorController.class);
 
     protected Dao dao;
 
@@ -57,7 +58,7 @@ public abstract class CutDownBaseEditor<T> extends Panel {
 
     protected ContainerManager<T> containerManager;
 
-    public CutDownBaseEditor(final Class<T> clazz, final Dao dao) {
+    public EditorController(final Class<T> clazz, final Dao dao) {
 
         this.dao = dao;
         this.ff = new JpaFieldFactory<T>(dao, clazz);
@@ -68,7 +69,6 @@ public abstract class CutDownBaseEditor<T> extends Panel {
          * Filter panel
          */
         filterPanel = new FilterPanel<T>(containerManager.getContainer(), dao);
-
     }
 
     protected void fireObjectSelected(ValueChangeEvent event) {
@@ -82,6 +82,11 @@ public abstract class CutDownBaseEditor<T> extends Panel {
 
     }
 
+    /**
+     * Designed to be overridden to allow customised form construction.
+     * 
+     * @param view
+     */
     public void init(IEditorView<T> view) {
 
         this.setContent(view);
@@ -92,43 +97,13 @@ public abstract class CutDownBaseEditor<T> extends Panel {
 
     }
 
-    /**
-     * 
-     * use {@link IEditorView}
-     * 
-     * @param view
-     */
-    @Deprecated
-    private void buildForm(CssLayout view) {
-
-        List<FieldGroupMeta<T>> fgrs = fgm.getFieldGroupReprs();
-        for (FieldGroupMeta<T> fieldGroupMeta : fgrs) {
-
-            FormLayout formLayout = new FormLayout();
-            BeanFieldGroup<T> bfg = fieldGroupMeta.getFieldGroup();
-
-            if (fieldGroupMeta.getDescription() != null) {
-                formLayout.addComponent(new Label(fieldGroupMeta.getLabel()));
-            }
-
-            Collection<Field<?>> fields = bfg.getFields();
-            for (Field<?> field : fields) {
-                formLayout.addComponent(field);
-            }
-            // view.addComponent(formLayout, fieldGroupMeta.getLabel(),
-            // fieldGroupMeta.getDescription());
-            view.addComponent(formLayout);
-
-        }
-    }
-
-    protected void addFieldGroup(String name) {
-        FieldGroupMeta<T> fieldGroupMeta = new FieldGroupMeta<T>(
-                ff.getFieldGroup(), name, null);
+    protected FieldGroup<T> addFieldGroup(String name) {
+        FieldGroup<T> fieldGroupMeta = ff.getFieldGroup(name);
         fgm.add(fieldGroupMeta);
+        return fieldGroupMeta;
     }
 
-    private void buildSubmitPanel(SubmitPanel submitPanel) {
+    protected void buildSubmitPanel(SubmitPanel submitPanel) {
         /*
          * Submit panel
          */
@@ -299,5 +274,9 @@ public abstract class CutDownBaseEditor<T> extends Panel {
 
     public T getEntity() {
         return fgm.getEntity();
+    }
+
+    protected List<FieldGroup<T>> getFieldGroups() {
+        return fgm.getFieldGroupReprs();
     }
 }

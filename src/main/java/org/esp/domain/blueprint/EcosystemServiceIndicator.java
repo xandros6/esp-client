@@ -294,7 +294,7 @@ public class EcosystemServiceIndicator  {
 
     private Polygon envelope;
 
-    @Column
+    @Column(name="envelope_")
     @Type(type = "org.hibernate.spatial.GeometryType")
     public Polygon getEnvelope() {
         return envelope;

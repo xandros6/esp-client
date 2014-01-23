@@ -2,6 +2,7 @@ package org.esp.publisher;
 
 import org.esp.domain.blueprint.EcosystemServiceIndicator;
 import org.esp.publisher.form.ESIEditor;
+import org.esp.publisher.form.EditorController;
 import org.esp.publisher.form.LayerPublishedListener;
 import org.esp.publisher.form.ViewToRename;
 import org.jrc.persist.Dao;
@@ -37,17 +38,14 @@ public class MapPublisher extends TwinPanelView implements View {
     
     private Logger logger = LoggerFactory.getLogger(MapPublisher.class);
 
-    // private CartographicKeyEditor cartographicKeyEditor;
-    
     private GeoserverRestApi gsr;
 
     private Dao dao;
 
     private LayerManager layerManager;
 
-    private ESIEditor surfaceEditor;
+    private EditorController<EcosystemServiceIndicator> surfaceEditor;
 
-    private TiffUploadField uploadField;
 
     @Inject
     public MapPublisher(GeoserverRestApi gsr, Dao dao,
