@@ -4,7 +4,7 @@ import org.esp.domain.blueprint.EcosystemServiceIndicator;
 import org.esp.publisher.form.ESIEditor;
 import org.esp.publisher.form.EditorController;
 import org.esp.publisher.form.LayerPublishedListener;
-import org.esp.publisher.form.ViewToRename;
+import org.esp.publisher.form.ESIEditorView;
 import org.jrc.persist.Dao;
 import org.jrc.ui.SimplePanel;
 import org.jrc.ui.baseview.TwinPanelView;
@@ -38,20 +38,15 @@ public class MapPublisher extends TwinPanelView implements View {
     
     private Logger logger = LoggerFactory.getLogger(MapPublisher.class);
 
-    private GeoserverRestApi gsr;
-
     private Dao dao;
 
     private LayerManager layerManager;
 
     private EditorController<EcosystemServiceIndicator> surfaceEditor;
 
-
     @Inject
-    public MapPublisher(GeoserverRestApi gsr, Dao dao,
-            ESIEditor surfaceEditor) {
+    public MapPublisher(Dao dao, ESIEditor surfaceEditor) {
 
-        this.gsr = gsr;
         this.dao = dao;
 
         this.surfaceEditor = surfaceEditor;
@@ -87,11 +82,11 @@ public class MapPublisher extends TwinPanelView implements View {
             replaceComponent(rightPanel, tabSheet);
 
 
-            ViewToRename displayPanel = new ViewToRename();
 
-            surfaceEditor.init(displayPanel);
+            ESIEditorView esiEditorView2 =  new ESIEditorView();
+            surfaceEditor.init(esiEditorView2);
 
-            tabSheet.addTab(displayPanel, "Maps");
+            tabSheet.addTab(esiEditorView2, "Maps");
         }
     }
 
@@ -101,18 +96,12 @@ public class MapPublisher extends TwinPanelView implements View {
 
         String params = event.getParameters();
         if (params != null && !params.isEmpty()) {
-
             if (params.equals("new")) {
+                layerManager.reset();
                 surfaceEditor.doCreate();
-                EcosystemServiceIndicator entity = surfaceEditor.getEntity();
             } else {
                 doEditById(params);
             }
-
-            // Assumes all entities are set up already.
-
-//            ColourMap cm = indicatorSurface.getColourMap();
-            // cartographicKeyEditor.setColourMap(cm);
         }
 
     }

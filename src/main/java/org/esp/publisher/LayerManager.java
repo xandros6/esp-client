@@ -1,7 +1,5 @@
 package org.esp.publisher;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.vaadin.addon.leaflet.LMap;
 import org.vaadin.addon.leaflet.LTileLayer;
 import org.vaadin.addon.leaflet.LWmsLayer;
@@ -10,27 +8,30 @@ import com.vaadin.ui.Component;
 import com.vividsolutions.jts.geom.Polygon;
 
 /**
- * FIXME
  * 
  * @author Will Temperley
  * 
  */
 public class LayerManager {
 
-    private Logger logger = LoggerFactory.getLogger(MapPublisher.class);
+    private static final String OSM = "OSM";
+
+//    private Logger logger = LoggerFactory.getLogger(MapPublisher.class);
 
     private LMap map;
 
     private LWmsLayer singleLayer;
 
+    private LTileLayer bl;
+
     public LayerManager(LMap map) {
 
         this.map = map;
 
-        LTileLayer bl = new LTileLayer(
+        bl = new LTileLayer(
                 "http://{s}.tile.osm.org/{z}/{x}/{y}.png");
         bl.setAttributionString("&copy; <a href='http://osm.org/copyright'>OpenStreetMap</a> contributors");
-        map.addBaseLayer(bl, "OSM");
+        map.addBaseLayer(bl, OSM);
 
     }
 
@@ -57,11 +58,15 @@ public class LayerManager {
     private LWmsLayer createDefaultWMSLayer(String layerName) {
         LWmsLayer l = new LWmsLayer();
 
+        
+//        String uuid = UUID.randomUUID().toString();
+        
         l.setUrl("http://lrm-maps.jrc.ec.europa.eu/geoserver/esp/wms");
         l.setTransparent(true);
         l.setFormat("image/png");
         l.setLayers(layerName);
-        l.setOpacity(1d);
+//        l.setOpacity(0.59d);
+//        l.setStyles(layerName + "," + uuid);
         l.setActive(true);
         l.setVisible(true);
         return l;
@@ -84,6 +89,11 @@ public class LayerManager {
 
     public LMap getMap() {
         return map;
+    }
+
+    public void reset() {
+        map.removeAllComponents();
+        map.addBaseLayer(bl, OSM);
     }
 
 }

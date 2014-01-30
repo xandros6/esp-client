@@ -1,14 +1,16 @@
 package org.esp.publisher;
 
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import com.vividsolutions.jts.geom.Polygon;
 
 public class TiffMetaImpl implements TiffMeta {
 
-
     private Double maxVal;
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see org.esp.publisher.TiffMeta#getMaxVal()
      */
     @Override
@@ -16,7 +18,9 @@ public class TiffMetaImpl implements TiffMeta {
         return maxVal;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see org.esp.publisher.TiffMeta#setMaxVal(java.lang.Double)
      */
     @Override
@@ -26,7 +30,9 @@ public class TiffMetaImpl implements TiffMeta {
 
     private Polygon envelope;
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see org.esp.publisher.TiffMeta#getEnvelope()
      */
     @Override
@@ -34,8 +40,12 @@ public class TiffMetaImpl implements TiffMeta {
         return envelope;
     }
 
-    /* (non-Javadoc)
-     * @see org.esp.publisher.TiffMeta#setEnvelope(com.vividsolutions.jts.geom.Polygon)
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.esp.publisher.TiffMeta#setEnvelope(com.vividsolutions.jts.geom.Polygon
+     * )
      */
     @Override
     public void setEnvelope(Polygon envelope) {
@@ -44,7 +54,9 @@ public class TiffMetaImpl implements TiffMeta {
 
     private String srid;
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see org.esp.publisher.TiffMeta#getSrid()
      */
     @Override
@@ -52,7 +64,9 @@ public class TiffMetaImpl implements TiffMeta {
         return srid;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see org.esp.publisher.TiffMeta#setSrid(java.lang.String)
      */
     @Override
@@ -62,7 +76,9 @@ public class TiffMetaImpl implements TiffMeta {
 
     private Double pixelSizeY;
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see org.esp.publisher.TiffMeta#getPixelSizeY()
      */
     @Override
@@ -70,7 +86,9 @@ public class TiffMetaImpl implements TiffMeta {
         return pixelSizeY;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see org.esp.publisher.TiffMeta#setPixelSizeY(java.lang.Double)
      */
     @Override
@@ -80,7 +98,9 @@ public class TiffMetaImpl implements TiffMeta {
 
     private Double pixelSizeX;
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see org.esp.publisher.TiffMeta#getPixelSizeX()
      */
     @Override
@@ -88,7 +108,9 @@ public class TiffMetaImpl implements TiffMeta {
         return pixelSizeX;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see org.esp.publisher.TiffMeta#setPixelSizeX(java.lang.Double)
      */
     @Override
@@ -98,7 +120,9 @@ public class TiffMetaImpl implements TiffMeta {
 
     private Double minVal;
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see org.esp.publisher.TiffMeta#getMinVal()
      */
     @Override
@@ -106,12 +130,59 @@ public class TiffMetaImpl implements TiffMeta {
         return minVal;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see org.esp.publisher.TiffMeta#setMinVal(java.lang.Double)
      */
     @Override
     public void setMinVal(Double minVal) {
         this.minVal = minVal;
     }
+
+    private CoordinateReferenceSystem crs;
+
+    @Override
+    public CoordinateReferenceSystem getCrs() {
+        return crs;
+    }
+
+    @Override
+    public void setCRS(CoordinateReferenceSystem crs) {
+        this.crs = crs;
+    }
     
+    private String getAxisUnit(int axisNo) {
+        if (crs == null) {
+            return null;
+        }
+        
+        if (crs.getCoordinateSystem() == null) {
+            return null;
+        }
+        
+        if (crs.getCoordinateSystem().getAxis(axisNo) == null) {
+            return null;
+        }
+        
+        if (crs.getCoordinateSystem().getAxis(axisNo).getUnit() == null) {
+            return null;
+        }
+        
+        return crs.getCoordinateSystem().getAxis(axisNo).getUnit().toString();
+    }
+
+    @Override
+    public String getSpatialReferenceDescription() {
+        StringBuilder repr = new StringBuilder();
+        repr.append("Spatial reference: ").append(getSrid());
+        repr.append("\n");
+        repr.append("X-axis pixel size: ").append(getPixelSizeX());
+        repr.append(getAxisUnit(0));
+        repr.append("\n");
+        repr.append("Y-axis pixel size: ").append(getPixelSizeY());
+        repr.append(getAxisUnit(1));
+        return repr.toString();
+    }
+
 }

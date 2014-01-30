@@ -117,7 +117,7 @@ public class EcosystemServiceIndicatorEditor extends
          * Inline editor
          */
         InlineStudyEditView isev = new InlineStudyEditView(theView.getHackPanel(), theView.getEditButton());
-        editor.init(isev);
+//        editor.init(isev);
         
         init(theView);
     }

@@ -383,6 +383,17 @@ public class EcosystemServiceIndicator  {
         this.status = status;
     }
     
+    private String spatialReferenceInfo;
+    
+    @Column(name = "spatial_reference_info")
+    public String getSpatialReferenceInfo() {
+        return spatialReferenceInfo;
+    }
+    
+    public void setSpatialReferenceInfo(String spatialReferenceInfo) {
+        this.spatialReferenceInfo = spatialReferenceInfo;
+    }
+    
     private File file;
     
     @Transient

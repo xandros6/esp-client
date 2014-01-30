@@ -66,6 +66,8 @@ public abstract class EcosystemServiceIndicator_ {
 
     public static volatile SingularAttribute<EcosystemServiceIndicator, String> srid;
 
+    public static volatile SingularAttribute<EcosystemServiceIndicator, String> spatialReferenceInfo;
+
     public static volatile SingularAttribute<EcosystemServiceIndicator, Double> pixelSizeY;
 
     public static volatile SingularAttribute<EcosystemServiceIndicator, Double> pixelSizeX;

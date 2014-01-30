@@ -1,4 +1,4 @@
-package org.esp.publisher;
+package org.esp.publisher.colours;
 
 import java.util.List;
 
@@ -10,14 +10,14 @@ import com.vaadin.shared.ui.colorpicker.Color;
 
 public class CartographicKey extends SimpleHtmlLabel {
 
-    private static String DIV_TEMPLATE = "<div style='width: 50px; height: 95px; margin-left: 20px;'><div style='position: relative;'><div style='%s'>&nbsp;</div>%s</div></div>";
+    private static String DIV_TEMPLATE = "<div style='width: 50px; height: 95px; padding-top: 10px;'><div style='position: relative;'><div style='%s'>&nbsp;</div>%s</div></div>";
 
     private List<ColourMapEntry> colours;
 
     private String RGB_TEMPLATE = "rgb(%s,%s,%s) %s";
 
-    double min;
-    double max;
+    Double min;
+    Double max;
 
     /*
      * Allow this as an option - may be useful if values are to be shown on a
@@ -57,7 +57,7 @@ public class CartographicKey extends SimpleHtmlLabel {
          * Find min and max vals
          */
         for (ColourMapEntry cme : colours) {
-            double value = cme.getValue();
+            Double value = cme.getValue();
             min = Math.min(min, value);
             max = Math.max(max, value);
         }
@@ -81,10 +81,10 @@ public class CartographicKey extends SimpleHtmlLabel {
 
         String theStyle = String
                 .format(
-                        "filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#fff, endColorstr=#000); " + 
-                          "background-image: -webkit-linear-gradient(top, s); "
-                        + "background-image: -moz-linear-gradient(top, %s); "
-                        + "background-image: linear-gradient(to bottom, %s);",
+                        "filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#fffff, endColorstr=#000000); " + 
+                          "background-image: -webkit-linear-gradient(bottom, %s); "
+                        + "background-image: -moz-linear-gradient(bottom, %s); "
+                        + "background-image: linear-gradient(to top, %s);",
                         colourString, colourString, colourString);
 
         String styleTemplate = "position: absolute; %s height:95px; width: 20px;";

@@ -4,6 +4,7 @@ import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import it.geosolutions.geoserver.rest.GeoServerRESTPublisher;
+import it.geosolutions.geoserver.rest.encoder.GSLayerEncoder;
 import it.geosolutions.geoserver.rest.encoder.GSResourceEncoder.ProjectionPolicy;
 
 import java.io.File;
@@ -115,9 +116,17 @@ public class GeoserverRestApi {
         logger.info("Updating style: " + styleName);
 
         String sldBody = buildSLDBody(styleName, cmes);
-        return publisher.updateStyle(sldBody, styleName);
-    }
 
+        GSLayerEncoder layer = new GSLayerEncoder();
+        layer.setWmsPath("newpath");
+        boolean configured = publisher.configureLayer(workspace, styleName, layer);
+        logger.info("Configured ok: " + configured);
+
+        return publisher.updateStyle(sldBody, styleName);
+        
+
+    }
+    
     public boolean publishStyle(String styleName, List<ColourMapEntry> cmes) {
 
         logger.info("Publishing style: " + styleName);

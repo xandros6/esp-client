@@ -4,6 +4,7 @@ import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.IOException;
 
+import javax.measure.unit.Unit;
 import javax.media.jai.RenderedOp;
 import javax.media.jai.operator.ExtremaDescriptor;
 import javax.persistence.Query;
@@ -54,6 +55,8 @@ public class TiffMetadataExtractor {
         try {
 
             CoordinateReferenceSystem crs = gtr.getCrs();
+            Unit<?> unit = crs.getCoordinateSystem().getAxis(0).getUnit();
+            surface.setCRS(crs);
             Integer epsgCode = CRS.lookupEpsgCode(crs, true);
 
             if (epsgCode == null) {

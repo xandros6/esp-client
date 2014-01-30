@@ -1,5 +1,7 @@
 package org.esp.publisher;
 
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
+
 import com.vividsolutions.jts.geom.Polygon;
 
 public interface TiffMeta {
@@ -27,6 +29,13 @@ public interface TiffMeta {
     public abstract Double getMinVal();
 
     public abstract void setMinVal(Double minVal);
-    
+
+    public abstract void setCRS(CoordinateReferenceSystem crs);
+
+    public CoordinateReferenceSystem getCrs();
+
+    String getSpatialReferenceDescription();
+
+
 
 }

@@ -1,31 +1,23 @@
 package org.esp.publisher.form;
 
-import java.util.Collection;
+
 import java.util.List;
 
-import org.esp.domain.blueprint.EcosystemServiceIndicator;
 import org.jrc.form.ButtonFactory;
-import org.jrc.form.FieldGroupManager;
 import org.jrc.form.FieldGroup;
+import org.jrc.form.FieldGroupManager;
 import org.jrc.form.JpaFieldFactory;
 import org.jrc.form.editor.BaseEditor;
 import org.jrc.form.editor.SubmitPanel;
-import org.jrc.form.filter.FilterPanel;
 import org.jrc.persist.ContainerManager;
 import org.jrc.persist.Dao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vaadin.dialogs.ConfirmDialog;
 
-import com.vaadin.data.Property.ValueChangeEvent;
-import com.vaadin.data.fieldgroup.BeanFieldGroup;
 import com.vaadin.data.fieldgroup.FieldGroup.CommitException;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
-import com.vaadin.ui.CssLayout;
-import com.vaadin.ui.Field;
-import com.vaadin.ui.FormLayout;
-import com.vaadin.ui.Label;
 import com.vaadin.ui.Notification;
 import com.vaadin.ui.Panel;
 import com.vaadin.ui.UI;
@@ -39,7 +31,7 @@ import com.vaadin.ui.UI;
  */
 public abstract class EditorController<T> extends Panel {
 
-    private static final String EDITING_FORMAT_STRING = "Editing: %s";
+//    private static final String EDITING_FORMAT_STRING = "Editing: %s";
 
     private static final String SAVE_MESSAGE = "Saved successfully.";
 
@@ -47,16 +39,22 @@ public abstract class EditorController<T> extends Panel {
 
     protected Dao dao;
 
-    protected FilterPanel<T> filterPanel;
-
     private FieldGroupManager<T> fgm = new FieldGroupManager<T>();
-
+    
     /*
      * The field factory
      */
     protected JpaFieldFactory<T> ff;
 
     protected ContainerManager<T> containerManager;
+
+    private EditCompleteListener<T> editCompleteListener;
+    
+    public interface EditCompleteListener<T> {
+        
+        public void onEditComplete(T entity);
+        
+    }
 
     public EditorController(final Class<T> clazz, final Dao dao) {
 
@@ -68,18 +66,7 @@ public abstract class EditorController<T> extends Panel {
         /*
          * Filter panel
          */
-        filterPanel = new FilterPanel<T>(containerManager.getContainer(), dao);
-    }
-
-    protected void fireObjectSelected(ValueChangeEvent event) {
-
-        Object id = event.getProperty().getValue();
-        // Object id = table.getValue();
-        if (id == null) {
-            return;
-        }
-        doEditById(id);
-
+//        filterPanel = new FilterPanel<T>(containerManager.getContainer(), dao);
     }
 
     /**
@@ -113,7 +100,7 @@ public abstract class EditorController<T> extends Panel {
 
         commit.addClickListener(new Button.ClickListener() {
             public void buttonClick(ClickEvent event) {
-                commitForm();
+                commitForm(true);
             }
         });
 
@@ -154,7 +141,7 @@ public abstract class EditorController<T> extends Panel {
         return ff;
     }
 
-    protected boolean commitForm() {
+    protected boolean commitForm(boolean showNotification) {
 
         T entity = fgm.getEntity();
 
@@ -179,7 +166,9 @@ public abstract class EditorController<T> extends Panel {
 
         Object id = containerManager.addEntity(entity);
 
-        Notification.show(SAVE_MESSAGE);
+        if (showNotification) {
+            Notification.show(SAVE_MESSAGE);
+        }
 
         entity = containerManager.findEntity(id);
 
@@ -188,25 +177,7 @@ public abstract class EditorController<T> extends Panel {
          */
         doPostCommit(entity);
 
-        editComplete();
         return true;
-    }
-
-    /**
-     * Sets the id of the entity that should be edited. Should be overridden if
-     * the ID isn't of type {@link Long}.
-     * 
-     * TODO: could determine the PK type and cast to this.
-     * 
-     */
-    private void doEditById(Object id) {
-        T entity = containerManager.findEntity(id);
-
-        if (entity != null) {
-            Notification.show(String.format(EDITING_FORMAT_STRING,
-                    entity.toString()));
-            doUpdate(entity);
-        }
     }
 
     public void doCreate() {
@@ -224,7 +195,6 @@ public abstract class EditorController<T> extends Panel {
             return;
         }
         containerManager.deleteEntity(entity);
-        editComplete();
         doPostDelete(entity);
     }
 
@@ -238,17 +208,11 @@ public abstract class EditorController<T> extends Panel {
     }
 
     /**
-     * Called when editing is over - cancel / save may have been called.
-     */
-    private void editComplete() {
-
-    }
-
-    /**
      * Can be overridden by classes that require parent child associations to be
      * fixed.
      */
-    protected void doPreCommit(T obj) {
+    protected void doPreCommit(T entity) {
+
     }
 
     /**
@@ -258,14 +222,10 @@ public abstract class EditorController<T> extends Panel {
      * @param entity
      */
     protected void doPostCommit(T entity) {
-    }
-
-    /**
-     * Creates a new entity of the class via reflection, but is designed to be
-     * overridden to add custom behaviour, e.g. creating a particular sub-class.
-     */
-    protected void addButtonClicked() {
-        doUpdate(containerManager.newEntity());
+        if (entity == null) {
+        System.out.println("ENTITY IS NULL");
+        }
+        fireEditComplete(entity);
     }
 
     public void refresh() {
@@ -278,5 +238,15 @@ public abstract class EditorController<T> extends Panel {
 
     protected List<FieldGroup<T>> getFieldGroups() {
         return fgm.getFieldGroupReprs();
+    }
+
+    public void addEditCompleteListener(EditCompleteListener<T> listener) {
+        this.editCompleteListener = listener;
+    }
+    
+    private void fireEditComplete(T entity) {
+        if (editCompleteListener != null) {
+            editCompleteListener.onEditComplete(entity);
+        }
     }
 }

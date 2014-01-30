@@ -8,7 +8,7 @@ import org.jrc.form.editor.SubmitPanel;
 import com.vaadin.ui.Component;
 
 /**
- * Form views should implement this.
+ * Form views should implement this.  This allows views to be "throwaway" components.
  * 
  * @author Will Temperley
  * 

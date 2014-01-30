@@ -1,27 +1,20 @@
 package org.esp.editor;
 
-import java.util.Set;
-
-import org.esp.domain.blueprint.EcosystemServiceIndicator;
 import org.esp.domain.blueprint.Study;
 import org.esp.domain.blueprint.Study_;
-import org.esp.publisher.GeoserverRestApi;
-import org.esp.ui.ViewModule;
-import org.jrc.form.editor.BaseEditor;
+import org.esp.publisher.form.EditorController;
 import org.jrc.persist.Dao;
 
 import com.google.inject.Inject;
 
-public class InlineStudyEditor extends BaseEditor<Study> {
+public class InlineStudyEditor extends EditorController<Study> {
 
-    private GeoserverRestApi gsr;
 
     @Inject
-    public InlineStudyEditor(final Dao dao, GeoserverRestApi gsr) {
+    public InlineStudyEditor(final Dao dao) {
 
         super(Study.class, dao);
 
-        this.gsr = gsr;
 
         ff.addField(Study_.studyName);
         ff.addField(Study_.studyPurpose);
@@ -38,22 +31,21 @@ public class InlineStudyEditor extends BaseEditor<Study> {
 
     }
 
-    @SuppressWarnings("static-access")
     @Override
     protected void doPostDelete(Study entity) {
 
-        Set<EcosystemServiceIndicator> esis = entity
-                .getEcosystemServiceIndicators();
-        if (esis != null) {
-            for (EcosystemServiceIndicator ecosystemServiceIndicator : esis) {
-
-                String layerName = ecosystemServiceIndicator.getLayerName();
-                if (layerName != null) {
-                    gsr.removeRasterStore(layerName);
-                }
-            }
-        }
-        getUI().getCurrent().getNavigator().navigateTo(ViewModule.HOME);
+//        Set<EcosystemServiceIndicator> esis = entity
+//                .getEcosystemServiceIndicators();
+//        if (esis != null) {
+//            for (EcosystemServiceIndicator ecosystemServiceIndicator : esis) {
+//
+//                String layerName = ecosystemServiceIndicator.getLayerName();
+//                if (layerName != null) {
+//                    gsr.removeRasterStore(layerName);
+//                }
+//            }
+//        }
+//        getUI().getCurrent().getNavigator().navigateTo(ViewModule.HOME);
     }
 
 }

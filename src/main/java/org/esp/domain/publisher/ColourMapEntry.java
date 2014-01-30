@@ -91,7 +91,7 @@ public class ColourMapEntry {
         this.alpha = alpha;
     }
     
-    private Double value = 0d;
+    private Double value;
     
     @Transient
     public Double getValue() {
@@ -139,6 +139,9 @@ public class ColourMapEntry {
     
         if (obj instanceof ColourMapEntry) {
             ColourMapEntry comparee = (ColourMapEntry) obj;
+            if (getId() == null) {
+                return false;
+            }
             if (comparee.getId().equals(getId())) {
                 return true;
             }

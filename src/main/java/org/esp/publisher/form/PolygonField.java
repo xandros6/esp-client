@@ -52,6 +52,8 @@ public class PolygonField extends AbstractJTSField<LinearRing> {
 
 		if (lPolygon == null) {
 			lPolygon = new LPolygon();
+//			lPolygon.setOpacity(0d);
+			lPolygon.setFill(false);
 			map.addLayer(lPolygon);
 		}
 		Point[] lPointArray = JTSUtil.toLeafletPointArray(getCrsTranslator()
@@ -70,7 +72,7 @@ public class PolygonField extends AbstractJTSField<LinearRing> {
 	}
 
 	protected void prepareDrawing() {
-	    System.out.println("Drawing");
+
 		lDrawFeature = new LDrawPolygon(map);
 
 		lDrawFeature.addFeatureDrawnListener(new FeatureDrawnListener() {
