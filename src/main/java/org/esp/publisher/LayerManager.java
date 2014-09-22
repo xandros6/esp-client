@@ -16,8 +16,6 @@ public class LayerManager {
 
     private static final String OSM = "OSM";
 
-//    private Logger logger = LoggerFactory.getLogger(MapPublisher.class);
-
     private LMap map;
 
     private LWmsLayer singleLayer;
@@ -43,30 +41,18 @@ public class LayerManager {
             } else {
                 map.removeComponent(singleLayer);
                 singleLayer = createDefaultWMSLayer(layerName);
-//                singleLayer.setLayers(layerName);
                 map.addOverlay(singleLayer, layerName);
             }
         
     }
 
-//    public void addWmsLayer(String layerName) {
-//
-//        LWmsLayer l = createDefaultWMSLayer(layerName);
-//        map.addOverlay(l, layerName);
-//    }
-
     private LWmsLayer createDefaultWMSLayer(String layerName) {
         LWmsLayer l = new LWmsLayer();
 
-        
-//        String uuid = UUID.randomUUID().toString();
-        
         l.setUrl("http://lrm-maps.jrc.ec.europa.eu/geoserver/esp/wms");
         l.setTransparent(true);
         l.setFormat("image/png");
         l.setLayers(layerName);
-//        l.setOpacity(0.59d);
-//        l.setStyles(layerName + "," + uuid);
         l.setActive(true);
         l.setVisible(true);
         return l;

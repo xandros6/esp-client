@@ -1,10 +1,11 @@
 package org.esp.publisher.colours;
 
+import it.jrc.form.editor.EntityTable;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import org.esp.domain.publisher.ColourMapEntry;
-import org.jrc.form.editor.EntityTable;
 
 import com.vaadin.data.util.BeanItemContainer;
 import com.vaadin.shared.ui.colorpicker.Color;

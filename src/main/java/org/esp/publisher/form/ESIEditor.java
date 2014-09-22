@@ -1,6 +1,14 @@
 package org.esp.publisher.form;
 
 import it.jrc.auth.RoleManager;
+import it.jrc.domain.adminunits.Grouping;
+import it.jrc.domain.adminunits.Grouping_;
+import it.jrc.form.FieldGroup;
+import it.jrc.form.component.YearField;
+import it.jrc.form.controller.EditorController;
+import it.jrc.form.view.DefaultEditorView;
+import it.jrc.form.view.IEditorView;
+import it.jrc.persist.Dao;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -11,27 +19,25 @@ import javax.persistence.metamodel.Attribute;
 import javax.persistence.metamodel.SingularAttribute;
 
 import org.esp.domain.blueprint.ArealUnit_;
+import org.esp.domain.blueprint.DataSource;
+import org.esp.domain.blueprint.DataSource_;
 import org.esp.domain.blueprint.EcosystemServiceIndicator;
 import org.esp.domain.blueprint.EcosystemServiceIndicator_;
 import org.esp.domain.blueprint.Indicator_;
 import org.esp.domain.blueprint.QuantificationUnit_;
+import org.esp.domain.blueprint.SpatialDataType;
 import org.esp.domain.blueprint.Study;
 import org.esp.domain.blueprint.TemporalUnit_;
 import org.esp.domain.publisher.ColourMap;
 import org.esp.domain.publisher.ColourMapEntry;
 import org.esp.publisher.GeoserverRestApi;
 import org.esp.publisher.TiffMeta;
-import org.esp.publisher.TiffMetaImpl;
 import org.esp.publisher.TiffMetadataExtractor;
 import org.esp.publisher.TiffUploadField;
+import org.esp.publisher.UnknownCRSException;
 import org.esp.publisher.colours.ColourMapFieldGroup;
 import org.esp.publisher.colours.ColourMapFieldGroup.ColourMapChangeListener;
-import org.esp.upload.old.UnknownCRSException;
-import org.jrc.form.FieldGroup;
-import org.jrc.form.filter.YearField;
-import org.jrc.persist.Dao;
-import org.jrc.persist.adminunits.Grouping;
-import org.jrc.persist.adminunits.Grouping_;
+import org.esp.publisher.ui.ViewModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vaadin.addon.leaflet.LMap;
@@ -48,6 +54,7 @@ import com.vaadin.ui.Notification.Type;
 import com.vaadin.ui.TextArea;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.TwinColSelect;
+import com.vaadin.ui.UI;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.LinearRing;
@@ -59,11 +66,11 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
     private Logger logger = LoggerFactory.getLogger(ESIEditor.class);
 
-    private PolygonField f;
+    private PolygonField envelopeField;
 
     private TiffMetadataExtractor tme;
 
-    private ColourMapFieldGroup cmf;
+    private ColourMapFieldGroup colourMapFieldGroup;
 
     private GeoserverRestApi gsr;
 
@@ -75,6 +82,8 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
     private TextArea spatialReferenceInfoField;
 
+    private RoleManager roleManager;
+
     @Inject
     public ESIEditor(Dao dao, RoleManager roleManager,
             TiffMetadataExtractor tme, GeoserverRestApi gsr) {
@@ -83,9 +92,9 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
         this.tme = tme;
         this.gsr = gsr;
+        this.roleManager = roleManager;
 
         buildPublishForm();
-
         buildMetaForm();
     }
 
@@ -103,24 +112,29 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
     @Override
     public void doUpdate(EcosystemServiceIndicator entity) {
+        if (!roleManager.isOwner(entity) && !roleManager.getRole().getIsSuperUser()) {
+            Notification.show("You do not have permission to edit this.", Type.ERROR_MESSAGE);
+            UI.getCurrent().getNavigator().navigateTo(ViewModule.HOME);
+            return;
+        }
+
         esiEditorView.setNewStatus(false);
         super.doUpdate(entity);
     }
 
-    /**
-     * Ensure colour-map related information is already set up.
-     */
     @Override
     public void doCreate() {
+
         esiEditorView.setNewStatus(true);
-        // EcosystemServiceIndicator esi = new EcosystemServiceIndicator();
-        // ColourMap cm = cmf.getDefaultValue();
-        // esi.setColourMap(cm);
-        // esi.setMinVal(0d);
-        // esi.setMaxVal(1d);
-        // super.doUpdate(esi);
         super.doCreate();
-        cmf.setDefaultValues();
+        colourMapFieldGroup.setDefaultValues();
+    }
+    
+    @Override
+    protected void doPreCommit(EcosystemServiceIndicator entity) {
+        entity.setRole(roleManager.getRole());
+        //hack!
+        entity.setSpatialDataType(dao.find(SpatialDataType.class, 1l));
     }
 
     @Override
@@ -131,28 +145,39 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
     private void buildPublishForm() {
 
         ff.addField(EcosystemServiceIndicator_.ecosystemService);
-        getFieldWithPopupandall(EcosystemServiceIndicator_.indicator,
+        getFieldWithPopup(EcosystemServiceIndicator_.indicator,
                 Indicator_.label);
 
-        ComboWithPopup<Study> studyField = new ComboWithPopup<Study>(
+        /*
+         * The study
+         */
+        EditableField<Study> studyField = new EditableCombo<Study>(
                 Study.class, dao);
-        InlineStudyEditor studyEditor = new InlineStudyEditor(dao);
+        InlineStudyEditor studyEditor = new InlineStudyEditor(dao, roleManager);
         studyField.setEditor(studyEditor);
         studyEditor.init(new DefaultEditorView<Study>());
         ff.addField(EcosystemServiceIndicator_.study, studyField);
 
         addFieldGroup(THE_ECOSYSTEM_SERVICE);
 
+        /*
+         * Uploading
+         */
         TiffUploadField uploadField = new TiffUploadField();
 
-        /*
-         * 
-         */
         uploadField.addListener(new ValueChangeListener() {
 
             @Override
             public void valueChange(ValueChangeEvent event) {
                 File f = (File) event.getProperty().getValue();
+
+//                boolean success = ESIEditor.this.isFormValid();
+//                if (!success) {
+//                    Notification.show("Please ensure the form is valid before continuing.");
+//                    return;
+//                }
+//
+//                Preconditions.checkArgument(f != null, "Where is the file?");
                 publishFile(f);
             }
 
@@ -160,22 +185,25 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
         ff.addField("file", uploadField);
 
-        cmf = new ColourMapFieldGroup(dao);
-        // Is this a hack?
-        getFieldGroups().add(cmf);
+        colourMapFieldGroup = new ColourMapFieldGroup(dao);
+        // Add to the field groups
+        getFieldGroups().add(colourMapFieldGroup);
 
-        cmf.setValueChangeListener(new ColourMapChangeListener() {
+        colourMapFieldGroup.setValueChangeListener(new ColourMapChangeListener() {
 
             @Override
             public void onValueChanged(ColourMap colourMap) {
 
-                // TODO Auto-generated method stub
                 List<ColourMapEntry> colourMapEntries = colourMap
                         .getColourMapEntries();
 
-                if (cmf.isValid() && getLayerName() != null) {
+                if (colourMapFieldGroup.isValid() && getLayerName() != null) {
+
+
                     // Is it published yet?
                     gsr.updateStyle(getLayerName(), colourMapEntries);
+
+
                     firePublishEvent();
                 }
 
@@ -194,37 +222,29 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         getGeometryField();
 
         // Invisible form field
-        ff.addField(EcosystemServiceIndicator_.envelope, f);
-        f.setVisible(false);
+        ff.addField(EcosystemServiceIndicator_.envelope, envelopeField);
+        envelopeField.setVisible(false);
 
         addFieldGroup("Geospatial data");
     }
 
+
     private void buildMetaForm() {
 
-        // SelectionTable<EcosystemService> st =
-        // ff.addSelectionTable(EcosystemServiceIndicator_.ecosystemService);
-        // st.addColumn(EcosystemService_.label, "Name");
-        // st.addFilterField(EcosystemService_.ecosystemServiceCategory,
-        // "Filter by category");
-
-        // ff.addField(EcosystemServiceIndicator_.study);
-
-        // ff.addField(EcosystemServiceIndicator_.status);
         ff.addField(EcosystemServiceIndicator_.ecosystemServiceAccountingType);
         ff.addField(EcosystemServiceIndicator_.ecosystemServiceBenefitType);
 
         addFieldGroup("Accounting");
 
 
-        getFieldWithPopupandall(
+        getFieldWithPopup(
                 EcosystemServiceIndicator_.quantificationUnit,
                 QuantificationUnit_.label,
                 QuantificationUnit_.quantificationUnitCategory);
 
-        getFieldWithPopupandall(EcosystemServiceIndicator_.arealUnit,
+        getFieldWithPopup(EcosystemServiceIndicator_.arealUnit,
                 ArealUnit_.label);
-        getFieldWithPopupandall(EcosystemServiceIndicator_.temporalUnit,
+        getFieldWithPopup(EcosystemServiceIndicator_.temporalUnit,
                 TemporalUnit_.label);
 
         addFieldGroup("Quantification");
@@ -235,7 +255,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
         // Quick hack to get a filtered TwinColSelect
         TwinColSelect groupingField = new TwinColSelect();
-        ff.addField(EcosystemServiceIndicator_.groupings, groupingField);
+        ff.addField(EcosystemServiceIndicator_.regions, groupingField);
         List<Grouping> groupings = dao.all(Grouping.class, Grouping_.id);
         for (Grouping grouping : groupings) {
             if (grouping.getGroupingType().getId().equals("Region")) {
@@ -249,7 +269,18 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
         ff.addField(EcosystemServiceIndicator_.quantificationMethod);
 
-        ff.addField(EcosystemServiceIndicator_.dataSources);
+        {
+            EditableTwinColSelect<DataSource> dataSourceField = new EditableTwinColSelect<DataSource>(DataSource.class, dao);
+            dataSourceField.setEditor(new EditorController<DataSource>(DataSource.class, dao) {
+                {
+                    ff.addField(DataSource_.label);
+                    ff.addField(DataSource_.url);
+                    addFieldGroup("");
+                    init(new DefaultEditorView<DataSource>());
+                }
+            });
+            ff.addField(EcosystemServiceIndicator_.dataSources, dataSourceField);
+        }
 
         addFieldGroup("Model and data");
 
@@ -265,31 +296,24 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         addFieldGroup("Other");
 
     }
-
-    public <X> Field<X> getFieldWithPopupandall(
+    
+    public <X> Field<X> getFieldWithPopup(
             Attribute<? extends EcosystemServiceIndicator, X> prop,
             final SingularAttribute<X, ?>... childProps) {
 
-        ComboWithPopup<X> c = new ComboWithPopup<X>(prop.getJavaType(), dao);
-
-        // SelectOrCreateField<X> socf = new SelectOrCreateField<X>(
-        // prop.getJavaType(), dao);
-
+        EditableField<X> c = new EditableCombo<X>(prop.getJavaType(), dao);
         c.setEditor(new EditorController<X>(prop.getJavaType(), dao) {
             {
                 for (int i = 0; i < childProps.length; i++) {
                     ff.addField(childProps[i]);
                 }
                 addFieldGroup("");
-
                 init(new DefaultEditorView<X>());
-
             }
         });
         
         ff.addField(prop, c);
         return c;
-
     }
 
     /**
@@ -297,9 +321,9 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
      */
     private void getGeometryField() {
 
-        f = new PolygonField();
+        envelopeField = new PolygonField();
 
-        f.setConverter(new Converter<LinearRing, Polygon>() {
+        envelopeField.setConverter(new Converter<LinearRing, Polygon>() {
 
             @Override
             public Polygon convertToModel(LinearRing value,
@@ -340,7 +364,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
             }
         });
 
-        f.setCRSTranslator(new CRSTranslator<Geometry>() {
+        envelopeField.setCRSTranslator(new CRSTranslator<Geometry>() {
 
             @Override
             public Geometry toPresentation(Geometry geom) {
@@ -355,8 +379,6 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
             }
         });
 
-        f.setHeight("200px");
-        f.setWidth("300px");
     }
 
     /**
@@ -365,7 +387,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
      * @return
      */
     public LMap getMap() {
-        return f.getMap();
+        return envelopeField.getMap();
     }
 
     public String getLayerName() {
@@ -384,6 +406,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
     /**
      * 
+     * 
      * @param f
      */
     private void publishFile(File f) {
@@ -397,12 +420,12 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         /*
          * Save the surface
          */
-        if (!commitForm(false)) {
-            logger.info("Ensure form is valid.");
-            return;
-        }
+//        if (!commitForm(false)) {
+//            logger.info("Ensure form is valid.");
+//            return;
+//        }
 
-        ColourMap cm = cmf.getColourMap();
+        ColourMap cm = colourMapFieldGroup.getColourMap();
         if (cm == null) {
             showError("Null colourmap");
             return;
@@ -414,15 +437,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
             return;
         }
 
-        // for (ColourMapEntry colourMapEntry : cmes) {
-        // if (cmes.g) {
-        //
-        // }
-        // }
-
         /*
-         * Key section
-         * 
          * If we have no layer, create a style and a name
          */
         if (getLayerName() == null) {
@@ -433,14 +448,12 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
             String layerName = generateLayerName();
             setLayerName(layerName);
 
-            boolean stylePublished = gsr.publishStyle(layerName,
-                    cm.getColourMapEntries());
+            boolean stylePublished = gsr.publishStyle(layerName, cm.getColourMapEntries());
             logger.info("Style published: " + stylePublished);
 
             /*
              * Publish new data
              */
-            // File f = getEntity().getFile();
             boolean tiffPublished = publishTiff(cm, f, tm);
 
             logger.info("Tiff published: " + tiffPublished);
@@ -457,7 +470,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
             /*
              * We have the layer already
              */
-            // File f = getEntity().getFile();
+//             File f = getEntity().getFile();
 
             /*
              * Always publishing the SLD. a little redundant but simpler.
@@ -476,8 +489,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
         Notification
                 .show("Published successfully.",
-                        "Please note the max-min values are estimates.  The extent may need to be adjusted for optimal display in Web Mercator projection.",
-                        Type.TRAY_NOTIFICATION);
+                        "Please note the max-min values will require editing manually.  The extent may need to be adjusted for optimal display in Web Mercator projection.", Type.HUMANIZED_MESSAGE);
         commitForm(false);
 
     }
@@ -486,7 +498,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
         try {
 
-            TiffMetaImpl tmi = new TiffMetaImpl();
+            TiffMeta tmi = new TiffMeta();
             tme.extractTiffMetadata(tiffFile, tmi);
 
             Double minVal = tmi.getMinVal();
@@ -494,16 +506,16 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
             // A bit hacky but there's no good way to determine real no-data
             // values.
             if (minVal < 0) {
-                cmf.setMinValue("0");
+                colourMapFieldGroup.setMinValue("0");
             }
-            cmf.setMaxValue(tmi.getMaxVal().toString());
+            colourMapFieldGroup.setMaxValue(tmi.getMaxVal().toString());
 
             sridField.setValue(tmi.getSrid().toString());
 
             spatialReferenceInfoField.setValue(tmi
                     .getSpatialReferenceDescription());
 
-            f.setValue((LinearRing) tmi.getEnvelope().getBoundary());
+            envelopeField.setValue((LinearRing) tmi.getEnvelope().getBoundary());
 
             return tmi;
 
@@ -526,7 +538,23 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
                 Notification.show("File not uploaded yet.");
                 return false;
             }
-            return gsr.publishTiff(f, tm.getSrid(), surface.getLayerName());
+
+            /*
+             * TODO:
+             * 
+             * Is the null stylename a good idea?  
+             * (detected in following method)
+             * 
+             * Uses default style when is a three band raster.
+             */
+            String styleName = null;
+            if (tm.getNumSampleDimensions() == 3) {
+
+                styleName = "raster";
+            }
+
+            return gsr.publishTiff(f, tm.getSrid(), surface.getLayerName(), styleName);
+
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             showError(e.getMessage());
@@ -544,8 +572,10 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
     @Override
     protected void doPostDelete(EcosystemServiceIndicator entity) {
         gsr.removeRasterStore(entity.getLayerName());
+        UI.getCurrent().getNavigator().navigateTo(ViewModule.HOME);
         super.doPostDelete(entity);
     }
+    
 
     private String generateLayerName() {
         return "esp-layer-"

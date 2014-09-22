@@ -118,7 +118,7 @@ $esp-green: rgb(149,204,77);
 	}
 	
 	.v-csslayout {
-	overflow: auto;
+		overflow: auto;
 	}
 	
 	.submit-panel {
@@ -183,14 +183,62 @@ $esp-green: rgb(149,204,77);
 		
 	}
 	
+/** ES search **/
+	.indicator-name {
+	  /*
+	   * text-shadow: 1px 2px 3px rgba(0,0,0,0.4);
+	   */
+	  text-shadow: 1px 2px 3px rgba(0,0,0,0.2);
+  }
 	
 	/** menu bar **/
 	
-	.v-menubar {
+	.field-menu.v-menubar {
 		height: 28px;
 		padding-left: 5px;
 	}
+
+	.nav-menu {
+		margin-left: 20px;
+		margin-top: 35px;
 	
+	 .v-menubar-menuitem {
+        margin-left: 10px;
+        font-size: 20px;
+        font-weight:200;
+        border-bottom:2px solid transparent;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+	 }
+
+	   .v-menubar-menuitem:hover {
+        color: #fff;
+        cursor: pointer;
+	 }
+
+	 .v-menubar-menuitem-checked {
+        border-bottom:2px solid $esp-blue;
+	 }
+
+	}
+	
+	.account-details {
+	  margin-top: 10px;
+	  padding-right: 20px;
+	}
+	
+	
+	/** map legend **/
+	
+	.map-legend {
+		padding-left: 20px;
+		padding-right: 20px;
+	}
+	
+	
+	/** Popup windows **/
+	.v-window-maximizebox {
+		visibility: hidden;
+	}
 	
 	/*** Wizardy stuff ******************/
 	
@@ -224,9 +272,6 @@ $esp-green: rgb(149,204,77);
 	}
 	
 	/******************************/
-	
-	
-	
 	
 	.sidebar {
 		background: #414243 url(img/sidebar-gradient.png) repeat-y top right;

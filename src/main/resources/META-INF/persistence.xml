@@ -3,27 +3,26 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd"
 	version="2.0">
-	<persistence-unit name="ibis-domain" transaction-type="RESOURCE_LOCAL">
+	<persistence-unit name="esp-domain" transaction-type="RESOURCE_LOCAL">
 
 		<provider>org.hibernate.ejb.HibernatePersistence</provider>
 
-		<class>org.jrc.auth.domain.Nonce</class>
-		<class>org.jrc.auth.domain.OpenIdProvider</class>
-		<class>org.jrc.auth.domain.Action</class>
-		<class>org.jrc.auth.domain.Role</class>
-		<class>org.jrc.auth.domain.OAuth2ClientCredentials</class>
-		<class>org.jrc.auth.domain.Group</class>
-		<class>org.jrc.auth.domain.PermissionTarget</class>
-		<class>org.jrc.auth.domain.Permission</class>
-		<class>org.jrc.auth.domain.OpenIdIdentity</class>
+		<class>it.jrc.domain.auth.Nonce</class>
+		<class>it.jrc.domain.auth.OpenIdProvider</class>
+		<class>it.jrc.domain.auth.Action</class>
+		<class>it.jrc.domain.auth.Role</class>
+		<class>it.jrc.domain.auth.OAuth2ClientCredentials</class>
+		<class>it.jrc.domain.auth.Group</class>
+		<class>it.jrc.domain.auth.PermissionTarget</class>
+		<class>it.jrc.domain.auth.Permission</class>
+		<class>it.jrc.domain.auth.OpenIdIdentity</class>
 		
-		<class>org.jrc.persist.metadata.TableDescription</class>
-		<class>org.jrc.persist.metadata.ColumnDescription</class>
+		<class>it.jrc.domain.metadata.TableDescription</class>
+		<class>it.jrc.domain.metadata.ColumnDescription</class>
 		
-		<class>org.jrc.persist.adminunits.Site</class>
-		<class>org.jrc.persist.adminunits.Country</class>
-		<class>org.jrc.persist.adminunits.Grouping</class>
-		<class>org.jrc.persist.adminunits.GroupingType</class>
+		<class>it.jrc.domain.adminunits.Country</class>
+		<class>it.jrc.domain.adminunits.Grouping</class>
+		<class>it.jrc.domain.adminunits.GroupingType</class>
 		
 		<properties>
 
@@ -38,6 +37,7 @@
 			<property name="connection.provider_class"
 				value="org.hibernate.connection.C3P0ConnectionProvider" />
 			<property name="hibernate.c3p0.acquire_increment" value="1" />
+			<property name="hibernate.c3p0.acquire_retry_attempts" value="0" />
 			<property name="hibernate.c3p0.idle_test_period" value="100" />
 			<property name="hibernate.c3p0.max_size" value="10" />
 			<property name="hibernate.c3p0.max_statements" value="0" />
@@ -66,14 +66,12 @@
 		<class>org.jrc.auth.domain.Permission</class>
 		<class>org.jrc.auth.domain.OpenIdIdentity</class>
 
-		<class>org.jrc.persist.metadata.TableDescription</class>
-		<class>org.jrc.persist.metadata.ColumnDescription</class>
+		<class>it.jrc.domain.metadata.TableDescription</class>
+		<class>it.jrc.domain.metadata.ColumnDescription</class>
 
-		<class>org.jrc.persist.adminunits.Country</class>
-		<class>org.jrc.persist.adminunits.CountryGrouping</class>
-		<class>org.jrc.persist.adminunits.Grouping</class>
-		<class>org.jrc.persist.adminunits.GroupingType</class>
-		<class>org.jrc.persist.adminunits.Site</class>
+		<class>it.jrc.domain.adminunits.Country</class>
+		<class>it.jrc.domain.adminunits.Grouping</class>
+		<class>it.jrc.domain.adminunits.GroupingType</class>
 
 		<properties>
 

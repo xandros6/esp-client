@@ -1,7 +1,8 @@
 package org.esp.publisher.colours;
 
+import it.jrc.form.component.ColorField;
+
 import org.esp.domain.publisher.ColourMapEntry;
-import org.jrc.form.component.ColorField;
 
 import com.vaadin.data.Property;
 import com.vaadin.data.Property.ValueChangeEvent;

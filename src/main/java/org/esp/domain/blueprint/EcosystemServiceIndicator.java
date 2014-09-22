@@ -1,6 +1,11 @@
 package org.esp.domain.blueprint;
 
+import it.jrc.domain.adminunits.Grouping;
+import it.jrc.domain.auth.HasRole;
+import it.jrc.domain.auth.Role;
+
 import java.io.File;
+import java.util.Date;
 import java.util.Set;
 
 import javax.persistence.Column;
@@ -18,14 +23,15 @@ import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 
 import org.esp.domain.publisher.ColourMap;
+import org.hibernate.annotations.Generated;
+import org.hibernate.annotations.GenerationTime;
 import org.hibernate.annotations.Type;
-import org.jrc.persist.adminunits.Grouping;
 
 import com.vividsolutions.jts.geom.Polygon;
 
 @Entity
 @Table(schema = "blueprint", name = "ecosystem_service_indicator")
-public class EcosystemServiceIndicator  {
+public class EcosystemServiceIndicator implements HasRole {
 
     private Long id;
 
@@ -200,14 +206,14 @@ public class EcosystemServiceIndicator  {
         this.spatialResolution = spatialResolution;
     }
 
-    private Long endYear;
+    private Integer endYear;
 
     @Column(name = "end_year")
-    public Long getEndYear() {
+    public Integer getEndYear() {
         return endYear;
     }
 
-    public void setEndYear(Long endYear) {
+    public void setEndYear(Integer endYear) {
         this.endYear = endYear;
     }
 
@@ -222,14 +228,14 @@ public class EcosystemServiceIndicator  {
         this.comments = comments;
     }
 
-    private Long startYear;
+    private Integer startYear;
 
     @Column(name = "start_year")
-    public Long getStartYear() {
+    public Integer getStartYear() {
         return startYear;
     }
 
-    public void setStartYear(Long startYear) {
+    public void setStartYear(Integer startYear) {
         this.startYear = startYear;
     }
 
@@ -245,16 +251,16 @@ public class EcosystemServiceIndicator  {
         this.biomes = biomes;
     }
 
-    private Set<Grouping> groupings;
+    private Set<Grouping> regions;
 
     @ManyToMany
     @JoinTable(name = "blueprint.ecosystem_service_indicator_grouping", joinColumns = @JoinColumn(name = "ecosystem_service_indicator_id"), inverseJoinColumns = @JoinColumn(name = "grouping_id"))
-    public Set<Grouping> getGroupings() {
-        return groupings;
+    public Set<Grouping> getRegions() {
+        return regions;
     }
 
-    public void setGroupings(Set<Grouping> groupings) {
-        this.groupings = groupings;
+    public void setRegions(Set<Grouping> groupings) {
+        this.regions = groupings;
     }
 
     private Set<DataSource> dataSources;
@@ -394,6 +400,43 @@ public class EcosystemServiceIndicator  {
         this.spatialReferenceInfo = spatialReferenceInfo;
     }
     
+
+    private Role role;
+    
+    @ManyToOne
+    @JoinColumn(name = "role_id")
+    public Role getRole() {
+        return role;
+    }
+    
+    public void setRole(Role role) {
+        this.role = role;
+    }
+    
+    private Date dateCreated;
+    
+    @Column(name = "date_created")
+    @Generated(value = GenerationTime.INSERT)
+    public Date getDateCreated() {
+        return dateCreated;
+    }
+    
+    public void setDateCreated(Date dateCreated) {
+        this.dateCreated = dateCreated;
+    }
+
+    private Date dateUpdated;
+    
+    @Column(name = "date_updated")
+    @Generated(value = GenerationTime.ALWAYS)
+    public Date getDateUpdated() {
+        return dateUpdated;
+    }
+    
+    public void setDateUpdated(Date dateUpdated) {
+        this.dateUpdated = dateUpdated;
+    }
+
     private File file;
     
     @Transient
@@ -430,4 +473,5 @@ public class EcosystemServiceIndicator  {
         }
         return super.hashCode();
     }
+
 }

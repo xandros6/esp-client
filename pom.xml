@@ -2,24 +2,48 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>org.jrc</groupId>
-		<artifactId>biopama</artifactId>
-		<version>0.0.2-SNAPSHOT</version>
-	</parent>
+	<groupId>org.esp</groupId>
+	<version>0.1.0</version>
 	<artifactId>esp-client</artifactId>
 	<packaging>war</packaging>
 	<name>esp-client</name>
 
 	<properties>
+		<vaadin.version>7.1.8</vaadin.version>
 		<vaadin.plugin.version>${vaadin.version}</vaadin.plugin.version>
-		<geotools.version>10-SNAPSHOT</geotools.version>
+		<geotools.version>10.4</geotools.version>
 		<geotk.version>4.x-SNAPSHOT</geotk.version>
+		<junit.version>4.11</junit.version>
+		<version.mockito>1.9.5</version.mockito>
+		<gwt.version>2.6.0</gwt.version>
+		<gwt.plugin.version>${gwt.version}</gwt.plugin.version>
 	</properties>
+
+	<profiles>
+		<profile>
+			<id>m2e</id>
+			<activation>
+				<property>
+					<name>m2e.version</name>
+				</property>
+			</activation>
+			<properties>
+				<production-mode>false</production-mode>
+			</properties>
+		</profile>
+		<profile>
+			<id>prod</id>
+			<activation>
+				<activeByDefault>false</activeByDefault>
+			</activation>
+			<properties>
+				<production-mode>true</production-mode>
+			</properties>
+		</profile>
+	</profiles>
 
 	<build>
 		<plugins>
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -28,6 +52,62 @@
 					<target>1.6</target>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>2.1.2</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+
+			<!-- This creates a zip file of jar and sources jar. When publishing in 
+				the Directory this makes sources available to maven users automatically. 
+				We could also use this to package required dependecies for those poor developer 
+				souls that still dont know how to use a build system that supports transient 
+				dependencies... -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+					<finalName>${project.artifactId}-${project.version}</finalName>
+					<appendAssemblyId>false</appendAssemblyId>
+					<descriptors>
+						<descriptor>assembly.xml</descriptor>
+					</descriptors>
+				</configuration>
+			</plugin>
+			<!-- <plugin> <groupId>com.vaadin</groupId> <artifactId>vaadin-maven-plugin</artifactId> 
+				<executions> <execution> <id>testwidgetset</id> <phase>test-compile</phase> 
+				<goals> <goal>compile</goal> </goals> <configuration> <skip>${skipTests}</skip> 
+				</configuration> </execution> </executions> </plugin> -->
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>copy-dependencies</id>
+						<phase>package</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+						<configuration>
+							<includeScope>runtime</includeScope>
+							<outputDirectory>target/libs</outputDirectory>
+							<!-- configure the plugin here -->
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+
 
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -53,10 +133,19 @@
 				</executions>
 			</plugin>
 
+			<!-- Compile SCSS <plugin> <groupId>org.codehaus.mojo</groupId> <artifactId>exec-maven-plugin</artifactId> 
+				<version>1.2.1</version> <executions> <execution> <phase>generate-sources</phase> 
+				<goals> <goal>java</goal> </goals> <configuration> <classpathScope>compile</classpathScope> 
+				<mainClass>com.vaadin.sass.SassCompiler</mainClass> <arguments> <argument>src/main/webapp/VAADIN/themes/dashboard/styles.scss</argument> 
+				<argument>src/main/webapp/VAADIN/themes/dashboard/styles.css</argument> </arguments> 
+				</configuration> </execution> </executions> </plugin> -->
+
+
+			<!-- Compile widget set -->
 			<plugin>
 				<groupId>com.vaadin</groupId>
 				<artifactId>vaadin-maven-plugin</artifactId>
-				<version>${vaadin.plugin.version}</version>
+				<version>${vaadin.version}</version>
 				<configuration>
 					<extraJvmArgs>-Xmx512M -Xss1024k</extraJvmArgs>
 					<webappDirectory>${basedir}/src/main/webapp/VAADIN/widgetsets</webappDirectory>
@@ -66,79 +155,48 @@
 					<style>OBF</style>
 					<compileReport>true</compileReport>
 					<runTarget>http://localhost:8080/</runTarget>
+					<module>org.esp.publisher.ui.AppWidgetset</module>
 				</configuration>
 				<executions>
 					<execution>
-						<configuration>
-						</configuration>
-						<phase>post-clean</phase>
+						<id>vaadin-compile-on-mvn-install</id>
 						<goals>
-							<goal>resources</goal>
-							<goal>update-widgetset</goal>
 							<goal>compile</goal>
+						</goals>
+						<phase>compile</phase>
+					</execution>
+					<execution>
+						<id>vaadin-clean-on-mvn-install</id>
+						<goals>
+							<goal>clean</goal>
+						</goals>
+						<phase>clean</phase>
+					</execution>
+					<execution>
+						<id>vaadin-compile-theme</id>
+						<goals>
 							<goal>compile-theme</goal>
 						</goals>
+						<phase>clean</phase>
 					</execution>
 				</executions>
 			</plugin>
-
-			<!-- Compile SCSS -->
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>exec-maven-plugin</artifactId>
-				<version>1.2.1</version>
-				<executions>
-					<execution>
-						<phase>generate-sources</phase>
-						<goals>
-							<goal>java</goal>
-						</goals>
-						<configuration>
-							<classpathScope>compile</classpathScope>
-							<mainClass>com.vaadin.sass.SassCompiler</mainClass>
-							<arguments>
-								<argument>src/main/webapp/VAADIN/themes/dashboard/styles.scss</argument>
-								<argument>src/main/webapp/VAADIN/themes/dashboard/styles.css</argument>
-							</arguments>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-
-
-
-
-			<!-- Compile custom GWT components or widget dependencies with the GWT 
-				compiler -->
-			<!-- <plugin> <groupId>org.codehaus.mojo</groupId> <artifactId>gwt-maven-plugin</artifactId> 
-				<version>${gwt.plugin.version}</version> <configuration> <webappDirectory>${project.build.directory}/${project.build.finalName}/VAADIN/widgetsets</webappDirectory> 
-				<extraJvmArgs>-Xmx512M -Xss1024k</extraJvmArgs> <runTarget>dopa-bits</runTarget> 
-				<hostedWebapp>${project.build.directory}/${project.build.finalName}</hostedWebapp> 
-				<noServer>true</noServer> <port>8080</port> <compileReport>false</compileReport> 
-				</configuration> <executions> <execution> <goals> <goal>resources</goal> 
-				<goal>compile</goal> </goals> </execution> </executions> <dependencies> <dependency> 
-				<groupId>com.google.gwt</groupId> <artifactId>gwt-dev</artifactId> <version>${gwt.version}</version> 
-				</dependency> <dependency> <groupId>com.google.gwt</groupId> <artifactId>gwt-user</artifactId> 
-				<version>${gwt.version}</version> </dependency> </dependencies> </plugin> 
-				<plugin> <groupId>com.vaadin</groupId> <artifactId>vaadin-maven-plugin</artifactId> 
-				<version>1.0.2</version> <executions> <execution> <configuration> </configuration> 
-				<goals> <goal>update-widgetset</goal> </goals> </execution> </executions> 
-				</plugin> -->
-
-			<!-- Maven Tomcat Plugin -->
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>tomcat-maven-plugin</artifactId>
-				<configuration>
-					<url>http://127.0.0.1:8000/manager</url>
-					<server>TomcatServer</server>
-					<path>/esp-upload</path>
-				</configuration>
-			</plugin>
-
 		</plugins>
+
+
 		<pluginManagement>
 			<plugins>
+				<plugin>
+					<artifactId>maven-surefire-plugin</artifactId>
+					<configuration>
+						<excludes>
+							<!-- Files here might match to naming convetions, but the are just 
+								vaadin apps containing you add-on components in varios setups. We can ignore 
+								them from test. -->
+							<exclude>**/demoandtestapp/*</exclude>
+						</excludes>
+					</configuration>
+				</plugin>
 				<!--This plugin's configuration is used to store Eclipse m2e settings 
 					only. It has no influence on the Maven build itself. -->
 				<plugin>
@@ -150,15 +208,40 @@
 							<pluginExecutions>
 								<pluginExecution>
 									<pluginExecutionFilter>
-										<groupId>com.vaadin</groupId>
+										<groupId>
+											com.vaadin
+										</groupId>
 										<artifactId>
 											vaadin-maven-plugin
 										</artifactId>
 										<versionRange>
-											[7.1.2,)
+											[2.3.0-1,)
 										</versionRange>
 										<goals>
-											<goal>resources</goal>
+											<goal>
+												compile
+											</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>
+											org.apache.maven.plugins
+										</groupId>
+										<artifactId>
+											maven-dependency-plugin
+										</artifactId>
+										<versionRange>
+											[2.0.0,)
+										</versionRange>
+										<goals>
+											<goal>
+												copy-dependencies
+											</goal>
 										</goals>
 									</pluginExecutionFilter>
 									<action>
@@ -171,6 +254,7 @@
 				</plugin>
 			</plugins>
 		</pluginManagement>
+
 	</build>
 
 
@@ -206,10 +290,11 @@
 			<version>7.0.3-SNAPSHOT</version>
 		</dependency>
 
+
 		<dependency>
 			<groupId>com.sun.media</groupId>
-			<artifactId>jai-codec</artifactId>
-			<version>1.1.3</version>
+			<artifactId>jai_imageio</artifactId>
+			<version>1.2-pre-dr-b04</version>
 		</dependency>
 
 		<dependency>
@@ -219,11 +304,48 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.jrc</groupId>
-			<artifactId>form7</artifactId>
-			<version>0.0.3-SNAPSHOT</version>
+			<groupId>org.vaadin.addons</groupId>
+			<artifactId>v-jpa-form</artifactId>
+			<version>0.1.0</version>
+		</dependency>
+
+		<!-- Servlet -->
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>servlet-api</artifactId>
+			<version>2.5</version>
+			<scope>provided</scope>
+		</dependency>
+		<!-- Testing -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>${junit.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<version>${version.mockito}</version>
 		</dependency>
 
 	</dependencies>
+	<repositories>
+		<repository>
+			<id>geo-solutions</id>
+			<name>Geosolution</name>
+			<url>http://maven.geo-solutions.it/</url>
+		</repository>
+		<repository>
+			<id>OSGEO GeoTools repo</id>
+			<url>http://download.osgeo.org/webdav/geotools</url>
+		</repository>
+		<repository>
+			<id>www.dcm4che.org</id>
+			<name>dcm4che Repository</name>
+			<url>http://www.dcm4che.org/maven2</url>
+		</repository>
+	</repositories>
 
 </project>

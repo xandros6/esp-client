@@ -1,118 +1,132 @@
 package org.esp.publisher.colours;
 
+import it.jrc.ui.HtmlLabel;
+
 import java.util.List;
 
 import org.esp.domain.publisher.ColourMapEntry;
-import org.jrc.ui.SimpleHtmlLabel;
 
 import com.google.common.base.Joiner;
 import com.vaadin.shared.ui.colorpicker.Color;
 
-public class CartographicKey extends SimpleHtmlLabel {
+public class CartographicKey extends HtmlLabel {
 
-    private static String DIV_TEMPLATE = "<div style='width: 50px; height: 95px; padding-top: 10px;'><div style='position: relative;'><div style='%s'>&nbsp;</div>%s</div></div>";
+	private static String DIV_TEMPLATE = "<div style='width: 50px; height: 95px; padding-top: 10px;'><div style='position: relative; width: 200px'><div style='%s'>&nbsp;</div>%s</div></div>";
 
-    private List<ColourMapEntry> colours;
+	private List<ColourMapEntry> colours;
 
-    private String RGB_TEMPLATE = "rgb(%s,%s,%s) %s";
+	private String RGB_TEMPLATE = "rgb(%s,%s,%s) %s";
 
-    Double min;
-    Double max;
+	Double min;
+	Double max;
 
-    /*
-     * Allow this as an option - may be useful if values are to be shown on a
-     * key.
-     */
-    boolean showValues = false;
+	/*
+	 * Allow this as an option - may be useful if values are to be shown on a
+	 * key.
+	 */
+	private boolean showValues = false;
 
-    private void update() {
+	public void showValues(boolean showValues) {
+		this.showValues = showValues;
+	}
 
-        String finalStyle = getStyleString();
+	private void update() {
 
-        StringBuilder sb = new StringBuilder();
+		String finalStyle = getStyleString();
 
-        for (ColourMapEntry cme : colours) {
-            Double val = cme.getValue();
-            double pc = getPercentage(val);
-            double height = 80;
-            if (showValues) {
-                sb.append("<div style='position: absolute; left: 30px; top:"
-                        + (int) (height * pc) / 100 + "px;'>");
-                sb.append(cme.getValue());
-                sb.append("</div>");
-            }
-        }
+		String labels;
+		if (showValues) {
+			labels = getLabels();
+		} else {
+			labels = "";
+		}
 
-        String labels = sb.toString();
+		setValue(String.format(DIV_TEMPLATE, finalStyle, labels));
+	}
 
-        setValue(String.format(DIV_TEMPLATE, finalStyle, labels));
-    }
+	private String getLabels() {
+		StringBuilder sb = new StringBuilder();
+		for (ColourMapEntry cme : colours) {
+			Double val = cme.getValue();
+			double pc = getPercentage(val);
+			double height = 80;
+			sb.append("<div style='position: absolute; left: 30px; top:"
+					+ (int) (height * (100 - pc)) / 100 + "px;'>");
+			sb.append(cme.getLabel());
+			sb.append(": ");
+			sb.append(cme.getValue());
+			sb.append("</div>");
+		}
 
-    private String getStyleString() {
+		String labels = sb.toString();
+		return labels;
+	}
 
-        min = Double.POSITIVE_INFINITY;
-        max = Double.NEGATIVE_INFINITY;
+	private String getStyleString() {
 
-        /*
-         * Find min and max vals
-         */
-        for (ColourMapEntry cme : colours) {
-            Double value = cme.getValue();
-            min = Math.min(min, value);
-            max = Math.max(max, value);
-        }
+		min = Double.POSITIVE_INFINITY;
+		max = Double.NEGATIVE_INFINITY;
 
-        /*
-         * build RGB
-         */
-        String[] rgbStrings = new String[colours.size()];
-        for (int i = 0; i < rgbStrings.length; i++) {
-            ColourMapEntry cme = colours.get(i);
-            Color c = cme.getColor();
+		/*
+		 * Find min and max vals
+		 */
+		for (ColourMapEntry cme : colours) {
+			Double value = cme.getValue();
+			min = Math.min(min, value);
+			max = Math.max(max, value);
+		}
 
-            int percentage = getPercentage(cme.getValue());
-            String pcString = percentage + "%";
+		/*
+		 * build RGB
+		 */
+		String[] rgbStrings = new String[colours.size()];
+		for (int i = 0; i < rgbStrings.length; i++) {
+			ColourMapEntry cme = colours.get(i);
+			Color c = cme.getColor();
 
-            rgbStrings[i] = String.format(RGB_TEMPLATE, c.getRed(),
-                    c.getGreen(), c.getBlue(), pcString);
-        }
+			int percentage = getPercentage(cme.getValue());
+			String pcString = percentage + "%";
 
-        String colourString = Joiner.on(",").join(rgbStrings);
+			rgbStrings[i] = String.format(RGB_TEMPLATE, c.getRed(),
+					c.getGreen(), c.getBlue(), pcString);
+		}
 
-        String theStyle = String
-                .format(
-                        "filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#fffff, endColorstr=#000000); " + 
-                          "background-image: -webkit-linear-gradient(bottom, %s); "
-                        + "background-image: -moz-linear-gradient(bottom, %s); "
-                        + "background-image: linear-gradient(to top, %s);",
-                        colourString, colourString, colourString);
+		String colourString = Joiner.on(",").join(rgbStrings);
 
-        String styleTemplate = "position: absolute; %s height:95px; width: 20px;";
-        String finalStyle = String.format(styleTemplate, theStyle);
-        return finalStyle;
-    }
+		String theStyle = String
+				.format("filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#fffff, endColorstr=#000000); "
+						+ "background-image: -webkit-linear-gradient(bottom, %s); "
+						+ "background-image: -moz-linear-gradient(bottom, %s); "
+						+ "background-image: linear-gradient(to top, %s);",
+						colourString, colourString, colourString);
 
-    /**
-     * Get the percentage
-     * 
-     * @param value
-     * @return
-     */
-    private int getPercentage(Double value) {
-        double diff = max - min;
-        double relZero = value - min;
+		String styleTemplate = "position: absolute; %s height:95px; width: 20px;";
+		String finalStyle = String.format(styleTemplate, theStyle);
+		return finalStyle;
+	}
 
-        if ((int) relZero == 0) {
-            return 0;
-        }
-        return (int) ((relZero / diff) * 100);
-    }
+	/**
+	 * Returns the percentage which represents the position of the given value
+	 * between the min and max values.
+	 * 
+	 * @param value
+	 * @return
+	 */
+	private int getPercentage(Double value) {
+		double diff = max - min;
+		double relZero = value - min;
 
-    public void setColours(List<ColourMapEntry> cmeList) {
+//		if ((int) relZero == 0) {
+//			return 0;
+//		}
+		return (int) ((relZero / diff) * 100);
+	}
 
-        this.colours = cmeList;
-        update();
+	public void setColours(List<ColourMapEntry> cmeList) {
 
-    }
+		this.colours = cmeList;
+		update();
+
+	}
 
 }

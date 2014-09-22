@@ -16,8 +16,7 @@ public class TiffUploadField extends UploadField {
     public TiffUploadField() {
         super();
         setFieldType(FieldType.FILE);
-        setCaption(UPLOAD_MESSAGE);
-    }
+        setCaption(UPLOAD_MESSAGE); }
 
     private File file;
     private MediaType mt;
@@ -53,9 +52,10 @@ public class TiffUploadField extends UploadField {
             }
         }
 
-        if (mt != null && mt.is(MediaType.TIFF)) {
+//        if (mt != null && mt.is(MediaType.TIFF)) {
+        //FIXME mt
             return file;
-        }
-        return null;
+//        }
+        
     }
 }

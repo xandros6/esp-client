@@ -1,13 +1,12 @@
 package org.esp.publisher.colours;
 
+import it.jrc.form.FieldGroup;
+import it.jrc.form.editor.SubmitPanel;
+import it.jrc.form.view.IEditorView;
+
 import java.util.List;
 
 import org.esp.domain.publisher.ColourMap;
-import org.esp.domain.publisher.ColourMapEntry;
-import org.esp.publisher.form.IEditorView;
-import org.jrc.form.FieldGroup;
-import org.jrc.form.editor.EntityTable;
-import org.jrc.form.editor.SubmitPanel;
 
 import com.vaadin.ui.Field;
 import com.vaadin.ui.VerticalLayout;
@@ -43,13 +42,6 @@ public class ColourMapView extends VerticalLayout implements
             }
         }
 
-//        EntityTable<ColourMapEntry> t = new EntityTable<ColourMapEntry>(this.colourMapEditor.bic);
-//        t.setVisibleColumns("label");
-//        t.setPageLength(2);
-//        t.addGeneratedColumn("color", new ColourColumnGenerator());
-//        t.setEditable(true);
-//        t.setSelectable(false);
-//        
         addComponent(sb);
         
     }

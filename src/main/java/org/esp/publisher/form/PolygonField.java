@@ -73,21 +73,21 @@ public class PolygonField extends AbstractJTSField<LinearRing> {
 
 	protected void prepareDrawing() {
 
-		lDrawFeature = new LDrawPolygon(map);
-
-		lDrawFeature.addFeatureDrawnListener(new FeatureDrawnListener() {
-
-			@Override
-			public void featureDrawn(FeatureDrawnEvent event) {
-				// TODO fill Vaadin bug report: exception from here has horrible
-				// stack trace (non informative), even more horrible than the
-				// usual that has some irrelevant stuff in front
-				setValue(getCrsTranslator()
-						.toModel(
-								JTSUtil.toLinearRing((LPolygon) event
-										.getDrawnFeature())));
-			}
-		});
+//		LDrawPolygon lDrawFeature = new LDrawPolygon(map);
+//
+//		lDrawFeature.addFeatureDrawnListener(new FeatureDrawnListener() {
+//
+//			@Override
+//			public void featureDrawn(FeatureDrawnEvent event) {
+//				// TODO fill Vaadin bug report: exception from here has horrible
+//				// stack trace (non informative), even more horrible than the
+//				// usual that has some irrelevant stuff in front
+//				setValue(getCrsTranslator()
+//						.toModel(
+//								JTSUtil.toLinearRing((LPolygon) event
+//										.getDrawnFeature())));
+//			}
+//		});
 
 	}
 

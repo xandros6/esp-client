@@ -1,17 +1,14 @@
 package org.esp.server;
 
-import it.jrc.auth.AnonymousAuthServlet;
 import it.jrc.auth.AuthFilter;
 import it.jrc.auth.AuthServlet;
 import it.jrc.auth.JpaRealm;
 import it.jrc.auth.SecurityFilter;
+import it.jrc.inject.AbstractGuiceServletModule;
 
 import org.apache.shiro.realm.Realm;
-import org.esp.ui.AppUI;
-import org.jrc.inject.AbstractGuiceServletModule;
-import org.jrc.inject.GuiceApplicationServlet;
+import org.vaadin.addons.guice.servlet.VGuiceApplicationServlet;
 
-import com.google.code.vaadin.application.MVPApplicationInitParameters;
 import com.google.inject.name.Names;
 import com.google.inject.persist.PersistFilter;
 
@@ -22,11 +19,11 @@ import com.google.inject.persist.PersistFilter;
  */
 public class ESPServletModule extends AbstractGuiceServletModule {
 
+    
 
     @Override
     protected void configureServlets() {
         
-        bind(Class.class).annotatedWith(Names.named(MVPApplicationInitParameters.P_APPLICATION_UI_CLASS)).toInstance(AppUI.class);
         
         bind(Realm.class).to(JpaRealm.class);
 
@@ -49,19 +46,18 @@ public class ESPServletModule extends AbstractGuiceServletModule {
         
         filter("/*").through(AuthFilter.class);
         
-//        serve("/login").with(AuthServlet.class);
         if (isInProductionMode()) {
+            serve("/login").with(AuthServlet.class);
 //            serve("/login").with(AnonymousAuthServlet.class);
-            serve("/login").with(FakeAuthServlet.class);
+//            serve("/login").with(FakeAuthServlet.class);
         } else {
-//            serve("/login").with(AnonymousAuthServlet.class);
             serve("/login").with(FakeAuthServlet.class);
         }
 
         /*
-         * Main application srvlet
+         * Main application servlet
          */
-        serve("/*").with(GuiceApplicationServlet.class, getServletParams());
+        serve("/*").with(VGuiceApplicationServlet.class, getServletParams());
 
     }
 

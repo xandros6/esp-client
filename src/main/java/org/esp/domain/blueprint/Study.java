@@ -1,5 +1,7 @@
 package org.esp.domain.blueprint;
 
+import it.jrc.domain.auth.Role;
+
 import java.util.Set;
 
 import javax.persistence.CascadeType;
@@ -14,8 +16,6 @@ import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
-
-import org.jrc.auth.domain.Role;
 
 @Entity
 @Table(schema = "blueprint", name = "study")
@@ -108,15 +108,27 @@ public class Study {
         this.studyLocation = studyLocation;
     }
     
-    private String studyDuration;
+    private Integer startYear;
 
-    @Column(name="study_duration")
-    public String getStudyDuration() {
-        return studyDuration;
+
+    @Column(name = "start_year")
+    public Integer getStartYear() {
+        return startYear;
+    }
+    
+    public void setStartYear(Integer startYear) {
+        this.startYear = startYear;
     }
 
-    public void setStudyDuration(String studyDuration) {
-        this.studyDuration = studyDuration;
+    private Integer endYear;
+
+    @Column(name = "end_year")
+    public Integer getEndYear() {
+        return endYear;
+    }
+    
+    public void setEndYear(Integer endYear) {
+        this.endYear = endYear;
     }
 
     private String mainInvestigators;
@@ -141,6 +153,17 @@ public class Study {
 
     public void setProjectReferences(String projectReferences) {
         this.projectReferences = projectReferences;
+    }
+    
+    private String url;
+    
+    @Column(name = "url")
+    public String getUrl() {
+        return url;
+    }
+    
+    public void setUrl(String url) {
+        this.url = url;
     }
 
     private String contactDetails;

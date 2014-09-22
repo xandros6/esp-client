@@ -1,11 +1,15 @@
 package org.esp.domain.blueprint;
 
+import it.jrc.domain.adminunits.Grouping;
+import it.jrc.domain.auth.Role;
+
+import java.util.Date;
+
 import javax.persistence.metamodel.SetAttribute;
 import javax.persistence.metamodel.SingularAttribute;
 import javax.persistence.metamodel.StaticMetamodel;
 
 import org.esp.domain.publisher.ColourMap;
-import org.jrc.persist.adminunits.Grouping;
 
 import com.vividsolutions.jts.geom.Polygon;
 
@@ -44,17 +48,17 @@ public abstract class EcosystemServiceIndicator_ {
 
     public static volatile SingularAttribute<EcosystemServiceIndicator, String> spatialResolution;
 
-    public static volatile SingularAttribute<EcosystemServiceIndicator, Long> endYear;
+    public static volatile SingularAttribute<EcosystemServiceIndicator, Integer> endYear;
 
     public static volatile SingularAttribute<EcosystemServiceIndicator, String> kml;
 
     public static volatile SingularAttribute<EcosystemServiceIndicator, String> comments;
 
-    public static volatile SingularAttribute<EcosystemServiceIndicator, Long> startYear;
+    public static volatile SingularAttribute<EcosystemServiceIndicator, Integer> startYear;
 
     public static volatile SetAttribute<EcosystemServiceIndicator, Biome> biomes;
 
-    public static volatile SetAttribute<EcosystemServiceIndicator, Grouping> groupings;
+    public static volatile SetAttribute<EcosystemServiceIndicator, Grouping> regions;
 
     public static volatile SingularAttribute<EcosystemServiceIndicator, SpatialDataType> spatialDataType;
 
@@ -76,6 +80,11 @@ public abstract class EcosystemServiceIndicator_ {
 
     public static volatile SingularAttribute<EcosystemServiceIndicator, ColourMap> colourMap;
 
-    public static volatile SingularAttribute<EcosystemServiceIndicator, Object> file;
+    public static volatile SingularAttribute<EcosystemServiceIndicator, Role> role;
+
+    public static volatile SingularAttribute<EcosystemServiceIndicator, Date> dateUpdated;
+
+    public static volatile SingularAttribute<EcosystemServiceIndicator, Date> dateCreated;
+
 
 }

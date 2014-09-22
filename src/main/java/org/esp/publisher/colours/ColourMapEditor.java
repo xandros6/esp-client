@@ -1,10 +1,11 @@
 package org.esp.publisher.colours;
 
+import it.jrc.form.controller.EditorController;
+import it.jrc.persist.Dao;
+
 import org.esp.domain.publisher.ColourMap;
 import org.esp.domain.publisher.ColourMapEntry;
 import org.esp.domain.publisher.ColourMap_;
-import org.esp.publisher.form.EditorController;
-import org.jrc.persist.Dao;
 
 import com.vaadin.data.util.BeanItemContainer;
 

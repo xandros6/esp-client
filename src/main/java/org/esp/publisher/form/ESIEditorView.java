@@ -1,24 +1,22 @@
 package org.esp.publisher.form;
 
+import it.jrc.form.FieldGroup;
+import it.jrc.form.editor.SubmitPanel;
+import it.jrc.form.view.IEditorView;
+import it.jrc.ui.HtmlHeader;
+import it.jrc.ui.HtmlLabel;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import org.esp.domain.blueprint.EcosystemServiceIndicator;
 import org.esp.publisher.colours.ColourMapFieldGroup;
-import org.jrc.form.FieldGroup;
-import org.jrc.form.editor.SubmitPanel;
-import org.jrc.ui.SimpleHtmlHeader;
-import org.jrc.ui.SimpleHtmlLabel;
 
 import com.vaadin.data.fieldgroup.BeanFieldGroup;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.CssLayout;
 import com.vaadin.ui.Field;
-import com.vaadin.ui.FormLayout;
-import com.vaadin.ui.Label;
-import com.vaadin.ui.ProgressBar;
 import com.vaadin.ui.VerticalLayout;
 
 public class ESIEditorView extends VerticalLayout implements
@@ -45,7 +43,7 @@ public class ESIEditorView extends VerticalLayout implements
         // pb.setWidth("100%");
         // pb.setValue(0.5f);
 
-        SimpleHtmlLabel spacer = new SimpleHtmlLabel("&nbsp;");
+        HtmlLabel spacer = new HtmlLabel("&nbsp;");
         addComponent(spacer);
 
         this.mainPanel = new CssLayout();
@@ -76,7 +74,7 @@ public class ESIEditorView extends VerticalLayout implements
             BeanFieldGroup<EcosystemServiceIndicator> bfg = fieldGroupMeta
                     .getFieldGroup();
 
-            SimpleHtmlHeader c = new SimpleHtmlHeader(fieldGroupMeta.getLabel());
+            HtmlHeader c = new HtmlHeader(fieldGroupMeta.getLabel());
             mainPanel.addComponent(c);
 
             if(fieldGroupMeta.getLabel() != ESIEditor.THE_ECOSYSTEM_SERVICE) {
@@ -98,7 +96,7 @@ public class ESIEditorView extends VerticalLayout implements
                 }
             }
 
-            mainPanel.addComponent(new SimpleHtmlLabel("&nbsp;"));
+            mainPanel.addComponent(new HtmlLabel("&nbsp;"));
             // view.addComponent(formLayout, fieldGroupMeta.getLabel(),
             // fieldGroupMeta.getDescription());
             // addComponent(formLayout);

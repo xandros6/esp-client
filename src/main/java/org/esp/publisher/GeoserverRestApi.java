@@ -6,19 +6,18 @@ import freemarker.template.TemplateException;
 import it.geosolutions.geoserver.rest.GeoServerRESTPublisher;
 import it.geosolutions.geoserver.rest.encoder.GSLayerEncoder;
 import it.geosolutions.geoserver.rest.encoder.GSResourceEncoder.ProjectionPolicy;
+import it.jrc.persist.Dao;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.esp.domain.publisher.ColourMapEntry;
-import org.jrc.persist.Dao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,19 +62,23 @@ public class GeoserverRestApi {
      * @param geotiff
      * @param srs
      * @param layerAndStoreName
+     * @param styleName TODO
      * @return
      * @throws IllegalArgumentException
      * @throws FileNotFoundException
      */
-    public boolean publishTiff(File geotiff, String srs,
-            String layerAndStoreName)
+    public boolean publishTiff(File geotiff, String srs, String layerAndStoreName, String styleName)
             throws FileNotFoundException, IllegalArgumentException {
 
         logger.info("Publishing Geotiff");
+        
+        if (styleName == null) {
+            styleName = layerAndStoreName;
+        }
 
         return publisher.publishGeoTIFF(workspace, layerAndStoreName,
                 layerAndStoreName, geotiff, srs, ProjectionPolicy.NONE,
-                layerAndStoreName, null);
+                styleName, null);
     }
 
     public boolean publishShp(File zipFile, String srs,
@@ -106,6 +109,10 @@ public class GeoserverRestApi {
     public boolean removeRasterStore(String storeName) {
 
         logger.info("Removing raster store");
+        
+        if (storeName == null) {
+            return false;
+        }
 
         return publisher.removeCoverageStore(workspace, storeName, true);
 
@@ -133,10 +140,14 @@ public class GeoserverRestApi {
 
         String sldBody = buildSLDBody(styleName, cmes);
         return publisher.publishStyle(sldBody);
+
     }
+    
 
     private String buildSLDBody(String styleName, List<ColourMapEntry> cmes) {
+
         try {
+
             Template template = configuration.getTemplate("SldContinuous.ftl");
 
             Map<String, Object> root = new HashMap<String, Object>();

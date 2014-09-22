@@ -1,13 +1,15 @@
 package org.esp.publisher;
 
+import it.jrc.form.controller.EditorController;
+import it.jrc.form.controller.EditorController.EditCompleteListener;
+import it.jrc.form.view.TwinPanelView;
+import it.jrc.persist.Dao;
+import it.jrc.ui.SimplePanel;
+
 import org.esp.domain.blueprint.EcosystemServiceIndicator;
 import org.esp.publisher.form.ESIEditor;
-import org.esp.publisher.form.EditorController;
 import org.esp.publisher.form.LayerPublishedListener;
 import org.esp.publisher.form.ESIEditorView;
-import org.jrc.persist.Dao;
-import org.jrc.ui.SimplePanel;
-import org.jrc.ui.baseview.TwinPanelView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vaadin.addon.leaflet.LMap;
@@ -26,10 +28,7 @@ import com.vividsolutions.jts.geom.Polygon;
  * Colour maps are stored in database entities. TODO: allow for choosing either
  * from default colour maps or personal ones
  * 
- * 
- * [ ] When editing colour schemes it can be republished to geoserver.
- * 
- * [ ] Support for multiple formats (geotiff, world * file etc) [ ]
+ * [ ] Support for multiple formats (geotiff, world * file etc)
  * 
  * @author Will Temperley
  * 
@@ -65,7 +64,6 @@ public class MapPublisher extends TwinPanelView implements View {
             vl.setSizeFull();
 
             LMap map = surfaceEditor.getMap();
-//            LMap map = new LMap();
             layerManager = new LayerManager(map);
             vl.addComponent(map);
             map.setSizeFull();
@@ -81,12 +79,16 @@ public class MapPublisher extends TwinPanelView implements View {
             tabSheet.setSizeFull();
             replaceComponent(rightPanel, tabSheet);
 
+            ESIEditorView esiEditorView =  new ESIEditorView();
+            surfaceEditor.init(esiEditorView);
+            surfaceEditor.addEditCompleteListener(new EditCompleteListener<EcosystemServiceIndicator>() {
+                @Override
+                public void onEditComplete(EcosystemServiceIndicator entity) {
+                    
+                }
+            });
 
-
-            ESIEditorView esiEditorView2 =  new ESIEditorView();
-            surfaceEditor.init(esiEditorView2);
-
-            tabSheet.addTab(esiEditorView2, "Maps");
+            tabSheet.addTab(esiEditorView, "Maps");
         }
     }
 
@@ -96,16 +98,12 @@ public class MapPublisher extends TwinPanelView implements View {
 
         String params = event.getParameters();
         if (params != null && !params.isEmpty()) {
-            if (params.equals("new")) {
-                layerManager.reset();
-                surfaceEditor.doCreate();
-            } else {
-                doEditById(params);
-            }
+            doEditById(params);
+        } else {
+            layerManager.reset();
+            surfaceEditor.doCreate();
         }
-
     }
-
 
     private void doEditById(String stringId) {
         try {
