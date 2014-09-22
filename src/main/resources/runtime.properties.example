@@ -1,0 +1,9 @@
+login_servlet_path = /login
+productionMode = true
+pushmode = automatic
+widgetset = org.esp.publisher.ui.AppWidgetset
+gs_rest_url = <url>
+gs_user = <username>
+gs_password = <password>
+gs_workspace = <ws>
+build_date = <date>

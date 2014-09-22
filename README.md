@@ -1,5 +1,4 @@
-v-jpa-form
+esp-client
 ==========
 
-OpenID 2.0 and form components for Vaadin 7
-
+A Vaadin 7 application for publishing Ecosystem Service Maps to Geoserver
