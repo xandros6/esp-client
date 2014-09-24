@@ -1,0 +1,91 @@
+body {
+	font: 14px 'Arial';
+	margin: 0px;
+	padding: 0px;
+	border: 0px;
+	background-color: #fff;
+}
+
+#header {
+	height: 100px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	margin-bottom: 20px;
+}
+
+#openid_authmessage {
+	margin: 0 auto;
+	width: 440px;
+	font-size: 15px;
+}
+
+#openid {
+	margin: 0 auto;
+	width: 470px;
+	height: 162px;
+}
+
+#openid_inputarea {
+	clear: both;
+	display: none;
+	border: 1px solid #CCC;
+	-moz-border-radius: 12px; -webkit-border-radius : 12px;
+	background-color: #E9ECED;
+	width: 470px;
+	height: 40px;
+	color: black;
+	text-align: center;
+	margin-top: 45px;
+	padding-top: 17px;
+	-webkit-border-radius: 12px;
+}
+
+#openid_inputarea #openid_username {
+	margin: 0 4px 0 8px;
+	width: 100px;
+}
+
+#openid_btns,#openid_btns br {
+	clear: both;
+}
+
+#openid_highlight {
+	-moz-border-radius: 10px;
+	-webkit-border-radius: 10px;
+	padding: 2px;
+	background-color: #FFFCC9;
+	float: left;
+}
+
+.openid_large_btn,.openid_small_btn {
+	background: url(img/openid-icons.png) no-repeat;
+	margin: 3px;
+	float: left;
+}
+
+.openid_large_btn {
+	width: 110px;
+	height: 73px;
+}
+
+.Google {
+	background-position: 0px 0px;
+}
+
+.Yahoo {
+	background-position: -110px 0px;
+}
+
+.MyOpenID {
+	background-position: -220px 0px;
+}
+
+.StackExchange {
+	background-position: -330px 0px;
+}
+
+a.openid_large_btn:focus {
+	outline: none;
+	-moz-outline-style: none;
+}
