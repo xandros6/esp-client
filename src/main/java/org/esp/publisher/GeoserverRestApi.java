@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.esp.domain.blueprint.FileType;
 import org.esp.domain.publisher.ColourMapEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,11 +119,11 @@ public class GeoserverRestApi {
 
     }
 
-    public boolean updateStyle(String styleName, List<ColourMapEntry> cmes) {
+    public boolean updateStyle(String styleName, String attributeName, String templateName, List<ColourMapEntry> cmes) {
 
         logger.info("Updating style: " + styleName);
 
-        String sldBody = buildSLDBody(styleName, cmes);
+        String sldBody = buildSLDBody(styleName, attributeName, templateName, cmes);
 
         GSLayerEncoder layer = new GSLayerEncoder();
         layer.setWmsPath("newpath");
@@ -134,27 +135,27 @@ public class GeoserverRestApi {
 
     }
     
-    public boolean publishStyle(String styleName, List<ColourMapEntry> cmes) {
+    public boolean publishStyle(String styleName, String attributeName, String templateName, List<ColourMapEntry> cmes) {
 
         logger.info("Publishing style: " + styleName);
 
-        String sldBody = buildSLDBody(styleName, cmes);
+        String sldBody = buildSLDBody(styleName, attributeName, templateName, cmes);
         return publisher.publishStyle(sldBody);
 
     }
     
 
-    private String buildSLDBody(String styleName, List<ColourMapEntry> cmes) {
+    private String buildSLDBody(String styleName, String attributeName, String templateName, List<ColourMapEntry> cmes) {
 
         try {
 
-            Template template = configuration.getTemplate("SldContinuous.ftl");
+            Template template = configuration.getTemplate(templateName);
 
             Map<String, Object> root = new HashMap<String, Object>();
 
             root.put("styleName", styleName);
             root.put("colourMapEntries", cmes);
-//            root.put("publishDate", new Date());
+            root.put("attributeName", attributeName);
 
             StringWriter sw = new StringWriter();
             template.process(root, sw);
@@ -169,5 +170,7 @@ public class GeoserverRestApi {
         }
         return null;
     }
+
+    
 
 }

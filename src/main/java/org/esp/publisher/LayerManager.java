@@ -4,6 +4,7 @@ import org.vaadin.addon.leaflet.LMap;
 import org.vaadin.addon.leaflet.LTileLayer;
 import org.vaadin.addon.leaflet.LWmsLayer;
 
+import com.google.inject.name.Named;
 import com.vaadin.ui.Component;
 import com.vividsolutions.jts.geom.Polygon;
 
@@ -21,11 +22,16 @@ public class LayerManager {
     private LWmsLayer singleLayer;
 
     private LTileLayer bl;
+    
+    private String defaultWms;
 
-    public LayerManager(LMap map) {
+    public LayerManager(LMap map,
+            String defaultWms) {
 
         this.map = map;
 
+        this.defaultWms = defaultWms;
+        
         bl = new LTileLayer(
                 "http://{s}.tile.osm.org/{z}/{x}/{y}.png");
         bl.setAttributionString("&copy; <a href='http://osm.org/copyright'>OpenStreetMap</a> contributors");
@@ -49,7 +55,8 @@ public class LayerManager {
     private LWmsLayer createDefaultWMSLayer(String layerName) {
         LWmsLayer l = new LWmsLayer();
 
-        l.setUrl("http://lrm-maps.jrc.ec.europa.eu/geoserver/esp/wms");
+        //l.setUrl("http://lrm-maps.jrc.ec.europa.eu/geoserver/esp/wms");
+        l.setUrl(this.defaultWms);
         l.setTransparent(true);
         l.setFormat("image/png");
         l.setLayers(layerName);

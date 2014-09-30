@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.vaadin.addon.leaflet.LMap;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
 import com.vaadin.ui.Notification;
@@ -44,7 +45,8 @@ public class MapPublisher extends TwinPanelView implements View {
     private EditorController<EcosystemServiceIndicator> surfaceEditor;
 
     @Inject
-    public MapPublisher(Dao dao, ESIEditor surfaceEditor) {
+    public MapPublisher(Dao dao, ESIEditor surfaceEditor, 
+            @Named("gs_wms_url") String defaultWms) {
 
         this.dao = dao;
 
@@ -64,7 +66,7 @@ public class MapPublisher extends TwinPanelView implements View {
             vl.setSizeFull();
 
             LMap map = surfaceEditor.getMap();
-            layerManager = new LayerManager(map);
+            layerManager = new LayerManager(map, defaultWms);
             vl.addComponent(map);
             map.setSizeFull();
 

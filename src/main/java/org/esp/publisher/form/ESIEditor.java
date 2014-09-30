@@ -12,8 +12,11 @@ import it.jrc.persist.Dao;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.persistence.metamodel.Attribute;
 import javax.persistence.metamodel.SingularAttribute;
@@ -23,6 +26,7 @@ import org.esp.domain.blueprint.DataSource;
 import org.esp.domain.blueprint.DataSource_;
 import org.esp.domain.blueprint.EcosystemServiceIndicator;
 import org.esp.domain.blueprint.EcosystemServiceIndicator_;
+import org.esp.domain.blueprint.FileType;
 import org.esp.domain.blueprint.Indicator_;
 import org.esp.domain.blueprint.QuantificationUnit_;
 import org.esp.domain.blueprint.SpatialDataType;
@@ -30,24 +34,34 @@ import org.esp.domain.blueprint.Study;
 import org.esp.domain.blueprint.TemporalUnit_;
 import org.esp.domain.publisher.ColourMap;
 import org.esp.domain.publisher.ColourMapEntry;
+import org.esp.publisher.ESPClientUploadField;
 import org.esp.publisher.GeoserverRestApi;
+import org.esp.publisher.FilePublisher;
+import org.esp.publisher.PublishException;
+import org.esp.publisher.PublishedFileMeta;
+import org.esp.publisher.ShapefileMeta;
+import org.esp.publisher.ShapefilePublisher;
 import org.esp.publisher.TiffMeta;
-import org.esp.publisher.TiffMetadataExtractor;
-import org.esp.publisher.TiffUploadField;
+import org.esp.publisher.TiffPublisher;
 import org.esp.publisher.UnknownCRSException;
 import org.esp.publisher.colours.ColourMapFieldGroup;
+import org.esp.publisher.colours.ColourMapFieldGroup.ColourMapAttributeChangeListener;
 import org.esp.publisher.colours.ColourMapFieldGroup.ColourMapChangeListener;
 import org.esp.publisher.ui.ViewModule;
+import org.opengis.referencing.FactoryException;
+import org.opengis.referencing.operation.TransformException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vaadin.addon.leaflet.LMap;
 import org.vaadin.addon.leaflet.util.CRSTranslator;
 
 import com.google.inject.Inject;
+import com.sun.org.apache.bcel.internal.generic.UnconditionalBranch;
 import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.data.util.converter.Converter;
 import com.vaadin.data.util.converter.StringToIntegerConverter;
+import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Field;
 import com.vaadin.ui.Notification;
 import com.vaadin.ui.Notification.Type;
@@ -63,14 +77,17 @@ import com.vividsolutions.jts.geom.Polygon;
 public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
     public static final String THE_ECOSYSTEM_SERVICE = "The Ecosystem Service";
+    public static final String FILE_TYPE = "File Type";
 
     private Logger logger = LoggerFactory.getLogger(ESIEditor.class);
 
     private PolygonField envelopeField;
 
-    private TiffMetadataExtractor tme;
+    private TiffPublisher tme;
 
     private ColourMapFieldGroup colourMapFieldGroup;
+    
+    private ComboBox fileTypeField;
 
     private GeoserverRestApi gsr;
 
@@ -83,13 +100,28 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
     private TextArea spatialReferenceInfoField;
 
     private RoleManager roleManager;
+    
+    private ESPClientUploadField uploadField;
+    
+    private Map<Long, FilePublisher> filePublishers = new HashMap<Long, FilePublisher>();
+    private static Map<Long, String> templates = new HashMap<Long, String>();
+    
+    static {
+        
+        
+        templates.put(1l, "SldContinuous.ftl");
+        templates.put(2l, "SldVectorContinuous.ftl");
+    }
 
     @Inject
     public ESIEditor(Dao dao, RoleManager roleManager,
-            TiffMetadataExtractor tme, GeoserverRestApi gsr) {
+            TiffPublisher tme, GeoserverRestApi gsr) {
 
         super(EcosystemServiceIndicator.class, dao);
 
+        filePublishers.put(1l, new TiffPublisher(gsr));
+        filePublishers.put(2l, new ShapefilePublisher(gsr));
+        
         this.tme = tme;
         this.gsr = gsr;
         this.roleManager = roleManager;
@@ -109,7 +141,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
         buildSubmitPanel(view.getSubmitPanel());
     }
-
+    
     @Override
     public void doUpdate(EcosystemServiceIndicator entity) {
         if (!roleManager.isOwner(entity) && !roleManager.getRole().getIsSuperUser()) {
@@ -119,6 +151,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         }
 
         esiEditorView.setNewStatus(false);
+        uploadField.updateFileType(entity.getFileType());
         super.doUpdate(entity);
     }
 
@@ -140,6 +173,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
     @Override
     protected void doPostCommit(EcosystemServiceIndicator entity) {
         esiEditorView.setNewStatus(false);
+        uploadField.updateFileType(entity.getFileType());
     }
 
     private void buildPublishForm() {
@@ -157,13 +191,15 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         studyField.setEditor(studyEditor);
         studyEditor.init(new DefaultEditorView<Study>());
         ff.addField(EcosystemServiceIndicator_.study, studyField);
-
+        
+        
+        fileTypeField = (ComboBox)ff.addField(EcosystemServiceIndicator_.fileType);
         addFieldGroup(THE_ECOSYSTEM_SERVICE);
 
         /*
          * Uploading
          */
-        TiffUploadField uploadField = new TiffUploadField();
+        uploadField = new ESPClientUploadField();
 
         uploadField.addListener(new ValueChangeListener() {
 
@@ -201,7 +237,8 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
 
                     // Is it published yet?
-                    gsr.updateStyle(getLayerName(), colourMapEntries);
+                    FileType fileType = (FileType)fileTypeField.getValue();
+                    gsr.updateStyle(getLayerName(), "", templates.get(fileType.getId()), colourMapEntries);
 
 
                     firePublishEvent();
@@ -210,6 +247,37 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
             }
 
         });
+        
+        colourMapFieldGroup.setAttributeListener(new ColourMapAttributeChangeListener() {
+
+            @Override
+            public void onValueChanged(String attributeName) {
+                // TODO Auto-generated method stub
+                
+            }
+            
+        }
+
+            /*@Override
+            public void onValueChanged(ColourMap colourMap) {
+
+                List<ColourMapEntry> colourMapEntries = colourMap
+                        .getColourMapEntries();
+
+                if (colourMapFieldGroup.isValid() && getLayerName() != null) {
+
+
+                    // Is it published yet?
+                    FileType fileType = (FileType)fileTypeField.getValue();
+                    gsr.updateStyle(getLayerName(), templates.get(fileType.getId()), colourMapEntries);
+
+
+                    firePublishEvent();
+                }
+
+            }*/
+
+        );
 
         this.sridField = ff.addTextField(EcosystemServiceIndicator_.srid);
         sridField.setVisible(false);
@@ -404,26 +472,88 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         getEntity().setLayerName(layerName);
     }
 
+    
     /**
      * 
      * 
      * @param f
      */
     private void publishFile(File f) {
-
-        TiffMeta tm = extractTiffMetaData(f);
-
-        if (tm == null) {
-            return;
+        FileType fileType = (FileType)fileTypeField.getValue();
+        
+        String layerName = getLayerName();
+        // new file
+        if(layerName == null) {
+            layerName = generateLayerName();
         }
+        try {
+            PublishedFileMeta meta = publishFile(f, layerName, fileType);
+            if(meta == null) {
+                return;
+            }
+            //publishFile(meta.getFile(), layerName, fileType, meta);
+        } catch (UnknownCRSException e) {
+            showError("Error extracting  CRS: " + e.getMessage());
+        } catch (PublishException e) {
+            showError("Publishing error: " + e.getMessage());
+        }
+    }
+    
+    
+    
+    
 
-        /*
-         * Save the surface
-         */
-//        if (!commitForm(false)) {
-//            logger.info("Ensure form is valid.");
-//            return;
-//        }
+    private PublishedFileMeta publishFile(File f, String layerName, FileType fileType) throws UnknownCRSException, PublishException {
+        Long fileTypeId = fileType.getId();
+        FilePublisher filePublisher = filePublishers.get(fileTypeId);
+        PublishedFileMeta metadata = filePublisher.extractMetadata(f ,layerName);
+        
+        Double minVal = metadata.getMinVal();
+
+        // A bit hacky but there's no good way to determine real no-data
+        // values.
+        if (minVal < 0) {
+            colourMapFieldGroup.setMinValue("0");
+        } else {
+            colourMapFieldGroup.setMinValue(metadata.getMinVal().toString());
+        }
+        colourMapFieldGroup.setMaxValue(metadata.getMaxVal().toString());
+
+        sridField.setValue(metadata.getSrid().toString());
+
+        spatialReferenceInfoField.setValue(metadata
+                .getDescription());
+
+        envelopeField.setValue((LinearRing) metadata.getEnvelope().getBoundary());
+        
+        if(metadata instanceof ShapefileMeta) {
+            ShapefileMeta shapefileMeta = (ShapefileMeta) metadata;
+            colourMapFieldGroup.setAttributes(shapefileMeta.getAttributes(), shapefileMeta.getAttributeName());
+        }
+        
+        if (getLayerName() == null) {
+            setLayerName(layerName);
+            if(filePublisher.publishStyle(metadata, layerName, templates.get(fileTypeId), colourMapFieldGroup.getColourMap())) {
+                if(filePublisher.publishLayer(layerName, metadata)) {
+                    boolean saved = commitForm(false);
+                    logger.info("File saved: " + saved);
+
+                    firePublishEvent();
+                }
+            }
+        } else {
+            
+        }
+        return metadata;
+    }
+
+    
+    /**
+     * 
+     * 
+     * @param f
+     */
+    private void publishFile(File f, String layerName, FileType fileType, PublishedFileMeta meta) {
 
         ColourMap cm = colourMapFieldGroup.getColourMap();
         if (cm == null) {
@@ -437,54 +567,61 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
             return;
         }
 
-        /*
+        /**
          * If we have no layer, create a style and a name
          */
         if (getLayerName() == null) {
-
-            /*
-             * New layer required
-             */
-            String layerName = generateLayerName();
             setLayerName(layerName);
 
-            boolean stylePublished = gsr.publishStyle(layerName, cm.getColourMapEntries());
+            boolean stylePublished = gsr.publishStyle(layerName, "", templates.get(fileType.getId()), cm.getColourMapEntries());
             logger.info("Style published: " + stylePublished);
+            
+            if(meta instanceof TiffMeta) {
+                boolean tiffPublished = publishTiff(cm, meta.getFile(), (TiffMeta)meta);
 
-            /*
-             * Publish new data
-             */
-            boolean tiffPublished = publishTiff(cm, f, tm);
+                logger.info("Tiff published: " + tiffPublished);
 
-            logger.info("Tiff published: " + tiffPublished);
+                if (tiffPublished) {
+                    boolean surfaceSaved = commitForm(false);
+                    logger.info("Surface saved: " + surfaceSaved);
 
-            if (tiffPublished) {
-                boolean surfaceSaved = commitForm(false);
-                logger.info("Surface saved: " + surfaceSaved);
+                    firePublishEvent();
+                }
+            } else if(meta instanceof ShapefileMeta) {
+                boolean shapePublished = publishShapefile(cm, f, (ShapefileMeta)meta);
 
-                firePublishEvent();
+                logger.info("Shapefile published: " + shapePublished);
+
+                if (shapePublished) {
+                    boolean shapefileSaved = commitForm(false);
+                    logger.info("Surface saved: " + shapefileSaved);
+
+                    firePublishEvent();
+                }
             }
+            
+            
 
         } else {
 
             /*
              * We have the layer already
-             */
+             
 //             File f = getEntity().getFile();
 
-            /*
+            
              * Always publishing the SLD. a little redundant but simpler.
-             */
+             
             gsr.updateStyle(getLayerName(), cm.getColourMapEntries());
 
-            /*
+            
              * User wants to change the data.
-             */
+             
             if (f != null) {
                 gsr.removeRasterStore(getLayerName());
                 publishTiff(cm, f, tm);
                 firePublishEvent();
-            }
+            }*/
         }
 
         Notification
@@ -493,7 +630,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         commitForm(false);
 
     }
-
+/*
     private TiffMeta extractTiffMetaData(File tiffFile) {
 
         try {
@@ -528,6 +665,26 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         }
         return null;
 
+    }*/
+    
+
+    private boolean publishShapefile(ColourMap cm, File f, ShapefileMeta meta) {
+
+        EcosystemServiceIndicator shapeFile = getEntity();
+        try {
+            if (f == null) {
+                Notification.show("File not uploaded yet.");
+                return false;
+            }
+
+
+            return gsr.publishShp(f, meta.getSrid(), shapeFile.getLayerName(), "polygon");
+
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+            showError(e.getMessage());
+        }
+        return false;
     }
 
     private boolean publishTiff(ColourMap cm, File f, TiffMeta tm) {

@@ -18,6 +18,7 @@ import org.esp.publisher.LayerManager;
 import org.vaadin.addon.leaflet.LMap;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.vaadin.addon.jpacontainer.EntityItem;
 import com.vaadin.addon.jpacontainer.JPAContainer;
 import com.vaadin.addon.jpacontainer.JPAContainerItem;
@@ -51,14 +52,15 @@ public class SearchView extends TwinPanelView implements View {
     private static int COL_WIDTH = 400;
 
     @Inject
-    public SearchView(Dao dao, RoleManager roleManager) {
+    public SearchView(Dao dao, RoleManager roleManager, 
+            @Named("gs_wms_url") String defaultWms) {
 
         ContainerManager<EcosystemServiceIndicator> containerManager = new ContainerManager<EcosystemServiceIndicator>(
                 dao, EcosystemServiceIndicator.class);
         this.esiContainer = containerManager.getContainer();
         esiContainer.sort(new String[] {"dateUpdated"}, new boolean[]{false});
         this.dao = dao;
-        this.layerManager = new LayerManager(new LMap());
+        this.layerManager = new LayerManager(new LMap(), defaultWms);
         this.roleManager = roleManager;
         {
             SimplePanel leftPanel = getLeftPanel();

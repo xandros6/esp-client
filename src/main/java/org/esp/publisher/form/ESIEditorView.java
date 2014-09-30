@@ -26,6 +26,7 @@ public class ESIEditorView extends VerticalLayout implements
     private SubmitPanel submitPanel;
     private CssLayout mainPanel;
     private List<Component> componentsToToggle = new ArrayList<Component>();
+    private List<Component> componentsToHide = new ArrayList<Component>();
 
     public ESIEditorView() {
         addStyleName("display-panel");
@@ -65,6 +66,10 @@ public class ESIEditorView extends VerticalLayout implements
                 c.setVisible(!isNew);
 //            }
         }
+        
+        for (Component c : componentsToHide) {
+              c.setVisible(isNew);
+        }
     }
 
     @Override
@@ -92,6 +97,9 @@ public class ESIEditorView extends VerticalLayout implements
                     //If it's invisible already, it should always be invisible
                     if(fieldGroupMeta.getLabel() != ESIEditor.THE_ECOSYSTEM_SERVICE && field.isVisible()) {
                         componentsToToggle.add(field);
+                    }
+                    if(field.getCaption().equals(ESIEditor.FILE_TYPE))  {
+                        componentsToHide.add(field);
                     }
                 }
             }

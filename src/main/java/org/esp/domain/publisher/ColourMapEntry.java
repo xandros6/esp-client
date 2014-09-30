@@ -97,9 +97,32 @@ public class ColourMapEntry {
     public Double getValue() {
         return value;
     }
-    
+        
     public void setValue(Double value) {
         this.value = value;
+    }
+    
+
+    private Double from;
+    
+    @Transient
+    public Double getFrom() {
+        return from;
+    }
+    
+    public void setFrom(Double from) {
+        this.from = from;
+    }
+    
+    private Double to;
+    
+    @Transient
+    public Double getTo() {
+        return to;
+    }
+    
+    public void setTo(Double to) {
+        this.to = to;
     }
     
     private String label;
