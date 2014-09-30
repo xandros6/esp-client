@@ -7,3 +7,4 @@ gs_user = <username>
 gs_password = <password>
 gs_workspace = <ws>
 build_date = <date>
+gs_wms_url = <url>
