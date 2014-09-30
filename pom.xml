@@ -133,12 +133,28 @@
 				</executions>
 			</plugin>
 
-			<!-- Compile SCSS <plugin> <groupId>org.codehaus.mojo</groupId> <artifactId>exec-maven-plugin</artifactId> 
-				<version>1.2.1</version> <executions> <execution> <phase>generate-sources</phase> 
-				<goals> <goal>java</goal> </goals> <configuration> <classpathScope>compile</classpathScope> 
-				<mainClass>com.vaadin.sass.SassCompiler</mainClass> <arguments> <argument>src/main/webapp/VAADIN/themes/dashboard/styles.scss</argument> 
-				<argument>src/main/webapp/VAADIN/themes/dashboard/styles.css</argument> </arguments> 
-				</configuration> </execution> </executions> </plugin> -->
+			<!-- Compile SCSS -->
+			<plugin>
+			  <groupId>org.codehaus.mojo</groupId>
+			  <artifactId>exec-maven-plugin</artifactId> 
+			  <version>1.2.1</version>
+			  <executions> 
+				<execution> 
+				<phase>generate-sources</phase> 
+				<goals> 
+					<goal>java</goal> 
+				</goals> 
+				<configuration> 
+					<classpathScope>compile</classpathScope> 
+					<mainClass>com.vaadin.sass.SassCompiler</mainClass> 
+					<arguments> 
+					<argument>src/main/webapp/VAADIN/themes/dashboard/styles.scss</argument> 
+					<argument>src/main/webapp/VAADIN/themes/dashboard/styles.css</argument> 
+				</arguments> 
+				</configuration> 
+			</execution> 
+		</executions>
+		</plugin>
 
 
 			<!-- Compile widget set -->
@@ -287,7 +303,7 @@
 		<dependency>
 			<groupId>org.vaadin.addon</groupId>
 			<artifactId>easyuploads</artifactId>
-			<version>7.0.3-SNAPSHOT</version>
+			<version>7.2.2</version>
 		</dependency>
 
 
@@ -345,6 +361,10 @@
 			<id>www.dcm4che.org</id>
 			<name>dcm4che Repository</name>
 			<url>http://www.dcm4che.org/maven2</url>
+		</repository>
+		<repository>
+		   <id>vaadin-addons</id>
+		   <url>http://maven.vaadin.com/vaadin-addons</url>
 		</repository>
 	</repositories>
 
