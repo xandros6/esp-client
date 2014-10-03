@@ -20,8 +20,6 @@ public abstract class EcosystemServiceIndicator_ {
 
     public static volatile SingularAttribute<EcosystemServiceIndicator, Study> study;
     
-    public static volatile SingularAttribute<EcosystemServiceIndicator, FileType> fileType;
-
     public static volatile SingularAttribute<EcosystemServiceIndicator, Status> status;
 
     public static volatile SingularAttribute<EcosystemServiceIndicator, StudyObjectiveMet> studyObjectiveMet;

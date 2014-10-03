@@ -8,11 +8,14 @@ import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.model.ZipParameters;
 
+import org.geotools.factory.Hints;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.referencing.CRS;
+import org.geotools.referencing.ReferencingFactoryFinder;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
+import org.opengis.referencing.crs.CRSAuthorityFactory;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.TransformException;
 
@@ -22,13 +25,11 @@ public class PublisherUtils {
     
     private static CoordinateReferenceSystem WGS84_CRS = null;
     
-    static {
-        System.setProperty("org.geotools.referencing.forceXY", "true");
-    }
-    
     protected static CoordinateReferenceSystem getWgs84Crs() throws NoSuchAuthorityCodeException, FactoryException {
         if(WGS84_CRS == null) {
-            WGS84_CRS = CRS.decode("EPSG:4326");
+            Hints hints = new Hints(Hints.FORCE_LONGITUDE_FIRST_AXIS_ORDER, Boolean.TRUE);
+            CRSAuthorityFactory factory = ReferencingFactoryFinder.getCRSAuthorityFactory("EPSG", hints);
+            WGS84_CRS = factory.createCoordinateReferenceSystem("EPSG:4326");
         }
         return WGS84_CRS;
     }

@@ -2,7 +2,7 @@ package org.esp.publisher;
 
 import java.io.File;
 
-import org.esp.domain.blueprint.FileType;
+import org.esp.domain.blueprint.SpatialDataType;
 import org.vaadin.easyuploads.UploadField;
 
 import com.google.common.net.MediaType;
@@ -60,7 +60,7 @@ public class ESPClientUploadField extends UploadField {
         
     }
 
-    public void updateFileType(FileType fileType) {
-        setCaption(String.format(UPLOAD_MESSAGE, fileType.getLabel()));
+    public void updateSpatialDataType(SpatialDataType spatialDataType) {
+        setCaption(String.format(UPLOAD_MESSAGE, spatialDataType.getLabel()));
     }
 }

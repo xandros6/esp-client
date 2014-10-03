@@ -1,5 +1,11 @@
 package org.esp.publisher;
 
+/**
+ * Exception thrown when there are problems publishing a spatial data file.
+ * 
+ * @author mauro.bartolomeoli@geo-solutions.it
+ *
+ */
 public class PublishException extends Exception {
 
     /**

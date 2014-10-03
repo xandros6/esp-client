@@ -2,22 +2,22 @@ package org.esp.publisher;
 
 import java.awt.image.RenderedImage;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import javax.media.jai.ImageLayout;
 import javax.media.jai.RenderedOp;
 import javax.media.jai.operator.ExtremaDescriptor;
 
+import org.esp.domain.publisher.ColourMap;
 import org.esp.publisher.utils.PublisherUtils;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.data.DataSourceException;
 import org.geotools.gce.geotiff.GeoTiffReader;
 import org.geotools.geometry.GeneralEnvelope;
 import org.geotools.geometry.jts.ReferencedEnvelope;
-import org.geotools.referencing.CRS;
 import org.opengis.geometry.DirectPosition;
 import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.ReferenceIdentifier;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.TransformException;
 
@@ -28,12 +28,12 @@ import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.Polygon;
 
 /**
- * Quick refactor to extract tiff processing for a copy paste job
+ * GeoTiff file publisher module.
  * 
- * @author Will Temperley
- * 
+ * @author mauro.bartolomeoli@geo-solutions.it
+ *
  */
-public class TiffPublisher extends AbstractFilePublisher {
+public class GeoTiffPublisher extends AbstractFilePublisher {
 
 
     static {
@@ -41,15 +41,15 @@ public class TiffPublisher extends AbstractFilePublisher {
     }
 
     @Inject
-    public TiffPublisher(GeoserverRestApi gsr) {
+    public GeoTiffPublisher(GeoserverRestApi gsr) {
         super(gsr);
     }
 
     @Override
-    protected PublishedFileMeta createMetadata(File tifFile, String layerName)
+    protected PublishedFileMetadata createMetadata(File tifFile, String layerName)
             throws PublishException, UnknownCRSException {
         
-        TiffMeta surface = new TiffMeta();;
+        GeoTiffMetadata surface = new GeoTiffMetadata();;
         GeoTiffReader gtr = null;
         
         surface.setFile(tifFile);
@@ -57,9 +57,6 @@ public class TiffPublisher extends AbstractFilePublisher {
             gtr = new GeoTiffReader(tifFile);
             CoordinateReferenceSystem crs = gtr.getCoordinateReferenceSystem();
             setCrs(surface, crs);
-
-            //
-            extremaOp(surface, gtr.read(null));
 
             /*
              * Build the envelope and set to WGS84
@@ -101,7 +98,7 @@ public class TiffPublisher extends AbstractFilePublisher {
             try {
                 int nDims = gridCoverage2D.getNumSampleDimensions();
                 surface.setNumSampleDimensions(nDims);
-
+                // calculate min and max from raster data
                 extremaOp(surface, gridCoverage2D);
 
             } finally {
@@ -122,7 +119,7 @@ public class TiffPublisher extends AbstractFilePublisher {
         return surface;
     }
 
-    private void extremaOp(TiffMeta surface, GridCoverage2D gridCoverage2D) {
+    private void extremaOp(GeoTiffMetadata surface, GridCoverage2D gridCoverage2D) {
         double min = Double.MAX_VALUE;
         double max = Double.MIN_VALUE;
 
@@ -140,9 +137,26 @@ public class TiffPublisher extends AbstractFilePublisher {
         surface.setMinVal(min);
     }
 
+    
+    
     @Override
-    public boolean publishLayer(String layerName, PublishedFileMeta metadata) {
-        return true;
+    public String createStyle(PublishedFileMetadata metadata, String layerName,
+            String styleTemplate, ColourMap colourMap) throws PublishException {
+        if (((GeoTiffMetadata)metadata).getNumSampleDimensions() == 3) {
+            return "raster";
+        }
+        return super.createStyle(metadata, layerName, styleTemplate, colourMap);
+    }
+
+    @Override
+    public boolean createLayer(String layerName, String styleName, PublishedFileMetadata metadata) throws PublishException {
+        try {
+            return gsr.publishTiff(metadata.getFile(), metadata.getSrid(), layerName, styleName);
+        } catch (FileNotFoundException e) {
+            throw new PublishException("File to publish not found", e);
+        } catch (IllegalArgumentException e) {
+            throw new PublishException("File to publish not valid", e);
+        }
     }
 
 }

@@ -98,7 +98,7 @@ public class ESIEditorView extends VerticalLayout implements
                     if(fieldGroupMeta.getLabel() != ESIEditor.THE_ECOSYSTEM_SERVICE && field.isVisible()) {
                         componentsToToggle.add(field);
                     }
-                    if(field.getCaption().equals(ESIEditor.FILE_TYPE))  {
+                    if(field.getCaption().equals(ESIEditor.SPATIAL_DATA_TYPE))  {
                         componentsToHide.add(field);
                     }
                 }

@@ -2,7 +2,13 @@ package org.esp.publisher;
 
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
-public class TiffMeta extends PublishedFileMeta {
+/**
+ * Metadata class for uploaded GeoTiff files.
+ * 
+ * @author mauro.bartolomeoli@geo-solutions.it
+ *
+ */
+public class GeoTiffMetadata extends PublishedFileMetadata {
 
     private Double pixelSizeY;
 

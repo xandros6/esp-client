@@ -4,7 +4,7 @@ import it.jrc.persist.Dao;
 
 import java.io.File;
 
-import org.esp.publisher.ShapefileMeta;
+import org.esp.publisher.ShapefileMetadata;
 import org.esp.publisher.ShapefilePublisher;
 import org.esp.publisher.UnknownCRSException;
 import org.junit.After;
@@ -43,7 +43,7 @@ public class ShapefileProcessingTests {
 
         ShapefilePublisher tme = new ShapefilePublisher(null);
 
-        ShapefileMeta surface = (ShapefileMeta)tme.extractMetadata(shapeFile, "aa");
+        ShapefileMetadata surface = (ShapefileMetadata)tme.extractMetadata(shapeFile, "aa");
 
         Assert.assertTrue(surface.getSrid().equals("EPSG:4326"));
     }

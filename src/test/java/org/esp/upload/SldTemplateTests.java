@@ -1,6 +1,5 @@
 package org.esp.upload;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -12,8 +11,14 @@ import java.util.List;
 import java.util.Map;
 
 import org.esp.domain.publisher.ColourMapEntry;
+import org.geotools.factory.Hints;
+import org.geotools.referencing.ReferencingFactoryFinder;
 import org.junit.Before;
 import org.junit.Test;
+import org.opengis.referencing.FactoryException;
+import org.opengis.referencing.NoSuchAuthorityCodeException;
+import org.opengis.referencing.crs.CRSAuthorityFactory;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import freemarker.template.Configuration;
 import freemarker.template.DefaultObjectWrapper;
@@ -65,4 +70,5 @@ public class SldTemplateTests {
         assertTrue(sldBody.contains("<sld:CssParameter name=\"fill\">#000000</sld:CssParameter>"));
         assertTrue(sldBody.contains("<sld:CssParameter name=\"fill\">#ff0000</sld:CssParameter>"));
     }
+    
 }

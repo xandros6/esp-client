@@ -14,12 +14,17 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
-public abstract class AbstractFilePublisher implements FilePublisher {
+/**
+ * Base spatial data file publisher functionality.
+ * 
+ * @author mauro.bartolomeoli@geo-solutions.it
+ *
+ */
+public abstract class AbstractFilePublisher implements SpatialDataPublisher {
 
     protected GeoserverRestApi gsr;
     
     private Logger logger = LoggerFactory.getLogger(AbstractFilePublisher.class);
-    
     
     
     public AbstractFilePublisher(GeoserverRestApi gsr) {
@@ -28,13 +33,56 @@ public abstract class AbstractFilePublisher implements FilePublisher {
     }
 
     @Override
-    public PublishedFileMeta extractMetadata(File file, String layerName) throws PublishException,
+    public PublishedFileMetadata extractMetadata(File file, String layerName) throws PublishException,
             UnknownCRSException {
         Preconditions.checkArgument(file != null, "File is null.");
         return  createMetadata(file, layerName);
     }
+    
+    /**
+     * Fills metadata properties object reading the given file.
+     * 
+     * @param file
+     * @param layerName
+     * @return
+     * @throws PublishException
+     * @throws UnknownCRSException
+     */
+    protected abstract PublishedFileMetadata createMetadata(File file, String layerName)
+            throws PublishException, UnknownCRSException;
 
-    protected void setCrs(PublishedFileMeta metadata, CoordinateReferenceSystem crs)
+
+    
+    /**
+     * Creates and publish the new layer, with the given name.
+     * 
+     */
+    public abstract boolean createLayer(String layerName, String styleName,
+            PublishedFileMetadata metadata) throws PublishException;
+
+    /**
+     * Creates and publish a new style for the layer.
+     */
+    public String createStyle(PublishedFileMetadata metadata, String layerName,
+            String styleTemplate, ColourMap colourMap) throws PublishException {
+        boolean stylePublished = gsr.publishStyle(layerName, getAttributeName(metadata),
+                styleTemplate, getColourMapEntries(colourMap));
+        logger.info("Style published: " + stylePublished);
+        if(stylePublished) {
+            return layerName;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Applies the given crs to the file metadata object.
+     * 
+     * @param metadata
+     * @param crs
+     * @throws UnknownCRSException
+     */
+    protected void setCrs(PublishedFileMetadata metadata, CoordinateReferenceSystem crs)
             throws UnknownCRSException {
         
         ReferenceIdentifier name = crs.getName();
@@ -57,23 +105,26 @@ public abstract class AbstractFilePublisher implements FilePublisher {
         }
     }
     
-    public abstract boolean publishLayer(String layerName, PublishedFileMeta metadata);
 
-    public boolean publishStyle(PublishedFileMeta metadata, String layerName, String styleTemplate, ColourMap colourMap) {
-        boolean stylePublished = gsr.publishStyle(layerName, getAttributeName(metadata), styleTemplate, getColourMapEntries(colourMap));
-        logger.info("Style published: " + stylePublished);
-        return stylePublished;
-    }
-
+    /**
+     * Extracts (and eventually preprocess) a set of colour map entries from the given colour map
+     * to be used to create a new SLD style.
+     * 
+     * @param colourMap
+     * @return
+     */
     protected List<ColourMapEntry> getColourMapEntries(ColourMap colourMap) {
         return colourMap.getColourMapEntries();
     }
 
-    protected String getAttributeName(PublishedFileMeta metadata) {
+    /**
+     * Returns the name of the attribute (if defined) to be styled for the published layer.
+     * 
+     * @param metadata
+     * @return
+     */
+    protected String getAttributeName(PublishedFileMetadata metadata) {
         return "";
     }
-
-    protected abstract PublishedFileMeta createMetadata(File file, String layerName) throws PublishException, UnknownCRSException;
-
-
+    
 }

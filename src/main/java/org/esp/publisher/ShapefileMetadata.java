@@ -3,14 +3,20 @@ package org.esp.publisher;
 import java.util.List;
 
 
-public class ShapefileMeta extends PublishedFileMeta {
+/**
+ * Metadata class for uploaded shapefiles.
+ * 
+ * @author mauro.bartolomeoli@geo-solutions.it
+ *
+ */
+public class ShapefileMetadata extends PublishedFileMetadata {
 
     String attributeName;
     
     List<String> attributes;
 
     /**
-     * Sets attributeName for simple themas.
+     * Sets attribute name to use for simple themas.
      * 
      * @param attributeName
      */
@@ -22,6 +28,11 @@ public class ShapefileMeta extends PublishedFileMeta {
         return attributeName;
     }
     
+    /**
+     * Sets list of available attributes.
+     * 
+     * @param attributes
+     */
     public void setAttributes(List<String> attributes) {
         this.attributes = attributes;
     }

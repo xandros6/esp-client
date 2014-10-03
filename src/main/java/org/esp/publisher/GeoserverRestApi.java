@@ -4,6 +4,9 @@ import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import it.geosolutions.geoserver.rest.GeoServerRESTPublisher;
+import it.geosolutions.geoserver.rest.GeoServerRESTReader;
+import it.geosolutions.geoserver.rest.decoder.RESTLayer;
+import it.geosolutions.geoserver.rest.decoder.RESTResource;
 import it.geosolutions.geoserver.rest.encoder.GSLayerEncoder;
 import it.geosolutions.geoserver.rest.encoder.GSResourceEncoder.ProjectionPolicy;
 import it.jrc.persist.Dao;
@@ -12,13 +15,18 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import org.esp.domain.blueprint.FileType;
+import org.apache.commons.io.IOUtils;
 import org.esp.domain.publisher.ColourMapEntry;
+import org.geotools.data.ows.HTTPResponse;
+import org.geotools.data.ows.SimpleHttpClient;
+import org.geotools.ows.ServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,8 +38,14 @@ public class GeoserverRestApi {
     private String workspace;
 
     private GeoServerRESTPublisher publisher;
-
+    
+    private GeoServerRESTReader reader;
+    
     private Configuration configuration;
+    
+    private static Pattern searchAggregate = Pattern.compile("^.*<AggregationResults><.*?>([0-9.E\\-]+)</.*?></AggregationResults>.*$",java.util.regex.Pattern.DOTALL);
+    
+    String wpsUrl;
     
     private Logger logger = LoggerFactory.getLogger(GeoserverRestApi.class);
 
@@ -46,12 +60,18 @@ public class GeoserverRestApi {
             @Named("gs_rest_url") String restUrl,
             @Named("gs_workspace") String workspace,
             @Named("gs_user") String restUser,
-            @Named("gs_password") String restPassword, Dao dao)
-            throws MalformedURLException {
+            @Named("gs_password") String restPassword,
+            @Named("gs_wps_url") String wpsUrl,
+            Dao dao)
+            throws ServiceException, IOException {
 
         this.dao = dao;
         this.publisher = new GeoServerRESTPublisher(restUrl, restUser,
                 restPassword);
+        this.reader = new GeoServerRESTReader(restUrl, restUser, restPassword);
+        
+        this.wpsUrl = wpsUrl;
+        
         this.configuration = config;
         this.workspace = workspace;
 
@@ -166,6 +186,61 @@ public class GeoserverRestApi {
         } catch (TemplateException e) {
             e.printStackTrace();
         } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public RESTResource getLayerInfo(String layerName) {
+        RESTLayer layer = reader.getLayer(layerName);
+        if(layer != null) {
+            return reader.getResource(layer);
+        }
+        return null;
+    }
+
+    public double[] getExtrema(String layerName, String attributeName) {
+        Template template;
+        try {
+            template = configuration.getTemplate("Aggregate.ftl");
+       
+        
+            Map<String, Object> root = new HashMap<String, Object>();
+    
+            root.put("layerName", workspace+":"+layerName);
+            root.put("attributeName", attributeName);
+            root.put("functionName", "Max");
+    
+            StringWriter sw = new StringWriter();
+            template.process(root, sw);
+    
+            String wpsRequest = sw.toString();
+            SimpleHttpClient httpClient = new SimpleHttpClient();
+            HTTPResponse response = httpClient.post(new URL(wpsUrl), IOUtils.toInputStream(wpsRequest), "application/xml");
+            String wpsResponse = IOUtils.toString(response.getResponseStream());
+            double max = 0.0;
+            double min = 0.0;
+            Matcher matcher = searchAggregate.matcher(wpsResponse);
+            if(matcher.find()) {
+                max = Double.parseDouble(matcher.group(1));
+            }
+            
+            root.put("functionName", "Min");
+            sw = new StringWriter();
+            template.process(root, sw);
+            wpsRequest = sw.toString();
+            
+            response = httpClient.post(new URL(wpsUrl), IOUtils.toInputStream(wpsRequest), "application/xml");
+            wpsResponse = IOUtils.toString(response.getResponseStream());
+            matcher = searchAggregate.matcher(wpsResponse);
+            if(matcher.find()) {
+                min = Double.parseDouble(matcher.group(1));
+            }
+            
+            return new double[] {min, max};
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (TemplateException e) {
             e.printStackTrace();
         }
         return null;

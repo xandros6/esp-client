@@ -72,19 +72,6 @@ public class EcosystemServiceIndicator implements HasRole {
         this.study = study;
     }
 
-    private FileType fileType;
-    
-    @NotNull
-    @ManyToOne
-    @JoinColumn(name = "filetype_id")
-    public FileType getFileType() {
-        return fileType;
-    }
-
-    public void setFileType(FileType fileType) {
-        this.fileType = fileType;
-    }
-    
     private StudyObjectiveMet studyObjectiveMet;
 
     @ManyToOne
@@ -290,6 +277,7 @@ public class EcosystemServiceIndicator implements HasRole {
 
     private SpatialDataType spatialDataType;
 
+    @NotNull
     @ManyToOne
     @JoinColumn(name="spatial_data_type_id")
     public SpatialDataType getSpatialDataType() {

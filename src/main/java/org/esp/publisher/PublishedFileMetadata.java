@@ -1,14 +1,18 @@
 package org.esp.publisher;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import com.vividsolutions.jts.geom.Polygon;
 
-public class PublishedFileMeta {
+/**
+ * Base class for uploaded spatial data files metadata.
+ * 
+ * @author mauro.bartolomeoli@geo-solutions.it
+ *
+ */
+public abstract class PublishedFileMetadata {
     private Double maxVal;
     
     private File file;

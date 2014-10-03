@@ -7,8 +7,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 
 import org.esp.publisher.GeoserverRestApi;
-import org.esp.publisher.TiffMeta;
-import org.esp.publisher.TiffPublisher;
+import org.esp.publisher.GeoTiffMetadata;
+import org.esp.publisher.GeoTiffPublisher;
 import org.esp.publisher.UnknownCRSException;
 import org.junit.After;
 import org.junit.Assert;
@@ -45,9 +45,9 @@ public class TiffProcessingTests {
         File tifFile = new File("src/test/data/pollination1.tif");
 
 
-        TiffPublisher tme = new TiffPublisher(null);
+        GeoTiffPublisher tme = new GeoTiffPublisher(null);
 
-        TiffMeta surface = (TiffMeta)tme.extractMetadata(tifFile, "aa");
+        GeoTiffMetadata surface = (GeoTiffMetadata)tme.extractMetadata(tifFile, "aa");
 
         Assert.assertTrue(surface.getPixelSizeX() == 1000);
         Assert.assertTrue(surface.getPixelSizeY() == 1000);
@@ -62,9 +62,9 @@ public class TiffProcessingTests {
         File tifFile = new File("src/test/data/cropland.tif");
 
 
-        TiffPublisher tme = new TiffPublisher(null);
+        GeoTiffPublisher tme = new GeoTiffPublisher(null);
 
-        TiffMeta surface = (TiffMeta)tme.extractMetadata(tifFile, "aa");
+        GeoTiffMetadata surface = (GeoTiffMetadata)tme.extractMetadata(tifFile, "aa");
 
         assertTrue(surface.getNumSampleDimensions() == 3);
 //        Assert.assertTrue(surface.getPixelSizeY() == 1000);

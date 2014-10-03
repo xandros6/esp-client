@@ -12,7 +12,6 @@ import it.jrc.persist.Dao;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -26,7 +25,6 @@ import org.esp.domain.blueprint.DataSource;
 import org.esp.domain.blueprint.DataSource_;
 import org.esp.domain.blueprint.EcosystemServiceIndicator;
 import org.esp.domain.blueprint.EcosystemServiceIndicator_;
-import org.esp.domain.blueprint.FileType;
 import org.esp.domain.blueprint.Indicator_;
 import org.esp.domain.blueprint.QuantificationUnit_;
 import org.esp.domain.blueprint.SpatialDataType;
@@ -35,28 +33,25 @@ import org.esp.domain.blueprint.TemporalUnit_;
 import org.esp.domain.publisher.ColourMap;
 import org.esp.domain.publisher.ColourMapEntry;
 import org.esp.publisher.ESPClientUploadField;
+import org.esp.publisher.GeoTiffMetadata;
+import org.esp.publisher.GeoTiffPublisher;
 import org.esp.publisher.GeoserverRestApi;
-import org.esp.publisher.FilePublisher;
 import org.esp.publisher.PublishException;
-import org.esp.publisher.PublishedFileMeta;
-import org.esp.publisher.ShapefileMeta;
+import org.esp.publisher.PublishedFileMetadata;
+import org.esp.publisher.ShapefileMetadata;
 import org.esp.publisher.ShapefilePublisher;
-import org.esp.publisher.TiffMeta;
-import org.esp.publisher.TiffPublisher;
+import org.esp.publisher.SpatialDataPublisher;
 import org.esp.publisher.UnknownCRSException;
 import org.esp.publisher.colours.ColourMapFieldGroup;
 import org.esp.publisher.colours.ColourMapFieldGroup.ColourMapAttributeChangeListener;
 import org.esp.publisher.colours.ColourMapFieldGroup.ColourMapChangeListener;
 import org.esp.publisher.ui.ViewModule;
-import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.operation.TransformException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vaadin.addon.leaflet.LMap;
 import org.vaadin.addon.leaflet.util.CRSTranslator;
 
 import com.google.inject.Inject;
-import com.sun.org.apache.bcel.internal.generic.UnconditionalBranch;
 import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.data.util.converter.Converter;
@@ -77,17 +72,17 @@ import com.vividsolutions.jts.geom.Polygon;
 public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
     public static final String THE_ECOSYSTEM_SERVICE = "The Ecosystem Service";
-    public static final String FILE_TYPE = "File Type";
+    public static final String SPATIAL_DATA_TYPE = "Spatial Data Type";
 
     private Logger logger = LoggerFactory.getLogger(ESIEditor.class);
 
     private PolygonField envelopeField;
 
-    private TiffPublisher tme;
+    private GeoTiffPublisher tme;
 
     private ColourMapFieldGroup colourMapFieldGroup;
     
-    private ComboBox fileTypeField;
+    private ComboBox spatialDataTypeField;
 
     private GeoserverRestApi gsr;
 
@@ -103,7 +98,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
     
     private ESPClientUploadField uploadField;
     
-    private Map<Long, FilePublisher> filePublishers = new HashMap<Long, FilePublisher>();
+    private Map<Long, SpatialDataPublisher> filePublishers = new HashMap<Long, SpatialDataPublisher>();
     private static Map<Long, String> templates = new HashMap<Long, String>();
     
     static {
@@ -115,11 +110,11 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
     @Inject
     public ESIEditor(Dao dao, RoleManager roleManager,
-            TiffPublisher tme, GeoserverRestApi gsr) {
+            GeoTiffPublisher tme, GeoserverRestApi gsr) {
 
         super(EcosystemServiceIndicator.class, dao);
 
-        filePublishers.put(1l, new TiffPublisher(gsr));
+        filePublishers.put(1l, new GeoTiffPublisher(gsr));
         filePublishers.put(2l, new ShapefilePublisher(gsr));
         
         this.tme = tme;
@@ -151,7 +146,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         }
 
         esiEditorView.setNewStatus(false);
-        uploadField.updateFileType(entity.getFileType());
+        uploadField.updateSpatialDataType(entity.getSpatialDataType());
         super.doUpdate(entity);
     }
 
@@ -166,14 +161,12 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
     @Override
     protected void doPreCommit(EcosystemServiceIndicator entity) {
         entity.setRole(roleManager.getRole());
-        //hack!
-        entity.setSpatialDataType(dao.find(SpatialDataType.class, 1l));
     }
 
     @Override
     protected void doPostCommit(EcosystemServiceIndicator entity) {
         esiEditorView.setNewStatus(false);
-        uploadField.updateFileType(entity.getFileType());
+        uploadField.updateSpatialDataType(entity.getSpatialDataType());
     }
 
     private void buildPublishForm() {
@@ -193,7 +186,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         ff.addField(EcosystemServiceIndicator_.study, studyField);
         
         
-        fileTypeField = (ComboBox)ff.addField(EcosystemServiceIndicator_.fileType);
+        spatialDataTypeField = (ComboBox)ff.addField(EcosystemServiceIndicator_.spatialDataType);
         addFieldGroup(THE_ECOSYSTEM_SERVICE);
 
         /*
@@ -237,8 +230,8 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
 
                     // Is it published yet?
-                    FileType fileType = (FileType)fileTypeField.getValue();
-                    gsr.updateStyle(getLayerName(), "", templates.get(fileType.getId()), colourMapEntries);
+                    SpatialDataType spatialDataType = (SpatialDataType)spatialDataTypeField.getValue();
+                    gsr.updateStyle(getLayerName(), "", templates.get(spatialDataType.getId()), colourMapEntries);
 
 
                     firePublishEvent();
@@ -252,30 +245,12 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
             @Override
             public void onValueChanged(String attributeName) {
-                // TODO Auto-generated method stub
-                
+                updateAttributeName(attributeName);
             }
             
         }
 
-            /*@Override
-            public void onValueChanged(ColourMap colourMap) {
-
-                List<ColourMapEntry> colourMapEntries = colourMap
-                        .getColourMapEntries();
-
-                if (colourMapFieldGroup.isValid() && getLayerName() != null) {
-
-
-                    // Is it published yet?
-                    FileType fileType = (FileType)fileTypeField.getValue();
-                    gsr.updateStyle(getLayerName(), templates.get(fileType.getId()), colourMapEntries);
-
-
-                    firePublishEvent();
-                }
-
-            }*/
+            
 
         );
 
@@ -296,6 +271,26 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         addFieldGroup("Geospatial data");
     }
 
+
+    protected void updateAttributeName(String attributeName) {
+        EcosystemServiceIndicator entity = getEntity();
+        if(entity != null) {
+            String layerName = entity.getLayerName();
+            if(layerName != null) {
+                double[] extrema = gsr.getExtrema(layerName, attributeName);
+                Double minVal = extrema[0];
+                Double maxVal = extrema[0];
+                if (minVal < 0) {
+                    colourMapFieldGroup.setMinValue("0");
+                } else {
+                    colourMapFieldGroup.setMinValue(minVal.toString());
+                }
+                colourMapFieldGroup.setMaxValue(maxVal.toString());
+            }
+        } else {
+            showError("No entity available");
+        }
+    }
 
     private void buildMetaForm() {
 
@@ -479,7 +474,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
      * @param f
      */
     private void publishFile(File f) {
-        FileType fileType = (FileType)fileTypeField.getValue();
+        SpatialDataType spatialDataType = (SpatialDataType)spatialDataTypeField.getValue();
         
         String layerName = getLayerName();
         // new file
@@ -487,11 +482,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
             layerName = generateLayerName();
         }
         try {
-            PublishedFileMeta meta = publishFile(f, layerName, fileType);
-            if(meta == null) {
-                return;
-            }
-            //publishFile(meta.getFile(), layerName, fileType, meta);
+            publishFile(f, layerName, spatialDataType);
         } catch (UnknownCRSException e) {
             showError("Error extracting  CRS: " + e.getMessage());
         } catch (PublishException e) {
@@ -503,11 +494,32 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
     
     
 
-    private PublishedFileMeta publishFile(File f, String layerName, FileType fileType) throws UnknownCRSException, PublishException {
-        Long fileTypeId = fileType.getId();
-        FilePublisher filePublisher = filePublishers.get(fileTypeId);
-        PublishedFileMeta metadata = filePublisher.extractMetadata(f ,layerName);
+    private void publishFile(File f, String layerName, SpatialDataType spatialDataType) throws UnknownCRSException, PublishException {
+        Long spatialDataTypeId = spatialDataType.getId();
+        SpatialDataPublisher filePublisher = filePublishers.get(spatialDataTypeId);
+        PublishedFileMetadata metadata = filePublisher.extractMetadata(f ,layerName);
         
+        updateUIAfterPublish(metadata);
+        
+        if (getLayerName() == null) {
+            setLayerName(layerName);
+            String styleName = filePublisher.createStyle(metadata, layerName, templates.get(spatialDataTypeId), colourMapFieldGroup.getColourMap());
+            if(styleName != null) {
+                if(filePublisher.createLayer(layerName, styleName, metadata)) {
+                    boolean saved = commitForm(false);
+                    logger.info("File saved: " + saved);
+
+                    firePublishEvent();
+                }
+            } else {
+                throw new PublishException("Error creating style");
+            }
+        } else {
+            // TODO: update
+        }
+    }
+
+    private void updateUIAfterPublish(PublishedFileMetadata metadata) {
         Double minVal = metadata.getMinVal();
 
         // A bit hacky but there's no good way to determine real no-data
@@ -526,25 +538,10 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
         envelopeField.setValue((LinearRing) metadata.getEnvelope().getBoundary());
         
-        if(metadata instanceof ShapefileMeta) {
-            ShapefileMeta shapefileMeta = (ShapefileMeta) metadata;
+        if(metadata instanceof ShapefileMetadata) {
+            ShapefileMetadata shapefileMeta = (ShapefileMetadata) metadata;
             colourMapFieldGroup.setAttributes(shapefileMeta.getAttributes(), shapefileMeta.getAttributeName());
         }
-        
-        if (getLayerName() == null) {
-            setLayerName(layerName);
-            if(filePublisher.publishStyle(metadata, layerName, templates.get(fileTypeId), colourMapFieldGroup.getColourMap())) {
-                if(filePublisher.publishLayer(layerName, metadata)) {
-                    boolean saved = commitForm(false);
-                    logger.info("File saved: " + saved);
-
-                    firePublishEvent();
-                }
-            }
-        } else {
-            
-        }
-        return metadata;
     }
 
     
@@ -553,7 +550,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
      * 
      * @param f
      */
-    private void publishFile(File f, String layerName, FileType fileType, PublishedFileMeta meta) {
+    private void publishFile(File f, String layerName, SpatialDataType spatialDataType, PublishedFileMetadata meta) {
 
         ColourMap cm = colourMapFieldGroup.getColourMap();
         if (cm == null) {
@@ -573,11 +570,11 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         if (getLayerName() == null) {
             setLayerName(layerName);
 
-            boolean stylePublished = gsr.publishStyle(layerName, "", templates.get(fileType.getId()), cm.getColourMapEntries());
+            boolean stylePublished = gsr.publishStyle(layerName, "", templates.get(spatialDataType.getId()), cm.getColourMapEntries());
             logger.info("Style published: " + stylePublished);
             
-            if(meta instanceof TiffMeta) {
-                boolean tiffPublished = publishTiff(cm, meta.getFile(), (TiffMeta)meta);
+            if(meta instanceof GeoTiffMetadata) {
+                boolean tiffPublished = publishTiff(cm, meta.getFile(), (GeoTiffMetadata)meta);
 
                 logger.info("Tiff published: " + tiffPublished);
 
@@ -587,8 +584,8 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
                     firePublishEvent();
                 }
-            } else if(meta instanceof ShapefileMeta) {
-                boolean shapePublished = publishShapefile(cm, f, (ShapefileMeta)meta);
+            } else if(meta instanceof ShapefileMetadata) {
+                boolean shapePublished = publishShapefile(cm, f, (ShapefileMetadata)meta);
 
                 logger.info("Shapefile published: " + shapePublished);
 
@@ -668,7 +665,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
     }*/
     
 
-    private boolean publishShapefile(ColourMap cm, File f, ShapefileMeta meta) {
+    private boolean publishShapefile(ColourMap cm, File f, ShapefileMetadata meta) {
 
         EcosystemServiceIndicator shapeFile = getEntity();
         try {
@@ -687,7 +684,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         return false;
     }
 
-    private boolean publishTiff(ColourMap cm, File f, TiffMeta tm) {
+    private boolean publishTiff(ColourMap cm, File f, GeoTiffMetadata tm) {
 
         EcosystemServiceIndicator surface = getEntity();
         try {

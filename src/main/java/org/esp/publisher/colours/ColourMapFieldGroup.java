@@ -3,7 +3,9 @@ package org.esp.publisher.colours;
 import it.jrc.form.FieldGroup;
 import it.jrc.persist.Dao;
 
+import java.text.NumberFormat;
 import java.util.List;
+import java.util.Locale;
 
 import org.esp.domain.blueprint.EcosystemServiceIndicator;
 import org.esp.domain.blueprint.EcosystemServiceIndicator_;
@@ -18,6 +20,8 @@ import com.vaadin.data.Property;
 import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.fieldgroup.BeanFieldGroup;
 import com.vaadin.data.util.converter.StringToDoubleConverter;
+import com.vaadin.event.FieldEvents.BlurEvent;
+import com.vaadin.event.FieldEvents.BlurListener;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.GridLayout;
@@ -27,15 +31,23 @@ import com.vaadin.ui.VerticalLayout;
 public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
 
     private EditableField<ColourMap> editableCombo;
+
     private CartographicKey ck;
+
     private DoubleField minValField;
+
     private DoubleField maxValField;
-    private ComboBox attributesField; 
+
+    private ComboBox attributesField;
+
     private VerticalLayout vl;
+
     private ColourMapChangeListener listener;
+
     private ColourMapAttributeChangeListener attributeListener;
+
     private ColourMap defaultValue;
-    
+
     Logger logger = LoggerFactory.getLogger(ColourMapFieldGroup.class);
 
     public Component getContent() {
@@ -47,17 +59,15 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
         public void onValueChanged(ColourMap colourMap);
 
     }
-    
+
     public interface ColourMapAttributeChangeListener {
 
         public void onValueChanged(String attributeName);
 
     }
 
-
     /**
-     * Public visibility of {@link TextField#setInternalValue} allows value
-     * changes from code to not fire a change event.
+     * Public visibility of {@link TextField#setInternalValue} allows value changes from code to not fire a change event.
      * 
      * @author Will Temperley
      * 
@@ -67,6 +77,7 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
         public DoubleField(String caption, StringToDoubleConverter std) {
             super(caption);
             setConverter(std);
+            
         }
 
         @Override
@@ -78,9 +89,8 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
 
     public ColourMapFieldGroup(Dao dao) {
 
-        super(new BeanFieldGroup<EcosystemServiceIndicator>(
-                EcosystemServiceIndicator.class), "Styling", null);
-
+        super(new BeanFieldGroup<EcosystemServiceIndicator>(EcosystemServiceIndicator.class),
+                "Styling", null);
 
         List<ColourMap> cms = dao.all(ColourMap.class);
         defaultValue = cms.get(0);
@@ -93,13 +103,19 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
         cme.init(new ColourMapView());
         editableCombo.setEditor(cme);
 
+        StringToDoubleConverter std = new StringToDoubleConverter() {
 
-        StringToDoubleConverter std = new StringToDoubleConverter();
+            @Override
+            protected NumberFormat getFormat(Locale locale) {
+                return super.getFormat(Locale.ENGLISH);
+            }
+            
+        };
         minValField = new DoubleField("Min. value", std);
         maxValField = new DoubleField("Max. value", std);
         minValField.setImmediate(true);
         maxValField.setImmediate(true);
-        
+
         // Descriptions
         editableCombo.setDescription(dao.getFieldDescription(EcosystemServiceIndicator_.colourMap));
         minValField.setDescription(dao.getFieldDescription(EcosystemServiceIndicator_.minVal));
@@ -125,7 +141,7 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
         attributesField = new ComboBox("Attribute");
         attributesField.setVisible(false);
         vl.addComponent(attributesField);
-        
+
         // for (ColourMap colourMap : cms) {
         // cb.addItem(colourMap);
         // }
@@ -151,34 +167,32 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
                 fireValueChanged();
             }
         });
-        
-        attributesField.addValueChangeListener(new Property.ValueChangeListener() {
+
+        attributesField.addBlurListener(new BlurListener() {
+
 
             @Override
-            public void valueChange(ValueChangeEvent event) {
+            public void blur(BlurEvent event) {
                 fireAttributeValueChanged();
+                
             }
         });
 
         // Bind the fields
 
-        getFieldGroup().bind(minValField,
-                EcosystemServiceIndicator_.minVal.getName());
-        getFieldGroup().bind(maxValField,
-                EcosystemServiceIndicator_.maxVal.getName());
-        getFieldGroup()
-                .bind(editableCombo, EcosystemServiceIndicator_.colourMap.getName());
+        getFieldGroup().bind(minValField, EcosystemServiceIndicator_.minVal.getName());
+        getFieldGroup().bind(maxValField, EcosystemServiceIndicator_.maxVal.getName());
+        getFieldGroup().bind(editableCombo, EcosystemServiceIndicator_.colourMap.getName());
 
     }
-    
+
     public void setAttributes(List<String> attributes, String selectedAttribute) {
-        for(String attribute : attributes) {
+        for (String attribute : attributes) {
             attributesField.addItem(attribute);
         }
         attributesField.select(selectedAttribute);
         attributesField.setVisible(true);
     }
-    
 
     public boolean isValid() {
         if (minValField.getValue() == null) {
@@ -239,8 +253,7 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
     public void setValueChangeListener(ColourMapChangeListener listener) {
         this.listener = listener;
     }
-    
-    
+
     public void setAttributeListener(ColourMapAttributeChangeListener attributeListener) {
         this.attributeListener = attributeListener;
     }
@@ -261,10 +274,8 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
             listener.onValueChanged(cm);
         }
     }
-    
-    private void fireAttributeValueChanged() {
 
-        
+    private void fireAttributeValueChanged() {
 
         if (attributeListener != null) {
             attributeListener.onValueChanged(attributesField.getValue().toString());
@@ -280,7 +291,7 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
         setMinValue("0");
         setMaxValue("1");
         ck.setColours(defaultValue.getColourMapEntries());
-        
+
         attributesField.removeAllItems();
         attributesField.setVisible(false);
     }
