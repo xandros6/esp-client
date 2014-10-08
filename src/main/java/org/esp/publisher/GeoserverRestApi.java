@@ -5,8 +5,8 @@ import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import it.geosolutions.geoserver.rest.GeoServerRESTPublisher;
 import it.geosolutions.geoserver.rest.GeoServerRESTReader;
+import it.geosolutions.geoserver.rest.decoder.RESTFeatureType;
 import it.geosolutions.geoserver.rest.decoder.RESTLayer;
-import it.geosolutions.geoserver.rest.decoder.RESTResource;
 import it.geosolutions.geoserver.rest.encoder.GSLayerEncoder;
 import it.geosolutions.geoserver.rest.encoder.GSResourceEncoder.ProjectionPolicy;
 import it.jrc.persist.Dao;
@@ -15,7 +15,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,9 +49,15 @@ public class GeoserverRestApi {
     
     String wpsUrl;
     
+    String classifyUrl;
+    
     private Logger logger = LoggerFactory.getLogger(GeoserverRestApi.class);
+    
+    private Pattern searchRules = Pattern.compile("^\\s*<Rules>\\s*(.*?)\\s*</Rules>\\s*$",Pattern.DOTALL);
 
     Dao dao;
+    
+    SimpleHttpClient httpClient = new SimpleHttpClient();
 
     static {
         System.setProperty("com.sun.media.jai.disableMediaLib", "true");
@@ -65,6 +73,11 @@ public class GeoserverRestApi {
             Dao dao)
             throws ServiceException, IOException {
 
+        this.classifyUrl = restUrl
+                + "/rest/sldservice/"
+                + workspace
+                + ":%s/classify.xml?attribute=%s&intervals=%d&ramp=custom&startColor=0x%s&endColor=0x%s&open=true";
+        
         this.dao = dao;
         this.publisher = new GeoServerRESTPublisher(restUrl, restUser,
                 restPassword);
@@ -74,6 +87,9 @@ public class GeoserverRestApi {
         
         this.configuration = config;
         this.workspace = workspace;
+        
+        httpClient.setUser(restUser);
+        httpClient.setPassword(restPassword);
 
     }
 
@@ -139,11 +155,11 @@ public class GeoserverRestApi {
 
     }
 
-    public boolean updateStyle(String styleName, String attributeName, String templateName, List<ColourMapEntry> cmes) {
+    public boolean updateStyle(String styleName, String attributeName, String templateName, List<ColourMapEntry> cmes, String rules) {
 
         logger.info("Updating style: " + styleName);
 
-        String sldBody = buildSLDBody(styleName, attributeName, templateName, cmes);
+        String sldBody = buildSLDBody(styleName, attributeName, templateName, cmes, rules);
 
         GSLayerEncoder layer = new GSLayerEncoder();
         layer.setWmsPath("newpath");
@@ -155,17 +171,17 @@ public class GeoserverRestApi {
 
     }
     
-    public boolean publishStyle(String styleName, String attributeName, String templateName, List<ColourMapEntry> cmes) {
+    public boolean publishStyle(String styleName, String attributeName, String templateName, List<ColourMapEntry> cmes, String rules) {
 
         logger.info("Publishing style: " + styleName);
 
-        String sldBody = buildSLDBody(styleName, attributeName, templateName, cmes);
+        String sldBody = buildSLDBody(styleName, attributeName, templateName, cmes, rules);
         return publisher.publishStyle(sldBody);
 
     }
     
 
-    private String buildSLDBody(String styleName, String attributeName, String templateName, List<ColourMapEntry> cmes) {
+    private String buildSLDBody(String styleName, String attributeName, String templateName, List<ColourMapEntry> cmes, String rules) {
 
         try {
 
@@ -176,6 +192,7 @@ public class GeoserverRestApi {
             root.put("styleName", styleName);
             root.put("colourMapEntries", cmes);
             root.put("attributeName", attributeName);
+            root.put("rules", rules);
 
             StringWriter sw = new StringWriter();
             template.process(root, sw);
@@ -191,10 +208,10 @@ public class GeoserverRestApi {
         return null;
     }
 
-    public RESTResource getLayerInfo(String layerName) {
+    public RESTFeatureType getLayerInfo(String layerName) {
         RESTLayer layer = reader.getLayer(layerName);
         if(layer != null) {
-            return reader.getResource(layer);
+            return reader.getFeatureType(layer);
         }
         return null;
     }
@@ -244,6 +261,22 @@ public class GeoserverRestApi {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public String getClassifiedStyle(String layerName, String attributeName, String startColor,
+            String endColor, int intervals) throws MalformedURLException, IOException {
+        String sldServiceUrl = String.format(classifyUrl, layerName, attributeName, intervals, startColor, endColor);
+        HTTPResponse response = httpClient.get(new URL(sldServiceUrl));
+        try {
+            String rules = IOUtils.toString(response.getResponseStream());
+            Matcher m = searchRules.matcher(rules);
+            if(m.find()) {
+                return m.group(1);
+            }
+            throw new IOException("sldservice response is in the wrong format");
+        } finally {
+            response.dispose();
+        }
     }
 
     

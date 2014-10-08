@@ -67,6 +67,8 @@ public abstract class EcosystemServiceIndicator_ {
     public static volatile SingularAttribute<EcosystemServiceIndicator, Polygon> envelope;
 
     public static volatile SingularAttribute<EcosystemServiceIndicator, String> layerName;
+    
+    public static volatile SingularAttribute<EcosystemServiceIndicator, String> attributeName;
 
     public static volatile SingularAttribute<EcosystemServiceIndicator, String> srid;
 

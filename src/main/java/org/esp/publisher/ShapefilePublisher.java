@@ -1,5 +1,8 @@
 package org.esp.publisher;
 
+import it.geosolutions.geoserver.rest.decoder.RESTFeatureType;
+import it.geosolutions.geoserver.rest.decoder.RESTFeatureType.Attribute;
+
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -223,14 +226,65 @@ public class ShapefilePublisher extends AbstractFilePublisher {
         return gsr.publishShp(metadata.getFile(), metadata.getSrid(), layerName, styleName);
     }
 
+    
+    
+    @Override
+    public boolean updateStyle(String layerName, String attributeName, String styleTemplate,
+            ColourMap colourMap) throws PublishException {
+        if(attributeName != null) {
+            return super.updateStyle(layerName, attributeName, styleTemplate, getStyleRules(layerName, attributeName, colourMap));
+        }
+        return false;
+    }
+
+    private String getStyleRules(String layerName, String attributeName, ColourMap colourMap) throws PublishException {
+        List<ColourMapEntry> entries = colourMap.getColourMapEntries();
+        
+        String startColor = entries.get(0).getColor().getCSS().substring(1);
+        String endColor = entries.get(1).getColor().getCSS().substring(1);
+        
+        try {
+            return gsr.getClassifiedStyle(layerName, attributeName, startColor, endColor, N_INTERVALS);
+        } catch (MalformedURLException e) {
+            throw new PublishException("sldservice url misconfigured", e);
+        } catch (IOException e) {
+            throw new PublishException("Error retrieving new style from sldservice", e);
+        }
+    }
+
+    /**
+     * Returns the list of supported attributes for the given layerName.
+     * 
+     * @param layerName
+     * @return
+     * @throws PublishException 
+     */
+    @Override
+    public List<String> getAttributes(String layerName) throws PublishException {
+        List<String> attributes = new ArrayList<String>();
+        RESTFeatureType layerInfo = gsr.getLayerInfo(layerName);
+        for(Attribute attributeInfo : layerInfo.getAttributes()) {
+            try {
+                Class<?> binding = Class.forName(attributeInfo.getBinding());
+                if(Number.class.isAssignableFrom(binding)) {
+                    attributes.add(attributeInfo.getName());
+                }
+            } catch (ClassNotFoundException e) {
+                throw new PublishException("Invalid binding: " + attributeInfo.getBinding(), e);
+            }
+        }
+        return attributes;
+    }
+    
+    
     @Override
     protected List<ColourMapEntry> getColourMapEntries(ColourMap colourMap) {
         List<ColourMapEntry> entries = colourMap.getColourMapEntries();
         List<ColourMapEntry> continuous = new ArrayList<ColourMapEntry>();
         ColourMapEntry minEntry = entries.get(0);
         ColourMapEntry maxEntry = entries.get(1);
-        double min = Math.floor(minEntry.getValue());
-        double max = Math.ceil(maxEntry.getValue());
+        double min = minEntry.getValue();
+        double max = maxEntry.getValue();
         
         int[] minColor = getColorArray(minEntry);
         int[] maxColor = getColorArray(maxEntry);

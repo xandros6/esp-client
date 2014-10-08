@@ -321,6 +321,17 @@ public class EcosystemServiceIndicator implements HasRole {
     public void setLayerName(String layerName) {
         this.layerName = layerName;
     }
+    
+    private String attributeName;
+    
+    @Column(name="attribute_name")
+    public String getAttributeName() {
+        return attributeName;
+    }
+
+    public void setAttributeName(String attributeName) {
+        this.attributeName = attributeName;
+    }
 
     private String srid;
 

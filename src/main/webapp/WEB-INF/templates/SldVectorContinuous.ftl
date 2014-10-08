@@ -13,16 +13,29 @@
         <#list colourMapEntries as colourMapEntry>
 	        <sld:Rule>
 	          <ogc:Filter>
-	            <ogc:And>
-	              <ogc:PropertyIsGreaterThan>
+	          <ogc:And>
+	          <#if colourMapEntry_has_next>
+	            
+	              <ogc:PropertyIsGreaterThanOrEqualTo>
 	                <ogc:PropertyName>${attributeName}</ogc:PropertyName>
 	                <ogc:Literal>${colourMapEntry.getFrom()?c}</ogc:Literal>
-	              </ogc:PropertyIsGreaterThan>
-	              <ogc:PropertyIsLessThanOrEqualTo>
+	              </ogc:PropertyIsGreaterThanOrEqualTo>
+	              <ogc:PropertyIsLessThan>
 	                <ogc:PropertyName>${attributeName}</ogc:PropertyName>
 	                <ogc:Literal>${colourMapEntry.getTo()?c}</ogc:Literal>
-	              </ogc:PropertyIsLessThanOrEqualTo>
-	            </ogc:And>
+	              </ogc:PropertyIsLessThan>
+	            
+	          <#else>
+	               <ogc:PropertyIsGreaterThanOrEqualTo>
+                    <ogc:PropertyName>${attributeName}</ogc:PropertyName>
+                    <ogc:Literal>${colourMapEntry.getFrom()?c}</ogc:Literal>
+                  </ogc:PropertyIsGreaterThanOrEqualTo>
+                  <ogc:PropertyIsLessThanOrEqualTo>
+                    <ogc:PropertyName>${attributeName}</ogc:PropertyName>
+                    <ogc:Literal>${colourMapEntry.getTo()?c}</ogc:Literal>
+                  </ogc:PropertyIsLessThanOrEqualTo>
+	          </#if>
+	          </ogc:And>
 	          </ogc:Filter>
 	          <sld:PolygonSymbolizer>            
 	            <sld:Fill>
@@ -31,6 +44,7 @@
 	          </sld:PolygonSymbolizer>
 	        </sld:Rule>
         </#list>
+        ${rules}
       </FeatureTypeStyle>
     </UserStyle>
   </NamedLayer>

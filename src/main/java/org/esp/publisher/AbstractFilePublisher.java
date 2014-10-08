@@ -1,6 +1,7 @@
 package org.esp.publisher;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.esp.domain.publisher.ColourMap;
@@ -63,16 +64,49 @@ public abstract class AbstractFilePublisher implements SpatialDataPublisher {
     /**
      * Creates and publish a new style for the layer.
      */
-    public String createStyle(PublishedFileMetadata metadata, String layerName,
+    public String createStyle(PublishedFileMetadata metadata, String layerName, 
             String styleTemplate, ColourMap colourMap) throws PublishException {
-        boolean stylePublished = gsr.publishStyle(layerName, getAttributeName(metadata),
-                styleTemplate, getColourMapEntries(colourMap));
+        String attributeName = getAttributeName(metadata);
+        boolean stylePublished = gsr.publishStyle(layerName, attributeName,
+                styleTemplate, getColourMapEntries(colourMap), "");
         logger.info("Style published: " + stylePublished);
         if(stylePublished) {
             return layerName;
         } else {
             return null;
         }
+    }
+    
+    /**
+     * Updates an existing style using the given colourmap.
+     * 
+     * @param layerName
+     * @param string
+     * @param colourMap
+     */
+    public boolean updateStyle(String layerName, String attributeName, String styleTemplate, 
+            ColourMap colourMap)  throws PublishException {
+        boolean stylePublished = gsr.updateStyle(layerName, attributeName, styleTemplate, 
+                getColourMapEntries(colourMap), "");
+        logger.info("Style published: " + stylePublished);
+        
+        return stylePublished;
+    }
+    
+    /**
+     * Updates an existing style using precompiled rules.
+     * 
+     * @param layerName
+     * @param string
+     * @param rules
+     */
+    public boolean updateStyle(String layerName, String attributeName, String styleTemplate, 
+            String rules) throws PublishException {
+        boolean stylePublished = gsr.updateStyle(layerName, attributeName, styleTemplate, 
+                new ArrayList<ColourMapEntry>(), rules) ;
+        logger.info("Style published: " + stylePublished);
+        
+        return stylePublished;
     }
 
     /**
@@ -126,5 +160,17 @@ public abstract class AbstractFilePublisher implements SpatialDataPublisher {
     protected String getAttributeName(PublishedFileMetadata metadata) {
         return "";
     }
+    
+   /**
+    * Returns the list of supported attributes for the given layerName.
+    * 
+    * @param layerName
+    * @return
+    * @throws PublishException 
+    */
+    public List<String> getAttributes(String layerName) throws PublishException {
+        return null;
+    }
+    
     
 }

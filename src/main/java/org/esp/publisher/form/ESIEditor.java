@@ -144,10 +144,20 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
             UI.getCurrent().getNavigator().navigateTo(ViewModule.HOME);
             return;
         }
-
-        esiEditorView.setNewStatus(false);
-        uploadField.updateSpatialDataType(entity.getSpatialDataType());
         super.doUpdate(entity);
+        esiEditorView.setNewStatus(false);
+        SpatialDataType spatialDataType = entity.getSpatialDataType();
+        SpatialDataPublisher filePublisher = filePublishers.get(spatialDataType.getId());
+        List<String> attributes;
+        try {
+            attributes = filePublisher.getAttributes(entity.getLayerName());
+            colourMapFieldGroup.setAttributes(attributes, entity.getAttributeName());
+            
+        } catch (PublishException e) {
+            Notification.show("Error getting attributes for the layer: " + e.getMessage(), Type.ERROR_MESSAGE);
+        }
+        
+        uploadField.updateSpatialDataType(spatialDataType);
     }
 
     @Override
@@ -222,21 +232,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
             @Override
             public void onValueChanged(ColourMap colourMap) {
-
-                List<ColourMapEntry> colourMapEntries = colourMap
-                        .getColourMapEntries();
-
-                if (colourMapFieldGroup.isValid() && getLayerName() != null) {
-
-
-                    // Is it published yet?
-                    SpatialDataType spatialDataType = (SpatialDataType)spatialDataTypeField.getValue();
-                    gsr.updateStyle(getLayerName(), "", templates.get(spatialDataType.getId()), colourMapEntries);
-
-
-                    firePublishEvent();
-                }
-
+                updateColourMap(colourMap);
             }
 
         });
@@ -272,24 +268,53 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
     }
 
 
+    protected void updateColourMap(ColourMap colourMap) {
+        String layerName = getLayerName();
+        if (colourMapFieldGroup.isValid() && layerName != null) {
+
+            try {
+                updateStyle(layerName, colourMapFieldGroup.getAttributeName(), colourMapFieldGroup.getColourMap());
+            } catch (PublishException e) {
+                showError("Error updating style: " + e.getMessage());
+            }
+            firePublishEvent();
+        }
+    }
+    
     protected void updateAttributeName(String attributeName) {
         EcosystemServiceIndicator entity = getEntity();
         if(entity != null) {
             String layerName = entity.getLayerName();
-            if(layerName != null) {
+            if(colourMapFieldGroup.isValid() && layerName != null) {
                 double[] extrema = gsr.getExtrema(layerName, attributeName);
                 Double minVal = extrema[0];
-                Double maxVal = extrema[0];
+                Double maxVal = extrema[1];
                 if (minVal < 0) {
                     colourMapFieldGroup.setMinValue("0");
                 } else {
                     colourMapFieldGroup.setMinValue(minVal.toString());
                 }
                 colourMapFieldGroup.setMaxValue(maxVal.toString());
+                try {
+                    updateStyle(layerName, attributeName, colourMapFieldGroup.getColourMap());
+                    firePublishEvent();
+                } catch (PublishException e) {
+                    showError("Error updating style: " + e.getMessage());
+                }
+                
             }
         } else {
             showError("No entity available");
         }
+    }
+
+    private void updateStyle(String layerName, String attributeName, ColourMap colourMap) throws PublishException {
+        SpatialDataType spatialDataType = (SpatialDataType)spatialDataTypeField.getValue();
+        Long spatialDataTypeId = spatialDataType.getId();
+        SpatialDataPublisher filePublisher = filePublishers.get(spatialDataTypeId);
+        filePublisher.updateStyle(layerName, attributeName, templates.get(spatialDataTypeId),
+                colourMapFieldGroup.getColourMap());
+        
     }
 
     private void buildMetaForm() {
@@ -545,88 +570,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
     }
 
     
-    /**
-     * 
-     * 
-     * @param f
-     */
-    private void publishFile(File f, String layerName, SpatialDataType spatialDataType, PublishedFileMetadata meta) {
-
-        ColourMap cm = colourMapFieldGroup.getColourMap();
-        if (cm == null) {
-            showError("Null colourmap");
-            return;
-        }
-
-        List<ColourMapEntry> cmes = cm.getColourMapEntries();
-        if (cmes.isEmpty()) {
-            showError("Invalid colour map.");
-            return;
-        }
-
-        /**
-         * If we have no layer, create a style and a name
-         */
-        if (getLayerName() == null) {
-            setLayerName(layerName);
-
-            boolean stylePublished = gsr.publishStyle(layerName, "", templates.get(spatialDataType.getId()), cm.getColourMapEntries());
-            logger.info("Style published: " + stylePublished);
-            
-            if(meta instanceof GeoTiffMetadata) {
-                boolean tiffPublished = publishTiff(cm, meta.getFile(), (GeoTiffMetadata)meta);
-
-                logger.info("Tiff published: " + tiffPublished);
-
-                if (tiffPublished) {
-                    boolean surfaceSaved = commitForm(false);
-                    logger.info("Surface saved: " + surfaceSaved);
-
-                    firePublishEvent();
-                }
-            } else if(meta instanceof ShapefileMetadata) {
-                boolean shapePublished = publishShapefile(cm, f, (ShapefileMetadata)meta);
-
-                logger.info("Shapefile published: " + shapePublished);
-
-                if (shapePublished) {
-                    boolean shapefileSaved = commitForm(false);
-                    logger.info("Surface saved: " + shapefileSaved);
-
-                    firePublishEvent();
-                }
-            }
-            
-            
-
-        } else {
-
-            /*
-             * We have the layer already
-             
-//             File f = getEntity().getFile();
-
-            
-             * Always publishing the SLD. a little redundant but simpler.
-             
-            gsr.updateStyle(getLayerName(), cm.getColourMapEntries());
-
-            
-             * User wants to change the data.
-             
-            if (f != null) {
-                gsr.removeRasterStore(getLayerName());
-                publishTiff(cm, f, tm);
-                firePublishEvent();
-            }*/
-        }
-
-        Notification
-                .show("Published successfully.",
-                        "Please note the max-min values will require editing manually.  The extent may need to be adjusted for optimal display in Web Mercator projection.", Type.HUMANIZED_MESSAGE);
-        commitForm(false);
-
-    }
+    
 /*
     private TiffMeta extractTiffMetaData(File tiffFile) {
 
@@ -750,4 +694,6 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
             listener.onLayerPublished(getLayerName(), getEntity().getEnvelope());
         }
     }
+
+    
 }

@@ -139,6 +139,7 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
         }
 
         attributesField = new ComboBox("Attribute");
+        attributesField.setImmediate(true);
         attributesField.setVisible(false);
         vl.addComponent(attributesField);
 
@@ -168,7 +169,14 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
             }
         });
 
-        attributesField.addBlurListener(new BlurListener() {
+        attributesField.addValueChangeListener(new Property.ValueChangeListener() {
+            @Override
+            public void valueChange(Property.ValueChangeEvent event) {
+                fireAttributeValueChanged();
+            }
+        });
+        
+        /*attributesField.addBlurListener(new BlurListener() {
 
 
             @Override
@@ -176,22 +184,28 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
                 fireAttributeValueChanged();
                 
             }
-        });
+        });*/
 
         // Bind the fields
 
         getFieldGroup().bind(minValField, EcosystemServiceIndicator_.minVal.getName());
         getFieldGroup().bind(maxValField, EcosystemServiceIndicator_.maxVal.getName());
         getFieldGroup().bind(editableCombo, EcosystemServiceIndicator_.colourMap.getName());
+        getFieldGroup().bind(attributesField, EcosystemServiceIndicator_.attributeName.getName());
 
     }
 
     public void setAttributes(List<String> attributes, String selectedAttribute) {
-        for (String attribute : attributes) {
-            attributesField.addItem(attribute);
+        if(attributes != null && !attributes.isEmpty()) {
+            for (String attribute : attributes) {
+                attributesField.addItem(attribute);
+            }
+            attributesField.select(selectedAttribute);
+            attributesField.setVisible(true);
+        } else {
+            attributesField.removeAllItems();
+            attributesField.setVisible(false);
         }
-        attributesField.select(selectedAttribute);
-        attributesField.setVisible(true);
     }
 
     public boolean isValid() {
@@ -215,6 +229,10 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
         maxValField.setInternalValue(string);
     }
 
+    public String getAttributeName() {
+        return attributesField.getValue() == null ? null : attributesField.getValue().toString();
+    }
+    
     public ColourMap getColourMap() {
 
         ColourMap cm = (ColourMap) editableCombo.getValue();
@@ -277,7 +295,7 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
 
     private void fireAttributeValueChanged() {
 
-        if (attributeListener != null) {
+        if (attributeListener != null && attributesField.getValue() != null) {
             attributeListener.onValueChanged(attributesField.getValue().toString());
         }
     }

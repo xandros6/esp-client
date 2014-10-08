@@ -1,6 +1,7 @@
 package org.esp.publisher;
 
 import java.io.File;
+import java.util.List;
 
 import org.esp.domain.publisher.ColourMap;
 
@@ -49,4 +50,33 @@ public interface SpatialDataPublisher {
      */
     public boolean createLayer(String layerName, String styleName, PublishedFileMetadata metadata)
             throws PublishException;
+
+    /**
+     * Updates an existing style using precompiled rules.
+     * 
+     * @param layerName
+     * @param string
+     * @param rules
+     */
+    public boolean updateStyle(String layerName, String attributeName, String styleTemplate,
+            String rules) throws PublishException;
+    
+    /**
+     * Updates an existing style using the given colourmap.
+     * 
+     * @param layerName
+     * @param string
+     * @param colourMap
+     */
+    public boolean updateStyle(String layerName, String attributeName, String styleTemplate,
+            ColourMap colourMap) throws PublishException;
+
+    /**
+     * Returns the list of supported attributes for the given layerName.
+     * 
+     * @param layerName
+     * @return
+     * @throws PublishException 
+     */
+    public List<String> getAttributes(String layerName) throws PublishException;
 }
