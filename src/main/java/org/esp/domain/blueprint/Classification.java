@@ -9,14 +9,14 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 @Entity
-@Table(schema = "blueprint", name = "status")
-public class Status {
+@Table(schema = "blueprint", name = "classification")
+public class Classification {
 
     private Long id;
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO, generator = "seq")
-    @SequenceGenerator(allocationSize = 1, name = "seq", sequenceName = "blueprint.status_id_seq")
+    @SequenceGenerator(allocationSize = 1, name = "seq", sequenceName = "blueprint.classification_id_seq")
     public Long getId() {
         return id;
     }
@@ -34,6 +34,17 @@ public class Status {
     public void setLabel(String label) {
         this.label = label;
     }
+    
+    private String method;
+
+    @Column
+    public String getMethod() {
+        return method;
+    }
+
+    public void setMethod(String method) {
+        this.method = method;
+    }
 
     @Override
     public String toString() {
@@ -43,9 +54,9 @@ public class Status {
     @Override
     public boolean equals(Object obj) {
         
-        if (obj instanceof Status) {
-            Status comparee = (Status) obj;
-            if (comparee.getLabel().equals(getLabel())) {
+        if (obj instanceof Classification) {
+            Classification comparee = (Classification) obj;
+            if (comparee.getMethod().equals(getMethod())) {
                 return true;
             }
             return false;

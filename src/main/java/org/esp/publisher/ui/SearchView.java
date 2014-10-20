@@ -233,9 +233,9 @@ public class SearchView extends TwinPanelView implements View {
 
         String layerName = entity.getLayerName();
         if (layerName != null) {
-            layerManager.setSurfaceLayerName(layerName);
+            layerManager.setSurfaceLayerName(layerName, entity.getTimestamp());
         } else {
-            layerManager.setSurfaceLayerName("");
+            layerManager.setSurfaceLayerName("", 0);
         }
 
         Polygon env = entity.getEnvelope();
@@ -251,4 +251,6 @@ public class SearchView extends TwinPanelView implements View {
         // gl.addComponent(new Label(entity.getMinimumMappingUnit()), 0,2);
         // gl.addComponent(new Label(entity.getIndicator().toString()), 1,2);
     }
+
+    
 }

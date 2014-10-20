@@ -58,8 +58,8 @@ public interface SpatialDataPublisher {
      * @param string
      * @param rules
      */
-    public boolean updateStyle(String layerName, String attributeName, String styleTemplate,
-            String rules) throws PublishException;
+    public boolean updateStyle(String layerName, String attributeName, String classificationMethod,
+            int intervalsNumber, String styleTemplate, String rules) throws PublishException;
     
     /**
      * Updates an existing style using the given colourmap.
@@ -68,8 +68,8 @@ public interface SpatialDataPublisher {
      * @param string
      * @param colourMap
      */
-    public boolean updateStyle(String layerName, String attributeName, String styleTemplate,
-            ColourMap colourMap) throws PublishException;
+    public boolean updateStyle(String layerName, String attributeName, String classificationMethod,
+            int intervalsNumber, String styleTemplate, ColourMap colourMap) throws PublishException;
 
     /**
      * Returns the list of supported attributes for the given layerName.

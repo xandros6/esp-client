@@ -377,6 +377,17 @@ public class EcosystemServiceIndicator implements HasRole {
         this.minVal = minVal;
     }
     
+    private Integer intervalsNumber;
+
+    @Column(name="intervals_num")
+    public Integer getIntervalsNumber() {
+        return intervalsNumber;
+    }
+
+    public void setIntervalsNumber(Integer intervalsNumber) {
+        this.intervalsNumber = intervalsNumber;
+    }
+    
     private ColourMap colourMap;
 
     @ManyToOne
@@ -387,6 +398,18 @@ public class EcosystemServiceIndicator implements HasRole {
 
     public void setColourMap(ColourMap colourMap) {
         this.colourMap = colourMap;
+    }
+    
+    private Classification classification;
+
+    @ManyToOne
+    @JoinColumn(name = "classification_id")
+    public Classification getClassification() {
+        return classification;
+    }
+
+    public void setClassification(Classification classification) {
+        this.classification = classification;
     }
     
     private Status status;
@@ -459,7 +482,18 @@ public class EcosystemServiceIndicator implements HasRole {
     public void setFile(File file) {
         this.file = file;
     }
-
+    
+    @Transient
+    public long getTimestamp() {
+        if(getDateUpdated() != null) {
+            return getDateUpdated().getTime();
+        }
+        if(getDateCreated() != null) {
+            return getDateCreated().getTime();
+        }
+        return 0;
+    }
+    
     @Override
     public String toString() {
         return String.format("%s - %s", ecosystemService, indicator);

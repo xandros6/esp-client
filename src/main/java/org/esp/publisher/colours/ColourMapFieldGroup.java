@@ -1,14 +1,22 @@
 package org.esp.publisher.colours;
 
 import it.jrc.form.FieldGroup;
+import it.jrc.form.component.IntegerField;
+import it.jrc.form.controller.EditorController;
+import it.jrc.form.view.DefaultEditorView;
 import it.jrc.persist.Dao;
 
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.Locale;
 
+import javax.persistence.metamodel.Attribute;
+import javax.persistence.metamodel.SingularAttribute;
+
+import org.esp.domain.blueprint.Classification;
 import org.esp.domain.blueprint.EcosystemServiceIndicator;
 import org.esp.domain.blueprint.EcosystemServiceIndicator_;
+import org.esp.domain.blueprint.Indicator_;
 import org.esp.domain.publisher.ColourMap;
 import org.esp.domain.publisher.ColourMapEntry;
 import org.esp.publisher.form.EditableCombo;
@@ -24,12 +32,15 @@ import com.vaadin.event.FieldEvents.BlurEvent;
 import com.vaadin.event.FieldEvents.BlurListener;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
+import com.vaadin.ui.Field;
 import com.vaadin.ui.GridLayout;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
 
 public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
 
+    public static final int DEFAULT_N_INTERVALS = 10;
+    
     private EditableField<ColourMap> editableCombo;
 
     private CartographicKey ck;
@@ -37,8 +48,12 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
     private DoubleField minValField;
 
     private DoubleField maxValField;
+    
+    private IntegerField intervalsNumberField;
 
     private ComboBox attributesField;
+    
+    private ComboBox classificationMethodField;
 
     private VerticalLayout vl;
 
@@ -49,6 +64,8 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
     private ColourMap defaultValue;
 
     Logger logger = LoggerFactory.getLogger(ColourMapFieldGroup.class);
+    
+    List<Classification> classifications;
 
     public Component getContent() {
         return vl;
@@ -62,7 +79,7 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
 
     public interface ColourMapAttributeChangeListener {
 
-        public void onValueChanged(String attributeName);
+        public void onValueChanged(String attributeName, String classificationMethod, int intervalsNumber);
 
     }
 
@@ -142,6 +159,22 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
         attributesField.setImmediate(true);
         attributesField.setVisible(false);
         vl.addComponent(attributesField);
+        
+        classifications = dao.all(Classification.class);
+        classificationMethodField = new ComboBox("Classification");
+        classificationMethodField.setImmediate(true);
+        classificationMethodField.setVisible(false);
+        
+        for (Classification classification : classifications) {
+            classificationMethodField.addItem(classification);
+        }
+        
+        vl.addComponent(classificationMethodField);
+        
+        intervalsNumberField = new IntegerField("Intervals #");
+        intervalsNumberField.setImmediate(true);
+        intervalsNumberField.setVisible(false);
+        vl.addComponent(intervalsNumberField);
 
         // for (ColourMap colourMap : cms) {
         // cb.addItem(colourMap);
@@ -176,15 +209,19 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
             }
         });
         
-        /*attributesField.addBlurListener(new BlurListener() {
-
-
+        classificationMethodField.addValueChangeListener(new Property.ValueChangeListener() {
             @Override
-            public void blur(BlurEvent event) {
+            public void valueChange(Property.ValueChangeEvent event) {
                 fireAttributeValueChanged();
-                
             }
-        });*/
+        });
+        
+        intervalsNumberField.addValueChangeListener(new Property.ValueChangeListener() {
+            @Override
+            public void valueChange(Property.ValueChangeEvent event) {
+                fireAttributeValueChanged();
+            }
+        });
 
         // Bind the fields
 
@@ -192,6 +229,8 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
         getFieldGroup().bind(maxValField, EcosystemServiceIndicator_.maxVal.getName());
         getFieldGroup().bind(editableCombo, EcosystemServiceIndicator_.colourMap.getName());
         getFieldGroup().bind(attributesField, EcosystemServiceIndicator_.attributeName.getName());
+        getFieldGroup().bind(classificationMethodField, EcosystemServiceIndicator_.classification.getName());
+        getFieldGroup().bind(intervalsNumberField, EcosystemServiceIndicator_.intervalsNumber.getName());
 
     }
 
@@ -201,11 +240,20 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
                 attributesField.addItem(attribute);
             }
             attributesField.select(selectedAttribute);
-            attributesField.setVisible(true);
+            if(classificationMethodField.getValue() == null) {
+                classificationMethodField.select(classifications.get(0));
+            }
+            setAttributeVisibility(true);
         } else {
             attributesField.removeAllItems();
-            attributesField.setVisible(false);
+            setAttributeVisibility(false);
         }
+    }
+
+    private void setAttributeVisibility(boolean visibility) {
+        attributesField.setVisible(visibility);
+        classificationMethodField.setVisible(visibility);
+        intervalsNumberField.setVisible(visibility);
     }
 
     public boolean isValid() {
@@ -231,6 +279,11 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
 
     public String getAttributeName() {
         return attributesField.getValue() == null ? null : attributesField.getValue().toString();
+    }
+    
+    public String getClassificationMethod() {
+        return classificationMethodField.getValue() == null ? "equalInterval"
+                : ((Classification) classificationMethodField.getValue()).getMethod();
     }
     
     public ColourMap getColourMap() {
@@ -294,9 +347,22 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
     }
 
     private void fireAttributeValueChanged() {
+        if (attributeListener != null && getAttributeName() != null && getIntervalsNumber() > 0) {
+            attributeListener.onValueChanged(getAttributeName(), 
+                    getClassificationMethod(),
+                    getIntervalsNumber()
+                    );
+        }
+    }
 
-        if (attributeListener != null && attributesField.getValue() != null) {
-            attributeListener.onValueChanged(attributesField.getValue().toString());
+    public int getIntervalsNumber() {
+        if(intervalsNumberField.getValue() == null) {
+            return DEFAULT_N_INTERVALS;
+        }
+        try {
+            return Integer.parseInt(intervalsNumberField.getValue());
+        } catch(NumberFormatException e) {
+            return -1;
         }
     }
 
@@ -311,7 +377,7 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
         ck.setColours(defaultValue.getColourMapEntries());
 
         attributesField.removeAllItems();
-        attributesField.setVisible(false);
+        setAttributeVisibility(false);
     }
 
 }

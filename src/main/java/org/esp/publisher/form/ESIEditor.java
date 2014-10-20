@@ -12,6 +12,7 @@ import it.jrc.persist.Dao;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -21,6 +22,7 @@ import javax.persistence.metamodel.Attribute;
 import javax.persistence.metamodel.SingularAttribute;
 
 import org.esp.domain.blueprint.ArealUnit_;
+import org.esp.domain.blueprint.Classification;
 import org.esp.domain.blueprint.DataSource;
 import org.esp.domain.blueprint.DataSource_;
 import org.esp.domain.blueprint.EcosystemServiceIndicator;
@@ -28,10 +30,10 @@ import org.esp.domain.blueprint.EcosystemServiceIndicator_;
 import org.esp.domain.blueprint.Indicator_;
 import org.esp.domain.blueprint.QuantificationUnit_;
 import org.esp.domain.blueprint.SpatialDataType;
+import org.esp.domain.blueprint.Status;
 import org.esp.domain.blueprint.Study;
 import org.esp.domain.blueprint.TemporalUnit_;
 import org.esp.domain.publisher.ColourMap;
-import org.esp.domain.publisher.ColourMapEntry;
 import org.esp.publisher.ESPClientUploadField;
 import org.esp.publisher.GeoTiffMetadata;
 import org.esp.publisher.GeoTiffPublisher;
@@ -73,6 +75,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
     public static final String THE_ECOSYSTEM_SERVICE = "The Ecosystem Service";
     public static final String SPATIAL_DATA_TYPE = "Spatial Data Type";
+    private static final Long NOT_VALIDATED_STATUS = 2l;
 
     private Logger logger = LoggerFactory.getLogger(ESIEditor.class);
 
@@ -165,6 +168,16 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
         esiEditorView.setNewStatus(true);
         super.doCreate();
+        
+        
+        EcosystemServiceIndicator entity = getEntity();
+        
+        Status status = new Status();
+        status.setId(NOT_VALIDATED_STATUS);
+        entity.setStatus(status);
+        
+        entity.setIntervalsNumber(ColourMapFieldGroup.DEFAULT_N_INTERVALS);
+        
         colourMapFieldGroup.setDefaultValues();
     }
     
@@ -240,8 +253,9 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         colourMapFieldGroup.setAttributeListener(new ColourMapAttributeChangeListener() {
 
             @Override
-            public void onValueChanged(String attributeName) {
-                updateAttributeName(attributeName);
+            public void onValueChanged(String attributeName, String classificationMethbod,
+                    int intervalsNumber) {
+                updateAttributeBasedStyle(attributeName, classificationMethbod, intervalsNumber);
             }
             
         }
@@ -273,47 +287,64 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         if (colourMapFieldGroup.isValid() && layerName != null) {
 
             try {
-                updateStyle(layerName, colourMapFieldGroup.getAttributeName(), colourMapFieldGroup.getColourMap());
+                updateStyle(layerName, colourMapFieldGroup.getAttributeName(), 
+                        colourMapFieldGroup.getClassificationMethod(),
+                        colourMapFieldGroup.getIntervalsNumber(),
+                        colourMapFieldGroup.getColourMap());
+                updateEntityDate();
             } catch (PublishException e) {
                 showError("Error updating style: " + e.getMessage());
             }
             firePublishEvent();
         }
     }
+
+    private void updateEntityDate() {
+        getEntity().setDateUpdated(Calendar.getInstance().getTime());
+    }
     
-    protected void updateAttributeName(String attributeName) {
+    protected void updateAttributeBasedStyle(String attributeName, String classificationMethod,
+            int intervalsNumber) {
         EcosystemServiceIndicator entity = getEntity();
         if(entity != null) {
             String layerName = entity.getLayerName();
             if(colourMapFieldGroup.isValid() && layerName != null) {
                 double[] extrema = gsr.getExtrema(layerName, attributeName);
-                Double minVal = extrema[0];
-                Double maxVal = extrema[1];
-                if (minVal < 0) {
-                    colourMapFieldGroup.setMinValue("0");
+                if(extrema != null) {
+                    Double minVal = extrema[0];
+                    Double maxVal = extrema[1];
+                    if (minVal < 0) {
+                        colourMapFieldGroup.setMinValue("0");
+                    } else {
+                        colourMapFieldGroup.setMinValue(minVal.toString());
+                    }
+                    colourMapFieldGroup.setMaxValue(maxVal.toString());
+                    try {
+                        updateStyle(layerName, attributeName, classificationMethod,
+                                intervalsNumber, colourMapFieldGroup.getColourMap());
+                        updateEntityDate();
+                        firePublishEvent();
+                    } catch (PublishException e) {
+                        showError("Error updating style: " + e.getMessage());
+                    }
                 } else {
-                    colourMapFieldGroup.setMinValue(minVal.toString());
+                    showError("Cannot retrieve min - max values for the layer");
                 }
-                colourMapFieldGroup.setMaxValue(maxVal.toString());
-                try {
-                    updateStyle(layerName, attributeName, colourMapFieldGroup.getColourMap());
-                    firePublishEvent();
-                } catch (PublishException e) {
-                    showError("Error updating style: " + e.getMessage());
-                }
+                
                 
             }
         } else {
-            showError("No entity available");
+            
         }
     }
 
-    private void updateStyle(String layerName, String attributeName, ColourMap colourMap) throws PublishException {
+    private void updateStyle(String layerName, String attributeName, String classificationMethod,
+            int intervalsNumber, ColourMap colourMap) throws PublishException {
         SpatialDataType spatialDataType = (SpatialDataType)spatialDataTypeField.getValue();
         Long spatialDataTypeId = spatialDataType.getId();
         SpatialDataPublisher filePublisher = filePublishers.get(spatialDataTypeId);
-        filePublisher.updateStyle(layerName, attributeName, templates.get(spatialDataTypeId),
-                colourMapFieldGroup.getColourMap());
+        filePublisher.updateStyle(layerName, attributeName, classificationMethod, intervalsNumber,
+                templates.get(spatialDataTypeId), colourMapFieldGroup.getColourMap());
         
     }
 
@@ -691,7 +722,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         if (listener == null) {
             logger.error("Null listener");
         } else {
-            listener.onLayerPublished(getLayerName(), getEntity().getEnvelope());
+            listener.onLayerPublished(getLayerName(), getEntity().getEnvelope(), getEntity().getTimestamp());
         }
     }
 

@@ -4,6 +4,6 @@ import com.vividsolutions.jts.geom.Polygon;
 
 public interface LayerPublishedListener {
 
-    void onLayerPublished(String layerName, Polygon extent);
+    void onLayerPublished(String layerName, Polygon extent, long timestamp);
 
 }

@@ -21,6 +21,8 @@ public abstract class EcosystemServiceIndicator_ {
     public static volatile SingularAttribute<EcosystemServiceIndicator, Study> study;
     
     public static volatile SingularAttribute<EcosystemServiceIndicator, Status> status;
+    
+    public static volatile SingularAttribute<EcosystemServiceIndicator, Classification> classification;
 
     public static volatile SingularAttribute<EcosystemServiceIndicator, StudyObjectiveMet> studyObjectiveMet;
 
@@ -79,6 +81,8 @@ public abstract class EcosystemServiceIndicator_ {
     public static volatile SingularAttribute<EcosystemServiceIndicator, Double> pixelSizeX;
 
     public static volatile SingularAttribute<EcosystemServiceIndicator, Double> minVal;
+    
+    public static volatile SingularAttribute<EcosystemServiceIndicator, Integer> intervalsNumber;
 
     public static volatile SingularAttribute<EcosystemServiceIndicator, ColourMap> colourMap;
 

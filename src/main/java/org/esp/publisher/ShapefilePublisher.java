@@ -46,7 +46,7 @@ public class ShapefilePublisher extends AbstractFilePublisher {
     private Logger logger = LoggerFactory.getLogger(ShapefilePublisher.class);
     private FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
     
-    private static final int N_INTERVALS = 10;
+
 
     protected SimpleFeatureType schema;
 
@@ -229,22 +229,22 @@ public class ShapefilePublisher extends AbstractFilePublisher {
     
     
     @Override
-    public boolean updateStyle(String layerName, String attributeName, String styleTemplate,
+    public boolean updateStyle(String layerName, String attributeName, String classificationMethod, int intervalsNumber, String styleTemplate,
             ColourMap colourMap) throws PublishException {
         if(attributeName != null) {
-            return super.updateStyle(layerName, attributeName, styleTemplate, getStyleRules(layerName, attributeName, colourMap));
+            return super.updateStyle(layerName, attributeName, classificationMethod, intervalsNumber, styleTemplate, getStyleRules(layerName, attributeName, classificationMethod, intervalsNumber, colourMap));
         }
         return false;
     }
 
-    private String getStyleRules(String layerName, String attributeName, ColourMap colourMap) throws PublishException {
+    private String getStyleRules(String layerName, String attributeName, String classificationMethod, int intervalsNumber, ColourMap colourMap) throws PublishException {
         List<ColourMapEntry> entries = colourMap.getColourMapEntries();
         
         String startColor = entries.get(0).getColor().getCSS().substring(1);
         String endColor = entries.get(1).getColor().getCSS().substring(1);
         
         try {
-            return gsr.getClassifiedStyle(layerName, attributeName, startColor, endColor, N_INTERVALS);
+            return gsr.getClassifiedStyle(layerName, attributeName, classificationMethod, startColor, endColor, intervalsNumber);
         } catch (MalformedURLException e) {
             throw new PublishException("sldservice url misconfigured", e);
         } catch (IOException e) {
@@ -278,7 +278,7 @@ public class ShapefilePublisher extends AbstractFilePublisher {
     
     
     @Override
-    protected List<ColourMapEntry> getColourMapEntries(ColourMap colourMap) {
+    protected List<ColourMapEntry> getColourMapEntries(ColourMap colourMap, int intervalsNumber) {
         List<ColourMapEntry> entries = colourMap.getColourMapEntries();
         List<ColourMapEntry> continuous = new ArrayList<ColourMapEntry>();
         ColourMapEntry minEntry = entries.get(0);
@@ -289,9 +289,9 @@ public class ShapefilePublisher extends AbstractFilePublisher {
         int[] minColor = getColorArray(minEntry);
         int[] maxColor = getColorArray(maxEntry);
         
-        double step = (max - min) / (double)N_INTERVALS;
-        double[] colorSteps = getColorSteps(minColor, maxColor, N_INTERVALS);
-        for(int i = 0; i < N_INTERVALS; i++) {
+        double step = (max - min) / (double)intervalsNumber;
+        double[] colorSteps = getColorSteps(minColor, maxColor, intervalsNumber);
+        for(int i = 0; i < intervalsNumber; i++) {
             ColourMapEntry entry = new ColourMapEntry();
             entry.setId(i+1);
             entry.setFrom(min + i * step);

@@ -67,8 +67,8 @@ public abstract class AbstractFilePublisher implements SpatialDataPublisher {
     public String createStyle(PublishedFileMetadata metadata, String layerName, 
             String styleTemplate, ColourMap colourMap) throws PublishException {
         String attributeName = getAttributeName(metadata);
-        boolean stylePublished = gsr.publishStyle(layerName, attributeName,
-                styleTemplate, getColourMapEntries(colourMap), "");
+        boolean stylePublished = gsr.publishStyle(layerName, attributeName, 
+                styleTemplate, getColourMapEntries(colourMap, 1), "");
         logger.info("Style published: " + stylePublished);
         if(stylePublished) {
             return layerName;
@@ -84,10 +84,10 @@ public abstract class AbstractFilePublisher implements SpatialDataPublisher {
      * @param string
      * @param colourMap
      */
-    public boolean updateStyle(String layerName, String attributeName, String styleTemplate, 
+    public boolean updateStyle(String layerName, String attributeName, String classificationMethod, int intervalsNumber, String styleTemplate, 
             ColourMap colourMap)  throws PublishException {
         boolean stylePublished = gsr.updateStyle(layerName, attributeName, styleTemplate, 
-                getColourMapEntries(colourMap), "");
+                getColourMapEntries(colourMap, intervalsNumber), "");
         logger.info("Style published: " + stylePublished);
         
         return stylePublished;
@@ -100,7 +100,7 @@ public abstract class AbstractFilePublisher implements SpatialDataPublisher {
      * @param string
      * @param rules
      */
-    public boolean updateStyle(String layerName, String attributeName, String styleTemplate, 
+    public boolean updateStyle(String layerName, String attributeName, String classificationMethod, int intervalsNumber, String styleTemplate, 
             String rules) throws PublishException {
         boolean stylePublished = gsr.updateStyle(layerName, attributeName, styleTemplate, 
                 new ArrayList<ColourMapEntry>(), rules) ;
@@ -147,7 +147,7 @@ public abstract class AbstractFilePublisher implements SpatialDataPublisher {
      * @param colourMap
      * @return
      */
-    protected List<ColourMapEntry> getColourMapEntries(ColourMap colourMap) {
+    protected List<ColourMapEntry> getColourMapEntries(ColourMap colourMap, int intervalNumbers) {
         return colourMap.getColourMapEntries();
     }
 

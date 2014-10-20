@@ -43,20 +43,20 @@ public class LayerManager {
 
     }
 
-    public void setSurfaceLayerName(String layerName) {
+    public void setSurfaceLayerName(String layerName, long timestamp) {
 
             if (singleLayer == null) {
-                singleLayer = createDefaultWMSLayer(layerName, getTimestamp(layerName));
+                singleLayer = createDefaultWMSLayer(layerName, timestamp);
                 map.addOverlay(singleLayer, layerName);
             } else {
                 map.removeComponent(singleLayer);
-                singleLayer = createDefaultWMSLayer(layerName, getTimestamp(layerName));
+                singleLayer = createDefaultWMSLayer(layerName, timestamp);
                 map.addOverlay(singleLayer, layerName);
             }
         
     }
 
-    private static synchronized int getTimestamp(String layerName) {
+    /*private static synchronized int getTimestamp(String layerName) {
         if(timestamps.containsKey(layerName)) {
             Integer timestamp = timestamps.get(layerName);
             timestamp++;
@@ -67,9 +67,9 @@ public class LayerManager {
             return 1;
         }
         
-    }
+    }*/
 
-    private LWmsLayer createDefaultWMSLayer(String layerName, int timestamp) {
+    private LWmsLayer createDefaultWMSLayer(String layerName, long timestamp) {
         LWmsLayer l = new LWmsLayer();
 
         //l.setUrl("http://lrm-maps.jrc.ec.europa.eu/geoserver/esp/wms");
@@ -79,7 +79,8 @@ public class LayerManager {
         l.setLayers(layerName);
         l.setActive(true);
         l.setVisible(true);
-        l.setTimestamp(timestamp);
+        //l.setTimestamp(timestamp);
+        l.setCustomParameter("_dc", timestamp + "");
         return l;
     }
 

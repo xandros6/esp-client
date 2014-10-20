@@ -55,8 +55,8 @@ public class MapPublisher extends TwinPanelView implements View {
         surfaceEditor.setPublishEventListener(new LayerPublishedListener() {
 
             @Override
-            public void onLayerPublished(String layerName, Polygon extent) {
-                layerManager.setSurfaceLayerName(layerName);
+            public void onLayerPublished(String layerName, Polygon extent, long timestamp) {
+                layerManager.setSurfaceLayerName(layerName, timestamp);
                 layerManager.zoomTo(extent);
             }
         });
@@ -118,7 +118,7 @@ public class MapPublisher extends TwinPanelView implements View {
             }
 
             surfaceEditor.doUpdate(entity);
-            layerManager.setSurfaceLayerName(entity.getLayerName());
+            layerManager.setSurfaceLayerName(entity.getLayerName(), entity.getTimestamp());
             layerManager.zoomTo(entity.getEnvelope());
 
         } catch (NumberFormatException e) {

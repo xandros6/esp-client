@@ -76,7 +76,7 @@ public class GeoserverRestApi {
         this.classifyUrl = restUrl
                 + "/rest/sldservice/"
                 + workspace
-                + ":%s/classify.xml?attribute=%s&intervals=%d&ramp=custom&startColor=0x%s&endColor=0x%s&open=true";
+                + ":%s/classify.xml?attribute=%s&method=%s&intervals=%d&ramp=custom&startColor=0x%s&endColor=0x%s&open=true";
         
         this.dao = dao;
         this.publisher = new GeoServerRESTPublisher(restUrl, restUser,
@@ -263,9 +263,10 @@ public class GeoserverRestApi {
         return null;
     }
 
-    public String getClassifiedStyle(String layerName, String attributeName, String startColor,
+    public String getClassifiedStyle(String layerName, String attributeName, String classificationMethod, String startColor,
             String endColor, int intervals) throws MalformedURLException, IOException {
-        String sldServiceUrl = String.format(classifyUrl, layerName, attributeName, intervals, startColor, endColor);
+        String sldServiceUrl = String.format(classifyUrl, layerName, attributeName,
+                classificationMethod, intervals, startColor, endColor);
         HTTPResponse response = httpClient.get(new URL(sldServiceUrl));
         try {
             String rules = IOUtils.toString(response.getResponseStream());
