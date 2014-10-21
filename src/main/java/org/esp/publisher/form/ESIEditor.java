@@ -11,7 +11,6 @@ import it.jrc.form.view.IEditorView;
 import it.jrc.persist.Dao;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
@@ -22,7 +21,6 @@ import javax.persistence.metamodel.Attribute;
 import javax.persistence.metamodel.SingularAttribute;
 
 import org.esp.domain.blueprint.ArealUnit_;
-import org.esp.domain.blueprint.Classification;
 import org.esp.domain.blueprint.DataSource;
 import org.esp.domain.blueprint.DataSource_;
 import org.esp.domain.blueprint.EcosystemServiceIndicator;
@@ -35,7 +33,6 @@ import org.esp.domain.blueprint.Study;
 import org.esp.domain.blueprint.TemporalUnit_;
 import org.esp.domain.publisher.ColourMap;
 import org.esp.publisher.ESPClientUploadField;
-import org.esp.publisher.GeoTiffMetadata;
 import org.esp.publisher.GeoTiffPublisher;
 import org.esp.publisher.GeoserverRestApi;
 import org.esp.publisher.PublishException;
@@ -45,8 +42,7 @@ import org.esp.publisher.ShapefilePublisher;
 import org.esp.publisher.SpatialDataPublisher;
 import org.esp.publisher.UnknownCRSException;
 import org.esp.publisher.colours.ColourMapFieldGroup;
-import org.esp.publisher.colours.ColourMapFieldGroup.ColourMapAttributeChangeListener;
-import org.esp.publisher.colours.ColourMapFieldGroup.ColourMapChangeListener;
+import org.esp.publisher.colours.ColourMapFieldGroup.StyleChangeListener;
 import org.esp.publisher.ui.ViewModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -161,6 +157,8 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         }
         
         uploadField.updateSpatialDataType(spatialDataType);
+        
+        colourMapFieldGroup.enableUpdateStyle(true);
     }
 
     @Override
@@ -241,7 +239,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         // Add to the field groups
         getFieldGroups().add(colourMapFieldGroup);
 
-        colourMapFieldGroup.setValueChangeListener(new ColourMapChangeListener() {
+        /*colourMapFieldGroup.setValueChangeListener(new ColourMapChangeListener() {
 
             @Override
             public void onValueChanged(ColourMap colourMap) {
@@ -258,11 +256,22 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
                 updateAttributeBasedStyle(attributeName, classificationMethbod, intervalsNumber);
             }
             
-        }
+        }*/
+        
+        colourMapFieldGroup.setUpdateStyleListener(new StyleChangeListener() {
+            
+            @Override
+            public void onValueChanged(ColourMap colourMap, String attributeName,
+                    String classificationMethod, int intervalsNumber) {
+                updateStyle(colourMap, attributeName, classificationMethod, intervalsNumber);
+                
+            }
+        });
+        
+       
 
             
 
-        );
 
         this.sridField = ff.addTextField(EcosystemServiceIndicator_.srid);
         sridField.setVisible(false);
@@ -525,7 +534,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
     
     /**
-     * 
+     * Published an uploaded file.
      * 
      * @param f
      */
@@ -562,7 +571,17 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
             String styleName = filePublisher.createStyle(metadata, layerName, templates.get(spatialDataTypeId), colourMapFieldGroup.getColourMap());
             if(styleName != null) {
                 if(filePublisher.createLayer(layerName, styleName, metadata)) {
+                    if(filePublisher.hasDynamicStyle()) {
+                        updateStyle(layerName, colourMapFieldGroup.getAttributeName(), 
+                                colourMapFieldGroup.getClassificationMethod(),
+                                colourMapFieldGroup.getIntervalsNumber(),
+                                colourMapFieldGroup.getColourMap()
+                                );
+                    }
                     boolean saved = commitForm(false);
+                    if(saved) {
+                        colourMapFieldGroup.enableUpdateStyle(true);
+                    }
                     logger.info("File saved: " + saved);
 
                     firePublishEvent();
@@ -637,7 +656,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         }
         return null;
 
-    }*/
+    }
     
 
     private boolean publishShapefile(ColourMap cm, File f, ShapefileMetadata meta) {
@@ -653,7 +672,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
             return gsr.publishShp(f, meta.getSrid(), shapeFile.getLayerName(), "polygon");
 
         } catch (IllegalArgumentException e) {
-            e.printStackTrace();
+            
             showError(e.getMessage());
         }
         return false;
@@ -668,14 +687,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
                 return false;
             }
 
-            /*
-             * TODO:
-             * 
-             * Is the null stylename a good idea?  
-             * (detected in following method)
-             * 
-             * Uses default style when is a three band raster.
-             */
+            
             String styleName = null;
             if (tm.getNumSampleDimensions() == 3) {
 
@@ -692,7 +704,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
             showError(e.getMessage());
         }
         return false;
-    }
+    }*/
 
     private void showError(String message) {
         Notification.show(message, Type.ERROR_MESSAGE);
@@ -700,11 +712,20 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
     @Override
     protected void doPostDelete(EcosystemServiceIndicator entity) {
-        gsr.removeRasterStore(entity.getLayerName());
+        if(isRaster(entity)) {
+            gsr.removeRasterStore(entity.getLayerName());
+        } else {
+            gsr.removeShapefile(entity.getLayerName());
+        }
+        gsr.removeStyle(entity.getLayerName());
         UI.getCurrent().getNavigator().navigateTo(ViewModule.HOME);
         super.doPostDelete(entity);
     }
     
+
+    private boolean isRaster(EcosystemServiceIndicator entity) {
+        return entity.getSpatialDataType() != null && entity.getSpatialDataType().getId() == 1;
+    }
 
     private String generateLayerName() {
         return "esp-layer-"
@@ -723,6 +744,43 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
             logger.error("Null listener");
         } else {
             listener.onLayerPublished(getLayerName(), getEntity().getEnvelope(), getEntity().getTimestamp());
+        }
+    }
+
+    private void updateStyle(ColourMap colourMap, String attributeName,
+            String classificationMethod, int intervalsNumber) {
+        String layerName = getLayerName();
+        if (colourMapFieldGroup.isValid() && layerName != null) {
+            try {
+
+                if(attributeName != null) {
+                    double[] extrema = gsr.getExtrema(layerName, attributeName);
+                    if(extrema != null) {
+                        Double minVal = extrema[0];
+                        Double maxVal = extrema[1];
+                        if (minVal < 0) {
+                            colourMapFieldGroup.setMinValue("0");
+                        } else {
+                            colourMapFieldGroup.setMinValue(minVal.toString());
+                        }
+                        colourMapFieldGroup.setMaxValue(maxVal.toString());
+                    } else {
+                        showError("Cannot retrieve min - max values for the layer");
+                        return;
+                    }
+                }
+                updateStyle(layerName, attributeName, 
+                        classificationMethod,
+                        intervalsNumber,
+                        colourMap);
+                updateEntityDate();
+                
+                
+                
+            } catch (PublishException e) {
+                showError("Error updating style: " + e.getMessage());
+            }
+            firePublishEvent();
         }
     }
 

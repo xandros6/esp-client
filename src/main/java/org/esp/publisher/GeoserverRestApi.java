@@ -5,6 +5,7 @@ import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import it.geosolutions.geoserver.rest.GeoServerRESTPublisher;
 import it.geosolutions.geoserver.rest.GeoServerRESTReader;
+import it.geosolutions.geoserver.rest.decoder.RESTDataStore;
 import it.geosolutions.geoserver.rest.decoder.RESTFeatureType;
 import it.geosolutions.geoserver.rest.decoder.RESTLayer;
 import it.geosolutions.geoserver.rest.encoder.GSLayerEncoder;
@@ -17,7 +18,6 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,13 +51,19 @@ public class GeoserverRestApi {
     
     String classifyUrl;
     
+    boolean shapefileToPostgis = false;
+    String postgisStoreName;
+    
     private Logger logger = LoggerFactory.getLogger(GeoserverRestApi.class);
     
     private Pattern searchRules = Pattern.compile("^\\s*<Rules>\\s*(.*?)\\s*</Rules>\\s*$",Pattern.DOTALL);
 
     Dao dao;
+    ShapefileToPostgisImporter importer;
     
     SimpleHttpClient httpClient = new SimpleHttpClient();
+
+
 
     static {
         System.setProperty("com.sun.media.jai.disableMediaLib", "true");
@@ -70,6 +76,10 @@ public class GeoserverRestApi {
             @Named("gs_user") String restUser,
             @Named("gs_password") String restPassword,
             @Named("gs_wps_url") String wpsUrl,
+            @Named("shapefile_to_postgis") boolean shapefileToPostgis,
+            @Named("postgis_store") String postgisStoreName,
+            
+            ShapefileToPostgisImporter importer,
             Dao dao)
             throws ServiceException, IOException {
 
@@ -88,8 +98,13 @@ public class GeoserverRestApi {
         this.configuration = config;
         this.workspace = workspace;
         
+        this.shapefileToPostgis = shapefileToPostgis;
+        this.postgisStoreName = postgisStoreName;
+        
         httpClient.setUser(restUser);
         httpClient.setPassword(restPassword);
+        
+        this.importer = importer;
 
     }
 
@@ -119,24 +134,25 @@ public class GeoserverRestApi {
     }
 
     public boolean publishShp(File zipFile, String srs,
-            String layerAndStoreName, String styleName) {
+            String layerAndStoreName, String styleName) throws PublishException {
 
         try {
-
-            boolean x = publisher.publishShp(workspace, layerAndStoreName,
+            if(shapefileToPostgis) {
+                importer.importShapefile(zipFile, layerAndStoreName, srs);
+                return publisher.publishDBLayer(workspace, postgisStoreName, layerAndStoreName, srs, styleName);
+            } else {
+                return publisher.publishShp(workspace, layerAndStoreName,
                     layerAndStoreName, zipFile, srs, styleName);
-            return x;
-
+            }
         } catch (FileNotFoundException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            throw new PublishException("Shapefile not found: " + zipFile.getAbsolutePath(), e);
         } catch (IllegalArgumentException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            throw new PublishException("Shapefile not valid: " + zipFile.getAbsolutePath(), e);
         }
-        return false;
-
     }
+
+    
+    
 
     /**
      * Deletes the store
@@ -278,6 +294,27 @@ public class GeoserverRestApi {
         } finally {
             response.dispose();
         }
+    }
+
+    public boolean removeShapefile(String layerName) {
+        
+        boolean result = publisher.removeLayer(workspace, layerName);
+        if(result) {
+            RESTDataStore dataStore = reader.getDatastore(workspace, layerName);
+            // for shapefiles we need to remove the datastore too
+            publisher.removeDatastore(workspace, layerName);
+        }
+        return result;
+    }
+
+    public boolean removeStyle(String styleName) {
+        logger.info("Removing style " + styleName);
+        
+        if (styleName == null) {
+            return false;
+        }
+
+        return publisher.removeStyle(styleName, true);
     }
 
     

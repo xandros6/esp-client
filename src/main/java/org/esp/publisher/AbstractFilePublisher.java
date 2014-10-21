@@ -41,6 +41,16 @@ public abstract class AbstractFilePublisher implements SpatialDataPublisher {
     }
     
     /**
+     * Checks if the publisher support dynamic styling (to be applied only on 
+     * already published data).
+     * 
+     * @return
+     */
+    public boolean hasDynamicStyle() {
+        return false;
+    }
+    
+    /**
      * Fills metadata properties object reading the given file.
      * 
      * @param file

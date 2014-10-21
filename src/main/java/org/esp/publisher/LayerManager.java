@@ -79,8 +79,7 @@ public class LayerManager {
         l.setLayers(layerName);
         l.setActive(true);
         l.setVisible(true);
-        //l.setTimestamp(timestamp);
-        l.setCustomParameter("_dc", timestamp + "");
+        l.setCustomOption("_dc", timestamp + "");
         return l;
     }
 

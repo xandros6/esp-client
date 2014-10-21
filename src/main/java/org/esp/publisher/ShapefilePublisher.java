@@ -62,7 +62,7 @@ public class ShapefilePublisher extends AbstractFilePublisher {
         
         ShapefileDataStore dataStore = null;
         try {
-            File shapeFile = uncompress(zipFile);
+            File shapeFile = PublisherUtils.uncompress(zipFile);
 
             dataStore = new ShapefileDataStore(shapeFile.toURL());
             List<String> attributes = new ArrayList<String>();
@@ -117,57 +117,7 @@ public class ShapefilePublisher extends AbstractFilePublisher {
         return shapeFile.getName().substring(0, shapeFile.getName().length() - 3);
     }
 
-    /**
-     * Uncompress the input zip file into a temporary folder
-     * @param f
-     * @return
-     * @throws PublishException
-     */
-    private File uncompress(File f) throws PublishException {
-        File tempFolder = null; 
-        try {
-            
-            tempFolder = File.createTempFile("esp", "upload");
-            tempFolder.delete();
-            tempFolder.mkdirs();
-            String baseFolder = tempFolder.getAbsolutePath();
-            
-            PublisherUtils.unzipFile(f.getAbsolutePath(), "", baseFolder);
-            File[] files = new File(baseFolder).listFiles(new FilenameFilter() {
-                @Override
-                public boolean accept(File dir, String name) {
-                    return name.toLowerCase().endsWith(".shp");
-                }
-                
-            });
-            if(files.length == 1) {
-                return files[0];
-            } else if(files.length == 0) {
-                cleanTempFolder(tempFolder);
-                throw new PublishException("No shapefile included in zip");
-            } else {
-                cleanTempFolder(tempFolder);
-                throw new PublishException("Only one shapefile should be included in zip");
-            }
-            
-        } catch(ZipException e) {
-            cleanTempFolder(tempFolder);
-            throw new PublishException("Input file is not a zip file or is corrupted", e);
-        } catch (IOException e) {
-            cleanTempFolder(tempFolder);
-            throw new PublishException("Cannot create temporary folder to uncompress zip file", e);
-        } 
-    }
-
-    private void cleanTempFolder(File tempFolder) {
-        if(tempFolder != null && tempFolder.exists() && tempFolder.isDirectory()) {
-            try {
-                FileUtils.cleanDirectory(tempFolder);
-            } catch (IOException e1) {
-                logger.warn("Cannot clean temporary folder: " + tempFolder.getAbsolutePath());
-            }
-        }
-    }
+    
     
     private File createFinalZip(String baseFolder, final String oldName, String layerName) throws PublishException {
         try {
@@ -317,5 +267,15 @@ public class ShapefilePublisher extends AbstractFilePublisher {
 
     private int[] getColorArray(ColourMapEntry minEntry) {
         return new int[] {minEntry.getAlpha(), minEntry.getRed(), minEntry.getGreen(), minEntry.getBlue()};
+    }
+    
+    /**
+     * Checks if the publisher support dynamic styling (to be applied only on 
+     * already published data).
+     * 
+     * @return
+     */
+    public boolean hasDynamicStyle() {
+        return true;
     }
 }

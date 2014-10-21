@@ -79,4 +79,12 @@ public interface SpatialDataPublisher {
      * @throws PublishException 
      */
     public List<String> getAttributes(String layerName) throws PublishException;
+
+    /**
+     * Checks if the publisher support dynamic styling (to be applied only on 
+     * already published data).
+     * 
+     * @return
+     */
+    public boolean hasDynamicStyle();
 }
