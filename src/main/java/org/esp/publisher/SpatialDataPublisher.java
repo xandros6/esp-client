@@ -58,8 +58,7 @@ public interface SpatialDataPublisher {
      * @param string
      * @param rules
      */
-    public boolean updateStyle(String layerName, String attributeName, String classificationMethod,
-            int intervalsNumber, String styleTemplate, String rules) throws PublishException;
+    public boolean updateStyle(String layerName, String styleTemplate, String rules, StylingMetadata metadata) throws PublishException;
     
     /**
      * Updates an existing style using the given colourmap.
@@ -68,8 +67,7 @@ public interface SpatialDataPublisher {
      * @param string
      * @param colourMap
      */
-    public boolean updateStyle(String layerName, String attributeName, String classificationMethod,
-            int intervalsNumber, String styleTemplate, ColourMap colourMap) throws PublishException;
+    public boolean updateStyle(String layerName, String styleTemplate, StylingMetadata metadata) throws PublishException;
 
     /**
      * Returns the list of supported attributes for the given layerName.
@@ -81,10 +79,10 @@ public interface SpatialDataPublisher {
     public List<String> getAttributes(String layerName) throws PublishException;
 
     /**
-     * Checks if the publisher support dynamic styling (to be applied only on 
+     * Checks if the publisher supports ad hoc styling (to be applied only on 
      * already published data).
      * 
      * @return
      */
-    public boolean hasDynamicStyle();
+    public boolean supportsAdHocStyling();
 }

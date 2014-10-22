@@ -296,10 +296,12 @@ public class GeoserverRestApi {
         }
     }
 
-    public boolean removeShapefile(String layerName) {
-        
-        boolean result = publisher.removeLayer(workspace, layerName);
+    public boolean removeShapefile(String layerName) throws PublishException {
+        boolean result = publisher.unpublishFeatureType(workspace, shapefileToPostgis ? postgisStoreName :  layerName, layerName);
         if(result) {
+            if(shapefileToPostgis) {
+                importer.removeFeature(layerName);
+            }
             RESTDataStore dataStore = reader.getDatastore(workspace, layerName);
             // for shapefiles we need to remove the datastore too
             publisher.removeDatastore(workspace, layerName);

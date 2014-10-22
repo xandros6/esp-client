@@ -46,7 +46,7 @@ public abstract class AbstractFilePublisher implements SpatialDataPublisher {
      * 
      * @return
      */
-    public boolean hasDynamicStyle() {
+    public boolean supportsAdHocStyling() {
         return false;
     }
     
@@ -94,10 +94,10 @@ public abstract class AbstractFilePublisher implements SpatialDataPublisher {
      * @param string
      * @param colourMap
      */
-    public boolean updateStyle(String layerName, String attributeName, String classificationMethod, int intervalsNumber, String styleTemplate, 
-            ColourMap colourMap)  throws PublishException {
-        boolean stylePublished = gsr.updateStyle(layerName, attributeName, styleTemplate, 
-                getColourMapEntries(colourMap, intervalsNumber), "");
+    public boolean updateStyle(String layerName, String styleTemplate, StylingMetadata metadata)
+            throws PublishException {
+        boolean stylePublished = gsr.updateStyle(layerName, metadata.getAttributeName(), styleTemplate, 
+                getColourMapEntries(metadata.getColourMap(), metadata.getIntervalsNumber()), "");
         logger.info("Style published: " + stylePublished);
         
         return stylePublished;
@@ -110,9 +110,9 @@ public abstract class AbstractFilePublisher implements SpatialDataPublisher {
      * @param string
      * @param rules
      */
-    public boolean updateStyle(String layerName, String attributeName, String classificationMethod, int intervalsNumber, String styleTemplate, 
-            String rules) throws PublishException {
-        boolean stylePublished = gsr.updateStyle(layerName, attributeName, styleTemplate, 
+    public boolean updateStyle(String layerName, String styleTemplate, 
+            String rules, StylingMetadata metadata) throws PublishException {
+        boolean stylePublished = gsr.updateStyle(layerName, metadata.getAttributeName(), styleTemplate, 
                 new ArrayList<ColourMapEntry>(), rules) ;
         logger.info("Style published: " + stylePublished);
         

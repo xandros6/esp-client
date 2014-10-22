@@ -2,6 +2,9 @@ package org.esp.publisher;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -22,6 +25,7 @@ import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
+import org.geotools.jdbc.JDBCDataStore;
 import org.geotools.referencing.CRS;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
@@ -49,6 +53,8 @@ public class ShapefileToPostgisImporter {
     
     private Logger logger = LoggerFactory.getLogger(ShapefileToPostgisImporter.class);
     
+    private String schema;
+    
     @Inject
     public ShapefileToPostgisImporter(
             @Named("postgis_host") String postgisHost,
@@ -66,6 +72,7 @@ public class ShapefileToPostgisImporter {
         postgisConnectionParams.put("user", postgisUser);
         postgisConnectionParams.put("passwd", postgisPassword);
         
+        schema = postgisSchema;
     }
 
     /**
@@ -390,6 +397,23 @@ public class ShapefileToPostgisImporter {
     }
     
     /**
+     * Closes a Statement resource.
+     * 
+     * @param stmt
+     */
+    protected void closeResource(Statement stmt) {
+        if (stmt != null) {
+            try {
+                stmt.close();;
+            } catch (Throwable t) {
+                if (logger.isErrorEnabled()) {
+                    logger.error("Error closing datastore connection");
+                }
+            }
+        }
+    }
+    
+    /**
      * Closes a Transaction resource.
      * 
      * @param transaction
@@ -437,5 +461,41 @@ public class ShapefileToPostgisImporter {
         query.setCoordinateSystem(CRS.decode(srs));
         
         return query;
+    }
+
+    public void removeFeature(String layerName) throws PublishException {
+        final Transaction transaction = new DefaultTransaction("create");
+        DataStore dataStore = null;
+        Statement stmt = null;
+        try {
+            dataStore = createOutputDataStore();
+            JDBCDataStore jdbcStore = (JDBCDataStore)dataStore;
+            Connection conn = jdbcStore.getConnection(transaction);
+            stmt = conn.createStatement();
+            stmt.execute("DROP TABLE "+schema+".\""+layerName+"\"");
+            transaction.commit();
+        } catch (IOException e) {
+            rollback(transaction);
+            throw new PublishException("Error removing table " + layerName +" from database", e);
+        } catch (SQLException e) {
+            rollback(transaction);
+            throw new PublishException("Error removing table " + layerName +" from database", e);
+        } finally {
+            closeResource(stmt);
+            closeResource(dataStore);
+            closeResource(transaction);
+        }
+    }
+
+    private void rollback(Transaction transaction) {
+        if (transaction != null) {
+            try {
+                transaction.rollback();;
+            } catch (Throwable t) {
+                if (logger.isErrorEnabled()) {
+                    logger.error("Error rolling back transaction");
+                }
+            }
+        }
     }
 }

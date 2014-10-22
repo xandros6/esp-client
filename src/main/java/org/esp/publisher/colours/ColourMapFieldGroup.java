@@ -13,6 +13,7 @@ import org.esp.domain.blueprint.EcosystemServiceIndicator;
 import org.esp.domain.blueprint.EcosystemServiceIndicator_;
 import org.esp.domain.publisher.ColourMap;
 import org.esp.domain.publisher.ColourMapEntry;
+import org.esp.publisher.StylingMetadata;
 import org.esp.publisher.form.EditableCombo;
 import org.esp.publisher.form.EditableField;
 import org.slf4j.Logger;
@@ -31,7 +32,7 @@ import com.vaadin.ui.GridLayout;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
 
-public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
+public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  implements StylingMetadata {
 
     public static final int DEFAULT_N_INTERVALS = 10;
     
@@ -181,6 +182,7 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator> {
         updateStyleButton = new Button("Update style");
         updateStyleButton.setImmediate(true);
         updateStyleButton.setEnabled(false);
+        updateStyleButton.setStyleName("update-style-button");
         vl.addComponent(updateStyleButton);
         
         updateStyleButton.addClickListener(new ClickListener() {

@@ -179,10 +179,13 @@ public class ShapefilePublisher extends AbstractFilePublisher {
     
     
     @Override
-    public boolean updateStyle(String layerName, String attributeName, String classificationMethod, int intervalsNumber, String styleTemplate,
-            ColourMap colourMap) throws PublishException {
+    public boolean updateStyle(String layerName, String styleTemplate,
+            StylingMetadata metadata) throws PublishException {
+        String attributeName = metadata.getAttributeName();
         if(attributeName != null) {
-            return super.updateStyle(layerName, attributeName, classificationMethod, intervalsNumber, styleTemplate, getStyleRules(layerName, attributeName, classificationMethod, intervalsNumber, colourMap));
+            String classificationMethod = metadata.getClassificationMethod();
+            int intervalsNumber = metadata.getIntervalsNumber();
+            return super.updateStyle(layerName, styleTemplate, getStyleRules(layerName, attributeName, classificationMethod, intervalsNumber, metadata.getColourMap()), metadata);
         }
         return false;
     }
@@ -213,17 +216,21 @@ public class ShapefilePublisher extends AbstractFilePublisher {
     public List<String> getAttributes(String layerName) throws PublishException {
         List<String> attributes = new ArrayList<String>();
         RESTFeatureType layerInfo = gsr.getLayerInfo(layerName);
-        for(Attribute attributeInfo : layerInfo.getAttributes()) {
-            try {
-                Class<?> binding = Class.forName(attributeInfo.getBinding());
-                if(Number.class.isAssignableFrom(binding)) {
-                    attributes.add(attributeInfo.getName());
+        if(layerInfo != null) {
+            for(Attribute attributeInfo : layerInfo.getAttributes()) {
+                try {
+                    Class<?> binding = Class.forName(attributeInfo.getBinding());
+                    if(Number.class.isAssignableFrom(binding)) {
+                        attributes.add(attributeInfo.getName());
+                    }
+                } catch (ClassNotFoundException e) {
+                    throw new PublishException("Invalid binding: " + attributeInfo.getBinding(), e);
                 }
-            } catch (ClassNotFoundException e) {
-                throw new PublishException("Invalid binding: " + attributeInfo.getBinding(), e);
             }
+            return attributes;
+        } else {
+            throw new PublishException("Layer " + layerName + " is not available on GeoServer");
         }
-        return attributes;
     }
     
     
@@ -275,7 +282,7 @@ public class ShapefilePublisher extends AbstractFilePublisher {
      * 
      * @return
      */
-    public boolean hasDynamicStyle() {
+    public boolean supportsAdHocStyling() {
         return true;
     }
 }
