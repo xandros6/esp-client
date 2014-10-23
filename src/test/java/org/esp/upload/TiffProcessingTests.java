@@ -9,6 +9,7 @@ import java.io.FileNotFoundException;
 import org.esp.publisher.GeoserverRestApi;
 import org.esp.publisher.GeoTiffMetadata;
 import org.esp.publisher.GeoTiffPublisher;
+import org.esp.publisher.PublishException;
 import org.esp.publisher.UnknownCRSException;
 import org.junit.After;
 import org.junit.Assert;
@@ -45,7 +46,7 @@ public class TiffProcessingTests {
         File tifFile = new File("src/test/data/pollination1.tif");
 
 
-        GeoTiffPublisher tme = new GeoTiffPublisher(null);
+        GeoTiffPublisher tme = new GeoTiffPublisher();
 
         GeoTiffMetadata surface = (GeoTiffMetadata)tme.extractMetadata(tifFile, "aa");
 
@@ -62,7 +63,7 @@ public class TiffProcessingTests {
         File tifFile = new File("src/test/data/cropland.tif");
 
 
-        GeoTiffPublisher tme = new GeoTiffPublisher(null);
+        GeoTiffPublisher tme = new GeoTiffPublisher();
 
         GeoTiffMetadata surface = (GeoTiffMetadata)tme.extractMetadata(tifFile, "aa");
 
@@ -72,7 +73,7 @@ public class TiffProcessingTests {
     }
 
     @Test
-    public void testPublish() throws FileNotFoundException, IllegalArgumentException {
+    public void testPublish() throws PublishException  {
         
         File tifFile = new File("src/test/data/cropland.tif");
 

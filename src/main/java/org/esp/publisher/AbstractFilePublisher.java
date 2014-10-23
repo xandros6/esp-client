@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
+import com.google.inject.Inject;
 
 /**
  * Base spatial data file publisher functionality.
@@ -28,10 +29,10 @@ public abstract class AbstractFilePublisher implements SpatialDataPublisher {
     private Logger logger = LoggerFactory.getLogger(AbstractFilePublisher.class);
     
     
-    public AbstractFilePublisher(GeoserverRestApi gsr) {
+    public AbstractFilePublisher() {
         super();
-        this.gsr = gsr;
     }
+    
 
     @Override
     public PublishedFileMetadata extractMetadata(File file, String layerName) throws PublishException,
@@ -63,60 +64,53 @@ public abstract class AbstractFilePublisher implements SpatialDataPublisher {
             throws PublishException, UnknownCRSException;
 
 
-    
-    /**
-     * Creates and publish the new layer, with the given name.
-     * 
-     */
-    public abstract boolean createLayer(String layerName, String styleName,
-            PublishedFileMetadata metadata) throws PublishException;
-
     /**
      * Creates and publish a new style for the layer.
      */
     public String createStyle(PublishedFileMetadata metadata, String layerName, 
             String styleTemplate, ColourMap colourMap) throws PublishException {
-        String attributeName = getAttributeName(metadata);
-        boolean stylePublished = gsr.publishStyle(layerName, attributeName, 
-                styleTemplate, getColourMapEntries(colourMap, 1), "");
-        logger.info("Style published: " + stylePublished);
-        if(stylePublished) {
-            return layerName;
-        } else {
+       if(gsr.publishStyle(layerName, getAttributeName(metadata), 
+                styleTemplate, getColourMapEntries(colourMap, 1), "")) {
+           logger.info("Style published: " + layerName);
+           return layerName;
+       } else {
             return null;
-        }
+       }
     }
     
     /**
      * Updates an existing style using the given colourmap.
      * 
-     * @param layerName
+     * @param styleName
      * @param string
      * @param colourMap
      */
-    public boolean updateStyle(String layerName, String styleTemplate, StylingMetadata metadata)
+    public boolean updateStyle(String styleName, String styleTemplate, StylingMetadata metadata)
             throws PublishException {
-        boolean stylePublished = gsr.updateStyle(layerName, metadata.getAttributeName(), styleTemplate, 
-                getColourMapEntries(metadata.getColourMap(), metadata.getIntervalsNumber()), "");
-        logger.info("Style published: " + stylePublished);
-        
-        return stylePublished;
+        if(gsr.updateStyle(styleName, metadata.getAttributeName(), styleTemplate, 
+                getColourMapEntries(metadata.getColourMap(), metadata.getIntervalsNumber()), "")) {
+            logger.info("Style published: " + styleName);
+            return true;
+        }
+        return false;
     }
     
     /**
      * Updates an existing style using precompiled rules.
      * 
-     * @param layerName
+     * @param styleName
      * @param string
      * @param rules
      */
-    public boolean updateStyle(String layerName, String styleTemplate, 
+    public boolean updateStyle(String styleName, String styleTemplate, 
             String rules, StylingMetadata metadata) throws PublishException {
-        boolean stylePublished = gsr.updateStyle(layerName, metadata.getAttributeName(), styleTemplate, 
-                new ArrayList<ColourMapEntry>(), rules) ;
-        logger.info("Style published: " + stylePublished);
+        if(gsr.updateStyle(styleName, metadata.getAttributeName(), styleTemplate, 
+                new ArrayList<ColourMapEntry>(), rules)) {
+            logger.info("Style published: " + styleName);
+            return true;
+        }
         
-        return stylePublished;
+        return false;
     }
 
     /**
@@ -182,5 +176,18 @@ public abstract class AbstractFilePublisher implements SpatialDataPublisher {
         return null;
     }
     
+    public void setGeoserverHandler(GeoserverRestApi gsr) {
+        this.gsr = gsr;
+    }
     
+    @Override
+    public void unpublish(String layerName) throws PublishException {
+        removeLayer(layerName);
+        if(!gsr.removeStyle(layerName)) {
+            throw new PublishException("Cannot remove style for layer " + layerName);
+        }
+    }
+
+
+    protected abstract void removeLayer(String layerName) throws PublishException;
 }

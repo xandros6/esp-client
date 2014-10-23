@@ -41,7 +41,7 @@ public class ShapefileProcessingTests {
 
         File shapeFile = new File("src/test/data/states.shp");
 
-        ShapefilePublisher tme = new ShapefilePublisher(null);
+        ShapefilePublisher tme = new ShapefilePublisher();
 
         ShapefileMetadata surface = (ShapefileMetadata)tme.extractMetadata(shapeFile, "aa");
 

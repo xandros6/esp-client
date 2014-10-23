@@ -85,4 +85,35 @@ public interface SpatialDataPublisher {
      * @return
      */
     public boolean supportsAdHocStyling();
+    
+    /**
+     * Returns a default style template name
+     * for this kind of spatial data.
+     * 
+     * @return
+     */
+    public String getDefaultStyleTemplate();
+
+    /**
+     * Returns an identifier for the publisher.
+     * Binds the publisher to persisted metadata.
+     * 
+     * @return
+     */
+    public Integer getId();
+    
+    /**
+     * Configures the global Geoserver REST Api handler.
+     * 
+     * @param gsr
+     */
+    public void setGeoserverHandler(GeoserverRestApi gsr);
+
+    /**
+     * Unpublish the given layer from Geoserver.
+     * 
+     * @param layerName
+     * @throws PublishException 
+     */
+    public void unpublish(String layerName) throws PublishException;
 }

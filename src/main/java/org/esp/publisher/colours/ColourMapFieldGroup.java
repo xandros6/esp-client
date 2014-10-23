@@ -77,9 +77,7 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
     }
 
     public interface ColourMapAttributeChangeListener {
-
-        public void onValueChanged(String attributeName, String classificationMethod, int intervalsNumber);
-
+        public void onValueChanged(String attributeName);
     }
     
     public interface StyleChangeListener {
@@ -220,14 +218,14 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
             }
         });
 
-        /*attributesField.addValueChangeListener(new Property.ValueChangeListener() {
+        attributesField.addValueChangeListener(new Property.ValueChangeListener() {
             @Override
             public void valueChange(Property.ValueChangeEvent event) {
                 fireAttributeValueChanged();
             }
         });
         
-        classificationMethodField.addValueChangeListener(new Property.ValueChangeListener() {
+        /*classificationMethodField.addValueChangeListener(new Property.ValueChangeListener() {
             @Override
             public void valueChange(Property.ValueChangeEvent event) {
                 fireAttributeValueChanged();
@@ -389,11 +387,8 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
     }
 
     private void fireAttributeValueChanged() {
-        if (attributeListener != null && getAttributeName() != null && getIntervalsNumber() > 0) {
-            attributeListener.onValueChanged(getAttributeName(), 
-                    getClassificationMethod(),
-                    getIntervalsNumber()
-                    );
+        if (attributeListener != null && getAttributeName() != null) {
+            attributeListener.onValueChanged(getAttributeName());
         }
     }
 

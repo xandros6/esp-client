@@ -12,7 +12,6 @@ import java.util.List;
 
 import net.lingala.zip4j.exception.ZipException;
 
-import org.apache.commons.io.FileUtils;
 import org.esp.domain.publisher.ColourMap;
 import org.esp.domain.publisher.ColourMapEntry;
 import org.esp.publisher.utils.PublisherUtils;
@@ -50,9 +49,8 @@ public class ShapefilePublisher extends AbstractFilePublisher {
 
     protected SimpleFeatureType schema;
 
-    @Inject
-    public ShapefilePublisher(GeoserverRestApi gsr) {
-        super(gsr);
+    public ShapefilePublisher() {
+        super();
     }
     
     protected PublishedFileMetadata createMetadata(File zipFile, String layerName)
@@ -220,6 +218,7 @@ public class ShapefilePublisher extends AbstractFilePublisher {
             for(Attribute attributeInfo : layerInfo.getAttributes()) {
                 try {
                     Class<?> binding = Class.forName(attributeInfo.getBinding());
+                    // we only consider numeric attributes
                     if(Number.class.isAssignableFrom(binding)) {
                         attributes.add(attributeInfo.getName());
                     }
@@ -284,5 +283,22 @@ public class ShapefilePublisher extends AbstractFilePublisher {
      */
     public boolean supportsAdHocStyling() {
         return true;
+    }
+    
+    @Override
+    public String getDefaultStyleTemplate() {
+        return "SldVector.ftl";
+    }
+    
+    @Override
+    public Integer getId() {
+        return 2;
+    }
+    
+    @Override
+    protected void removeLayer(String layerName) throws PublishException {
+        if(!gsr.removeShapefile(layerName)) {
+            throw new PublishException("Cannot remove layer " + layerName);
+        }
     }
 }

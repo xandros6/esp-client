@@ -120,7 +120,7 @@ public class GeoserverRestApi {
      * @throws FileNotFoundException
      */
     public boolean publishTiff(File geotiff, String srs, String layerAndStoreName, String styleName)
-            throws FileNotFoundException, IllegalArgumentException {
+            throws PublishException {
 
         logger.info("Publishing Geotiff");
         
@@ -128,11 +128,29 @@ public class GeoserverRestApi {
             styleName = layerAndStoreName;
         }
 
-        return publisher.publishGeoTIFF(workspace, layerAndStoreName,
-                layerAndStoreName, geotiff, srs, ProjectionPolicy.NONE,
-                styleName, null);
+        try {
+            return publisher.publishGeoTIFF(workspace, layerAndStoreName,
+                    layerAndStoreName, geotiff, srs, ProjectionPolicy.NONE,
+                    styleName, null);
+        } catch (FileNotFoundException e) {
+            throw new PublishException("File to publish not found", e);
+        } catch (IllegalArgumentException e) {
+            throw new PublishException("File to publish not valid", e);
+        }
     }
 
+    /**
+     * Publish a shapefile in the defined workspace.
+     * Depending on the shapefileToPostgis flag, the shapefile is published as is,
+     * or imported into a configured postgis istance first.
+     * 
+     * @param zipFile
+     * @param srs
+     * @param layerAndStoreName
+     * @param styleName
+     * @return
+     * @throws PublishException
+     */
     public boolean publishShp(File zipFile, String srs,
             String layerAndStoreName, String styleName) throws PublishException {
 
@@ -171,57 +189,84 @@ public class GeoserverRestApi {
 
     }
 
-    public boolean updateStyle(String styleName, String attributeName, String templateName, List<ColourMapEntry> cmes, String rules) {
-
+    /**
+     * Updates a style using the given template and info to build the SLD.
+     *  
+     * @param styleName
+     * @param attributeName
+     * @param templateName
+     * @param cmes
+     * @param rules
+     * @return
+     * @throws PublishException
+     */
+    public boolean updateStyle(String styleName, String attributeName, String templateName,
+            List<ColourMapEntry> cmes, String rules) throws PublishException {
         logger.info("Updating style: " + styleName);
+        String sldBody;
+        try {
+            sldBody = buildSLDBody(styleName, attributeName, templateName, cmes, rules);
+            GSLayerEncoder layer = new GSLayerEncoder();
+            layer.setWmsPath("newpath");
+            if(publisher.configureLayer(workspace, styleName, layer)) {
+                logger.info("Configured " + styleName);
+                return publisher.updateStyle(sldBody, styleName);
+            } else {
+                throw new PublishException("Error configuring style " + styleName);
+            }
+        } catch (IOException e) {
+            throw new PublishException("Error reading template ("+templateName+") for style " + styleName, e);
+        } catch (TemplateException e) {
+            throw new PublishException("Error parsing template ("+templateName+") for style " + styleName, e);
+        }
 
-        String sldBody = buildSLDBody(styleName, attributeName, templateName, cmes, rules);
-
-        GSLayerEncoder layer = new GSLayerEncoder();
-        layer.setWmsPath("newpath");
-        boolean configured = publisher.configureLayer(workspace, styleName, layer);
-        logger.info("Configured ok: " + configured);
-
-        return publisher.updateStyle(sldBody, styleName);
         
-
     }
     
-    public boolean publishStyle(String styleName, String attributeName, String templateName, List<ColourMapEntry> cmes, String rules) {
+    /**
+     * 
+     * Creates a new style using the given template and info to build the SLD.
+     * 
+     * @param styleName
+     * @param attributeName
+     * @param templateName
+     * @param cmes
+     * @param rules
+     * @return
+     * @throws PublishException
+     */
+    public boolean publishStyle(String styleName, String attributeName, String templateName,
+            List<ColourMapEntry> cmes, String rules) throws PublishException {
 
         logger.info("Publishing style: " + styleName);
-
-        String sldBody = buildSLDBody(styleName, attributeName, templateName, cmes, rules);
-        return publisher.publishStyle(sldBody);
-
+        String sldBody;
+        try {
+            sldBody = buildSLDBody(styleName, attributeName, templateName, cmes, rules);
+            return publisher.publishStyle(sldBody);
+        } catch (IOException e) {
+            throw new PublishException("Error reading template ("+templateName+") for style " + styleName, e);
+        } catch (TemplateException e) {
+            throw new PublishException("Error parsing template ("+templateName+") for style " + styleName, e);
+        }
     }
     
 
-    private String buildSLDBody(String styleName, String attributeName, String templateName, List<ColourMapEntry> cmes, String rules) {
+    private String buildSLDBody(String styleName, String attributeName, String templateName,
+            List<ColourMapEntry> cmes, String rules) throws IOException, TemplateException {
+        Template template = configuration.getTemplate(templateName);
 
-        try {
+        Map<String, Object> root = new HashMap<String, Object>();
 
-            Template template = configuration.getTemplate(templateName);
+        root.put("styleName", styleName);
+        root.put("colourMapEntries", cmes);
+        root.put("attributeName", attributeName);
+        root.put("rules", rules);
 
-            Map<String, Object> root = new HashMap<String, Object>();
+        StringWriter sw = new StringWriter();
+        template.process(root, sw);
 
-            root.put("styleName", styleName);
-            root.put("colourMapEntries", cmes);
-            root.put("attributeName", attributeName);
-            root.put("rules", rules);
-
-            StringWriter sw = new StringWriter();
-            template.process(root, sw);
-
-            String sldBody = sw.toString();
-            return sldBody;
-
-        } catch (TemplateException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
+        String sldBody = sw.toString();
+        return sldBody;
     }
 
     public RESTFeatureType getLayerInfo(String layerName) {
@@ -315,7 +360,6 @@ public class GeoserverRestApi {
         if (styleName == null) {
             return false;
         }
-
         return publisher.removeStyle(styleName, true);
     }
 

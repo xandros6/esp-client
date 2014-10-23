@@ -40,10 +40,11 @@ public class GeoTiffPublisher extends AbstractFilePublisher {
         System.setProperty("com.sun.media.jai.disableMediaLib", "true");
     }
 
-    @Inject
-    public GeoTiffPublisher(GeoserverRestApi gsr) {
-        super(gsr);
+    public GeoTiffPublisher() {
+        super();
     }
+    
+   
 
     @Override
     protected PublishedFileMetadata createMetadata(File tifFile, String layerName)
@@ -150,13 +151,27 @@ public class GeoTiffPublisher extends AbstractFilePublisher {
 
     @Override
     public boolean createLayer(String layerName, String styleName, PublishedFileMetadata metadata) throws PublishException {
-        try {
-            return gsr.publishTiff(metadata.getFile(), metadata.getSrid(), layerName, styleName);
-        } catch (FileNotFoundException e) {
-            throw new PublishException("File to publish not found", e);
-        } catch (IllegalArgumentException e) {
-            throw new PublishException("File to publish not valid", e);
+        return gsr.publishTiff(metadata.getFile(), metadata.getSrid(), layerName, styleName);
+    }
+    
+    @Override
+    public String getDefaultStyleTemplate() {
+        return "SldRaster.ftl";
+    }
+    
+    @Override
+    public Integer getId() {
+        return 1;
+    }
+
+
+
+    @Override
+    protected void removeLayer(String layerName) throws PublishException {
+        if(!gsr.removeRasterStore(layerName)) {
+            throw new PublishException("Cannot remove layer " + layerName);
         }
     }
 
+    
 }

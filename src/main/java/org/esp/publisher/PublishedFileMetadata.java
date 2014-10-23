@@ -1,6 +1,7 @@
 package org.esp.publisher;
 
 import java.io.File;
+import java.util.List;
 
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
@@ -84,5 +85,35 @@ public abstract class PublishedFileMetadata {
         this.file = file;
     }
     
+    String attributeName = null;
     
+    List<String> attributes = null;
+
+    
+    /**
+     * Sets attribute name to use for simple themas.
+     * 
+     * @param attributeName
+     */
+    public void setAttributeName(String attributeName) {
+        this.attributeName = attributeName;
+    }
+
+    public String getAttributeName() {
+        return attributeName;
+    }
+    
+    /**
+     * Sets list of available attributes.
+     * 
+     * @param attributes
+     */
+    public void setAttributes(List<String> attributes) {
+        this.attributes = attributes;
+    }
+
+    public List<String> getAttributes() {
+        return attributes;
+    }
+     
 }
