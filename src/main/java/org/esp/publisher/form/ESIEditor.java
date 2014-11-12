@@ -135,9 +135,13 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         SpatialDataPublisher filePublisher = getFilePublisher();
         List<String> attributes;
         try {
-            attributes = filePublisher.getAttributes(entity.getLayerName());
-            colourMapFieldGroup.setAttributes(attributes, entity.getAttributeName());
+            String layerName = entity.getLayerName();
+            attributes = filePublisher.getAttributes(layerName);
+            String attributesInfo = filePublisher.getAttributesInfo(layerName);
+            String symbolType = filePublisher.getGeometryType(layerName);
             
+            updateUIStyle(layerName, attributesInfo, symbolType);
+            colourMapFieldGroup.setAttributes(attributes, entity.getAttributeName());
         } catch (PublishException e) {
             Notification.show("Error getting attributes for the layer: " + e.getMessage(), Type.ERROR_MESSAGE);
         }
@@ -172,6 +176,10 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
     @Override
     protected void doPreCommit(EcosystemServiceIndicator entity) {
         entity.setRole(roleManager.getRole());
+        entity.setDateUpdated(Calendar.getInstance().getTime());
+        if(colourMapFieldGroup.getSLD() != null) {
+            entity.setAttributeName("*");
+        }
     }
 
     @Override
@@ -226,15 +234,14 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         ff.addField("file", uploadField);
 
         colourMapFieldGroup = new ColourMapFieldGroup(dao);
-        // Add to the field groups
-        getFieldGroups().add(colourMapFieldGroup);
+        
 
         
         colourMapFieldGroup.setUpdateStyleListener(new StyleChangeListener() {
             
             @Override
             public void onValueChanged(ColourMap colourMap, String attributeName,
-                    String classificationMethod, int intervalsNumber) {
+                    String classificationMethod, int intervalsNumber, String SLD) {
                 updateStyle(colourMapFieldGroup);
                 
             }
@@ -271,10 +278,9 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         envelopeField.setVisible(false);
 
         addFieldGroup("Geospatial data");
-    }
-
-    private void updateEntityDate() {
-        getEntity().setDateUpdated(Calendar.getInstance().getTime());
+        
+        // Add to the field groups
+        getFieldGroups().add(colourMapFieldGroup);
     }
     
     
@@ -290,6 +296,23 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
     private boolean updateStyle(String styleName, StylingMetadata metadata) throws PublishException {
         SpatialDataPublisher filePublisher = getFilePublisher();
         return filePublisher.updateStyle(styleName, filePublisher.getDefaultStyleTemplate(), metadata);
+    }
+    
+    /**
+     * Updates a style definition with the given style metadata.
+     * 
+     * @param styleName
+     * @param metadata
+     * @return
+     * @throws PublishException
+     */
+    private void updateUIStyle(String styleName, String attributes, String symbolType) throws PublishException {
+        SpatialDataPublisher filePublisher = getFilePublisher();
+        String style = filePublisher.getPublishedStyle(styleName);
+        
+        if(style != null) {
+            colourMapFieldGroup.updateStyle(styleName, style, symbolType, attributes);
+        }
     }
 
     /**
@@ -551,6 +574,9 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
                         throw new PublishException("Error creating ad hoc style");
                     }
                 }
+                String attributesInfo = filePublisher.getAttributesInfo(layerName);
+                String symbolType = filePublisher.getGeometryType(layerName);
+                updateUIStyle(styleName, attributesInfo, symbolType);
                 if(commitForm(false)) {
                     // enable the Update Style button
                     colourMapFieldGroup.enableUpdateStyle(true);
@@ -665,17 +691,18 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
     private void updateStyle(StylingMetadata metadata) {
         String layerName = getLayerName();
         String attributeName = metadata.getAttributeName();
+        String sld = metadata.getSLD();
         if (colourMapFieldGroup.isValid() && layerName != null) {
             try {
-
-                if(attributeName != null) {
+                
+                if(attributeName != null && sld == null) {
                     if(!updateExtrema(layerName, attributeName)) {
                         showError("Cannot retrieve min - max values for the layer");
                         return;
                     }
                 }
                 if(updateStyle(layerName, metadata)) {
-                    updateEntityDate();
+                    updateUIStyle(layerName, null, null);
                     if(commitForm(false)) {
                         logger.info("Style updated");
                         firePublishEvent();

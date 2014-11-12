@@ -7,6 +7,8 @@ import org.esp.publisher.MapPublisher;
 import org.vaadin.addons.guice.ui.ScopedUI;
 
 import com.google.inject.Inject;
+import com.vaadin.annotations.JavaScript;
+import com.vaadin.annotations.StyleSheet;
 import com.vaadin.annotations.Theme;
 import com.vaadin.navigator.Navigator;
 import com.vaadin.navigator.ViewChangeListener;
@@ -15,6 +17,16 @@ import com.vaadin.ui.CssLayout;
 import com.vaadin.ui.VerticalLayout;
 
 @Theme("dashboard")
+@JavaScript({"vaadin://themes/dashboard/js/ext/adapter/ext/ext-base.js", 
+    "vaadin://themes/dashboard/js/ext/ext-all.js",
+    "vaadin://themes/dashboard/js/styler/OpenLayers.js",
+    "vaadin://themes/dashboard/js/styler/GeoExt.js",
+    "vaadin://themes/dashboard/js/styler/GeoExtExt.js",
+    "vaadin://themes/dashboard/js/styler/Styler.js",
+    "vaadin://themes/dashboard/js/ESPStyler.js"
+    })
+@StyleSheet({"vaadin://themes/dashboard/resources/css/ext-all.css",
+    "vaadin://themes/dashboard/resources/all.css"})
 public class AppUI extends ScopedUI  {
 
 	private VerticalLayout rootLayout = new VerticalLayout();

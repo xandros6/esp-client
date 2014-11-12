@@ -96,6 +96,16 @@ public abstract class AbstractFilePublisher implements SpatialDataPublisher {
     }
     
     /**
+     * Updates an existing style using full SLD.
+     * 
+     * @param layerName
+     * @param style
+     */
+    public boolean updateStyle(String styleName, String style) throws PublishException {
+        return gsr.updateStyle(styleName, style);
+    }
+    
+    /**
      * Updates an existing style using precompiled rules.
      * 
      * @param styleName
@@ -190,4 +200,36 @@ public abstract class AbstractFilePublisher implements SpatialDataPublisher {
 
 
     protected abstract void removeLayer(String layerName) throws PublishException;
+    
+    /**
+     * Gets a published style from GeoServer.
+     * 
+     * @param styleName
+     * @return
+     */
+    public String getPublishedStyle(String styleName) {
+        return null;
+    }
+    
+    /**
+     * Gets a published layer attribute information (name, type, etc.) from GeoServer.
+     * 
+     * @param styleName
+     * @return
+     * @throws PublishException 
+     */
+    public String getAttributesInfo(String layerName) throws PublishException {
+        return null;
+    }
+    
+    /**
+     * Gets a published layer geometry type from GeoServer.
+     * 
+     * @param layerName
+     * @return
+     * @throws PublishException 
+     */
+    public String getGeometryType(String layerName) throws PublishException {
+        return null;
+    }
 }

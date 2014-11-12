@@ -52,6 +52,14 @@ public interface SpatialDataPublisher {
             throws PublishException;
 
     /**
+     * Updates an existing style using full SLD.
+     * 
+     * @param layerName
+     * @param style
+     */
+    public boolean updateStyle(String layerName, String style) throws PublishException;
+    
+    /**
      * Updates an existing style using precompiled rules.
      * 
      * @param layerName
@@ -116,4 +124,30 @@ public interface SpatialDataPublisher {
      * @throws PublishException 
      */
     public void unpublish(String layerName) throws PublishException;
+
+    /**
+     * Gets a published style from GeoServer.
+     * 
+     * @param styleName
+     * @return
+     */
+    public String getPublishedStyle(String styleName);
+
+    /**
+     * Gets a published layer attribute information (name, type, etc.) from GeoServer.
+     * 
+     * @param layerName
+     * @return
+     * @throws PublishException 
+     */
+    public String getAttributesInfo(String layerName) throws PublishException;
+
+    /**
+     * Gets a published layer geometry type from GeoServer.
+     * 
+     * @param layerName
+     * @return
+     * @throws PublishException 
+     */
+    public String getGeometryType(String layerName) throws PublishException;
 }

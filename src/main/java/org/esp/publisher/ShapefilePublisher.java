@@ -179,11 +179,16 @@ public class ShapefilePublisher extends AbstractFilePublisher {
     @Override
     public boolean updateStyle(String layerName, String styleTemplate,
             StylingMetadata metadata) throws PublishException {
-        String attributeName = metadata.getAttributeName();
-        if(attributeName != null) {
-            String classificationMethod = metadata.getClassificationMethod();
-            int intervalsNumber = metadata.getIntervalsNumber();
-            return super.updateStyle(layerName, styleTemplate, getStyleRules(layerName, attributeName, classificationMethod, intervalsNumber, metadata.getColourMap()), metadata);
+        String sld = metadata.getSLD();
+        if(sld != null) {
+            return super.updateStyle(layerName, sld);
+        } else {
+            String attributeName = metadata.getAttributeName();
+            if(attributeName != null) {
+                String classificationMethod = metadata.getClassificationMethod();
+                int intervalsNumber = metadata.getIntervalsNumber();
+                return super.updateStyle(layerName, styleTemplate, getStyleRules(layerName, attributeName, classificationMethod, intervalsNumber, metadata.getColourMap()), metadata);
+            }
         }
         return false;
     }
@@ -300,5 +305,52 @@ public class ShapefilePublisher extends AbstractFilePublisher {
         if(!gsr.removeShapefile(layerName)) {
             throw new PublishException("Cannot remove layer " + layerName);
         }
+    }
+    
+    /**
+     * Gets a published style from GeoServer.
+     * 
+     * @param styleName
+     * @return
+     */
+    @Override
+    public String getPublishedStyle(String styleName) {
+        return gsr.getStyle(styleName);
+    }
+    
+    /**
+     * Gets a published layer attribute information (name, type, etc.) from GeoServer.
+     * 
+     * @param styleName
+     * @return
+     * @throws PublishException 
+     */
+    @Override
+    public String getAttributesInfo(String layerName) throws PublishException {
+        try {
+            return gsr.getAttributesInfo(layerName);
+        } catch (MalformedURLException e) {
+            throw new PublishException("Wrong DescribeFeatureType url for WFS", e);
+        } catch (IOException e) {
+            throw new PublishException("Error contacting WFS for DescribeFeatureType", e);
+        }
+    }
+    
+    /**
+     * Gets a published layer geometry type from GeoServer.
+     * 
+     * @param layerName
+     * @return
+     * @throws PublishException 
+     */
+    public String getGeometryType(String layerName) throws PublishException {
+        String symbolType = gsr.getGeometryType(layerName);
+        if(symbolType.startsWith("Multi")) {
+            symbolType=symbolType.substring("Multi".length());
+        }
+        if(symbolType.equalsIgnoreCase("LineString")) {
+            symbolType = "Line";
+        }
+        return symbolType;
     }
 }

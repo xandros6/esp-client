@@ -463,7 +463,7 @@ public class EcosystemServiceIndicator implements HasRole {
     private Date dateUpdated;
     
     @Column(name = "date_updated")
-    @Generated(value = GenerationTime.ALWAYS)
+    //@Generated(value = GenerationTime.ALWAYS)
     public Date getDateUpdated() {
         return dateUpdated;
     }

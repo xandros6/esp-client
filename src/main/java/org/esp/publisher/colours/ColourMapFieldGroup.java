@@ -4,7 +4,9 @@ import it.jrc.form.FieldGroup;
 import it.jrc.form.component.IntegerField;
 import it.jrc.persist.Dao;
 
+import java.beans.PropertyChangeListener;
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -13,23 +15,32 @@ import org.esp.domain.blueprint.EcosystemServiceIndicator;
 import org.esp.domain.blueprint.EcosystemServiceIndicator_;
 import org.esp.domain.publisher.ColourMap;
 import org.esp.domain.publisher.ColourMapEntry;
+import org.esp.publisher.PublishException;
 import org.esp.publisher.StylingMetadata;
 import org.esp.publisher.form.EditableCombo;
 import org.esp.publisher.form.EditableField;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.vaadin.dialogs.ConfirmDialog;
 
 import com.vaadin.data.Property;
 import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.fieldgroup.BeanFieldGroup;
 import com.vaadin.data.util.converter.StringToDoubleConverter;
+import com.vaadin.shared.ui.label.ContentMode;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.Button.ClickListener;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.GridLayout;
+import com.vaadin.ui.JavaScript;
+import com.vaadin.ui.Label;
+import com.vaadin.ui.OptionGroup;
 import com.vaadin.ui.TextField;
+import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 
 public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  implements StylingMetadata {
@@ -60,7 +71,17 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
 
     private ColourMap defaultValue;
     
-    Button updateStyleButton;
+    private OptionGroup stylerType;
+    
+    private Label advancedStylerContainer;
+    
+    private TextField advancedStylerConfig;
+    
+    private Button updateStyleButton;
+    
+    private boolean confirmStylerType = true;
+    
+    //Button advancedStylerButton;
 
     Logger logger = LoggerFactory.getLogger(ColourMapFieldGroup.class);
     
@@ -81,7 +102,8 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
     }
     
     public interface StyleChangeListener {
-        public void onValueChanged(ColourMap colourMap, String attributeName, String classificationMethod, int intervalsNumber);
+        public void onValueChanged(ColourMap colourMap, String attributeName,
+                String classificationMethod, int intervalsNumber, String SLD);
     }
 
     /**
@@ -115,6 +137,51 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
 
         vl = new VerticalLayout();
 
+        // Styler type Radio Buttons
+        List<String> values = new ArrayList<String>(2);
+        values.add("Basic");
+        values.add("Advanced");                
+        stylerType = new OptionGroup("Type",values);
+        stylerType.setValue("Basic");
+        stylerType.setImmediate(true);
+        stylerType.setVisible(false);
+        vl.addComponent(stylerType);
+        
+        stylerType.addValueChangeListener(new Property.ValueChangeListener() {
+            public void valueChange(ValueChangeEvent event) {
+                if (stylerType.getValue().equals("Basic")) {
+                    if(confirmStylerType) {
+                        ConfirmDialog.show(UI.getCurrent(),
+                                "Are you sure you wish to switch to Basic Style? You will loose all the changes made",
+                                new ConfirmDialog.Listener() {
+    
+                                    public void onClose(ConfirmDialog dialog) {
+                                        if (dialog.isConfirmed()) {
+                                            configureBasicStyle();
+                                        } else {
+                                            stylerType.setValue("Advanced");
+                                        }
+                                    }
+    
+                                });
+                    } else {
+                        configureBasicStyle();
+                    }
+                    
+                } else {
+                    setAdvancedVisibility(true);
+                    JavaScript.getCurrent().execute("ESPStyler.showStyler()");
+                }
+        }
+
+            private void configureBasicStyle() {
+                if(attributesField.getItemIds().size() > 0) {
+                    attributesField.select(attributesField.getItemIds().iterator().next());
+                    fireValueChanged();
+                }
+                setAdvancedVisibility(false);
+            }});
+        
         // Fields
         editableCombo = new EditableCombo<ColourMap>(ColourMap.class, dao);
         ColourMapEditor cme = new ColourMapEditor(dao);
@@ -177,6 +244,24 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
         intervalsNumberField.setVisible(false);
         vl.addComponent(intervalsNumberField);
         
+        /*advancedStylerButton = new Button("Advanced style");
+        advancedStylerButton.setImmediate(true);
+        advancedStylerButton.setEnabled(true);
+        advancedStylerButton.setStyleName("update-style-button");
+        vl.addComponent(advancedStylerButton);*/
+        
+        advancedStylerContainer = new Label("<div class=\"advanced-styler\" id=\"advancedStyler\"></div>");
+        advancedStylerContainer.setContentMode(ContentMode.HTML);
+        advancedStylerContainer.setVisible(false);
+        vl.addComponent(advancedStylerContainer);
+        
+        advancedStylerConfig = new TextField();
+        advancedStylerConfig.setId("advancedStylerConfig");
+        advancedStylerConfig.setValue(null);
+        advancedStylerConfig.setImmediate(true);
+        advancedStylerConfig.setStyleName("advanced-styler-config");
+        vl.addComponent(advancedStylerConfig);
+        
         updateStyleButton = new Button("Update style");
         updateStyleButton.setImmediate(true);
         updateStyleButton.setEnabled(false);
@@ -191,6 +276,15 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
             }
             
         });
+        
+        /*advancedStylerButton.addClickListener(new ClickListener() {
+
+            @Override
+            public void buttonClick(ClickEvent event) {
+                JavaScript.getCurrent().execute("ESPStyler.showStyler()");
+            }
+            
+        });*/
 
         // for (ColourMap colourMap : cms) {
         // cb.addItem(colourMap);
@@ -250,7 +344,19 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
 
     }
 
+    protected void setAdvancedVisibility(boolean visibility) {
+        attributesField.setVisible(!visibility);
+        classificationMethodField.setVisible(!visibility);
+        intervalsNumberField.setVisible(!visibility);
+        editableCombo.setVisible(!visibility);
+        minValField.setVisible(!visibility);
+        maxValField.setVisible(!visibility);
+        ck.setVisible(!visibility);
+        advancedStylerContainer.setVisible(visibility);
+    }
+
     public void setAttributes(List<String> attributes, String selectedAttribute) {
+        attributesField.removeAllItems();
         if(attributes != null && !attributes.isEmpty()) {
             for (String attribute : attributes) {
                 attributesField.addItem(attribute);
@@ -260,9 +366,27 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
                 classificationMethodField.select(classifications.get(0));
             }
             setAttributeVisibility(true);
+            if(selectedAttribute != null) {
+                confirmStylerType = false;
+                if(selectedAttribute.equals("*")) {
+                    stylerType.setValue("Advanced");
+                    JavaScript.getCurrent().execute("ESPStyler.showStyler()");
+                } else {
+                    stylerType.setValue("Basic");
+                }
+                confirmStylerType = true;
+            
+                setAdvancedVisibility(selectedAttribute.equals("*"));
+            }
         } else {
-            attributesField.removeAllItems();
+            
             setAttributeVisibility(false);
+            advancedStylerContainer.setVisible(false);
+            editableCombo.setVisible(true);
+            minValField.setVisible(true);
+            maxValField.setVisible(true);
+            ck.setVisible(true);
+            advancedStylerConfig.setValue(null);
         }
     }
 
@@ -270,6 +394,7 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
         attributesField.setVisible(visibility);
         classificationMethodField.setVisible(visibility);
         intervalsNumberField.setVisible(visibility);
+        stylerType.setVisible(visibility);
     }
 
     public boolean isValid() {
@@ -382,8 +507,12 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
             styleListener.onValueChanged(cm, 
                     getAttributeName(), 
                     getClassificationMethod(),
-                    getIntervalsNumber());
+                    getIntervalsNumber(), getSLD());
         }
+    }
+
+    private boolean isAdvanced() {
+        return stylerType.getValue().equals("Advanced");
     }
 
     private void fireAttributeValueChanged() {
@@ -421,5 +550,32 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
         setAttributeVisibility(false);
         updateStyleButton.setEnabled(false);
     }
+
+    public void updateStyle(String styleName,  String style, String symbolType, String attributes) throws PublishException {
+        JSONObject json = new JSONObject();
+        try {
+            json.accumulate("style", style);
+            json.accumulate("layer", styleName);
+            if(symbolType != null) {
+                json.accumulate("symbolType", symbolType);
+            }
+            if(attributes != null) {
+                json.accumulate("attributes", attributes);
+            }
+            
+            JavaScript.getCurrent().execute("ESPStyler.configureStyler("+json.toString()+")");
+            advancedStylerConfig.setValue(style);
+        } catch (JSONException e) {
+            throw new PublishException("Error configuring the advanced styler", e);
+        }
+        
+    }
+
+    @Override
+    public String getSLD() {
+        return isAdvanced() ? advancedStylerConfig.getValue() : null;
+    }
+    
+    
 
 }

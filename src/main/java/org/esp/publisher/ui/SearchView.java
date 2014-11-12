@@ -14,6 +14,7 @@ import java.util.Iterator;
 
 import org.esp.domain.blueprint.EcosystemServiceIndicator;
 import org.esp.domain.blueprint.EcosystemServiceIndicator_;
+import org.esp.publisher.GeoserverRestApi;
 import org.esp.publisher.LayerManager;
 import org.vaadin.addon.leaflet.LMap;
 
@@ -50,10 +51,13 @@ public class SearchView extends TwinPanelView implements View {
     private RoleManager roleManager;
 
     private static int COL_WIDTH = 400;
+    
+    private GeoserverRestApi gsr;
 
     @Inject
     public SearchView(Dao dao, RoleManager roleManager, 
-            @Named("gs_wms_url") String defaultWms) {
+            @Named("gs_wms_url") String defaultWms,
+            GeoserverRestApi gsr) {
 
         ContainerManager<EcosystemServiceIndicator> containerManager = new ContainerManager<EcosystemServiceIndicator>(
                 dao, EcosystemServiceIndicator.class);
@@ -62,6 +66,7 @@ public class SearchView extends TwinPanelView implements View {
         this.dao = dao;
         this.layerManager = new LayerManager(new LMap(), defaultWms);
         this.roleManager = roleManager;
+        this.gsr = gsr;
         {
             SimplePanel leftPanel = getLeftPanel();
             leftPanel.setWidth((COL_WIDTH + 80) +  "px");
@@ -106,7 +111,7 @@ public class SearchView extends TwinPanelView implements View {
             hl.setSizeFull();
             vl.addComponent(hl);
 
-            mapLegend = new MapLegend();
+            mapLegend = new MapLegend(gsr);
             hl.addComponent(mapLegend);
             hl.setSpacing(true);
             

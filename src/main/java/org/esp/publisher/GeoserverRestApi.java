@@ -7,6 +7,7 @@ import it.geosolutions.geoserver.rest.GeoServerRESTPublisher;
 import it.geosolutions.geoserver.rest.GeoServerRESTReader;
 import it.geosolutions.geoserver.rest.decoder.RESTDataStore;
 import it.geosolutions.geoserver.rest.decoder.RESTFeatureType;
+import it.geosolutions.geoserver.rest.decoder.RESTFeatureType.Attribute;
 import it.geosolutions.geoserver.rest.decoder.RESTLayer;
 import it.geosolutions.geoserver.rest.encoder.GSLayerEncoder;
 import it.geosolutions.geoserver.rest.encoder.GSResourceEncoder.ProjectionPolicy;
@@ -19,6 +20,7 @@ import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -51,12 +53,15 @@ public class GeoserverRestApi {
     
     String classifyUrl;
     
+    String describeLayerUrl;
+    
     boolean shapefileToPostgis = false;
     String postgisStoreName;
     
     private Logger logger = LoggerFactory.getLogger(GeoserverRestApi.class);
     
     private Pattern searchRules = Pattern.compile("^\\s*<Rules>\\s*(.*?)\\s*</Rules>\\s*$",Pattern.DOTALL);
+    private Pattern searchRulesError = Pattern.compile("^\\s*<string>\\s*(.*?):\\s*(.*?)\\s*</string>\\s*$",Pattern.DOTALL);
 
     Dao dao;
     ShapefileToPostgisImporter importer;
@@ -87,6 +92,8 @@ public class GeoserverRestApi {
                 + "/rest/sldservice/"
                 + workspace
                 + ":%s/classify.xml?attribute=%s&method=%s&intervals=%d&ramp=custom&startColor=0x%s&endColor=0x%s&open=true";
+        
+        this.describeLayerUrl = restUrl + "/ows?service=WFS&request=DescribeFeatureType&typeName=%s";
         
         this.dao = dao;
         this.publisher = new GeoServerRESTPublisher(restUrl, restUser,
@@ -206,14 +213,8 @@ public class GeoserverRestApi {
         String sldBody;
         try {
             sldBody = buildSLDBody(styleName, attributeName, templateName, cmes, rules);
-            GSLayerEncoder layer = new GSLayerEncoder();
-            layer.setWmsPath("newpath");
-            if(publisher.configureLayer(workspace, styleName, layer)) {
-                logger.info("Configured " + styleName);
-                return publisher.updateStyle(sldBody, styleName);
-            } else {
-                throw new PublishException("Error configuring style " + styleName);
-            }
+            return updateStyle(styleName, sldBody);
+            
         } catch (IOException e) {
             throw new PublishException("Error reading template ("+templateName+") for style " + styleName, e);
         } catch (TemplateException e) {
@@ -325,15 +326,25 @@ public class GeoserverRestApi {
     }
 
     public String getClassifiedStyle(String layerName, String attributeName, String classificationMethod, String startColor,
-            String endColor, int intervals) throws MalformedURLException, IOException {
+            String endColor, int intervals) throws MalformedURLException, IOException, PublishException {
         String sldServiceUrl = String.format(classifyUrl, layerName, attributeName,
                 classificationMethod, intervals, startColor, endColor);
+        logger.debug("Sending request to SLDService: " + sldServiceUrl);
         HTTPResponse response = httpClient.get(new URL(sldServiceUrl));
         try {
             String rules = IOUtils.toString(response.getResponseStream());
+            logger.debug("Response received from SLDService: " + rules);
             Matcher m = searchRules.matcher(rules);
             if(m.find()) {
                 return m.group(1);
+            }
+            m = searchRulesError.matcher(rules);
+            if(m.find()) {
+                String errorType = m.group(1).toLowerCase();
+                String errorDesc = m.group(2);
+                if(errorType.equals("intervals")) {
+                    throw new PublishException("The layer has " + errorDesc + " unique values. Try increasing # of intervals");
+                }
             }
             throw new IOException("sldservice response is in the wrong format");
         } finally {
@@ -361,6 +372,46 @@ public class GeoserverRestApi {
             return false;
         }
         return publisher.removeStyle(styleName, true);
+    }
+
+    public String getStyle(String styleName) {
+        return reader.getSLD(styleName);
+    }
+
+    public boolean updateStyle(String styleName, String style) throws PublishException {
+        GSLayerEncoder layer = new GSLayerEncoder();
+        layer.setWmsPath("newpath");
+        if(publisher.configureLayer(workspace, styleName, layer)) {
+            logger.info("Configured " + styleName);
+            return publisher.updateStyle(style, styleName);
+        } else {
+            throw new PublishException("Error configuring style " + styleName);
+        }
+    }
+
+    public String getAttributesInfo(String layerName) throws MalformedURLException, IOException {
+        String attributesUrl = String.format(describeLayerUrl, layerName);
+        logger.debug("Sending request to WFS: " + attributesUrl);
+        HTTPResponse response = httpClient.get(new URL(attributesUrl));
+        try {
+            String xml = IOUtils.toString(response.getResponseStream());
+            logger.debug("Response received from WFS: " + xml);
+            return xml;
+        } finally {
+            response.dispose();
+        }
+    }
+
+    public String getGeometryType(String layerName) {
+        RESTFeatureType featureType = getLayerInfo(layerName);
+        for(Attribute attr : featureType.getAttributes()) {
+            String binding = attr.getBinding();
+            if(binding.startsWith("com.vividsolutions.jts.geom.")) {
+                return binding.substring("com.vividsolutions.jts.geom.".length());
+            }
+        }
+        
+        return null;
     }
 
     

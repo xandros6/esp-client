@@ -37,5 +37,12 @@ public interface StylingMetadata {
      * @return
      */
     public int getIntervalsNumber();
+    
+    /**
+     * Returns the full SLD for the Style.
+     * 
+     * @return
+     */
+    public String getSLD();
 
 }
