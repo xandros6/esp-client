@@ -25,7 +25,14 @@ public class SpatialDataPublishers {
     private static Map<Integer, SpatialDataPublisher> publishers = null;
     
     private static GeoserverRestApi gsr = null;
-        
+    private static Map<Long, Map<String, Integer>> limits = new HashMap<Long, Map<String, Integer>>();
+       
+    
+    
+    public static void setLimits(Map<Long, Map<String, Integer>> limits) {
+        SpatialDataPublishers.limits = limits;
+    }
+
     /**
      * Gets the SpatialDataPublisher implementation bound to the given spatial data type
      * identifier.
@@ -61,6 +68,7 @@ public class SpatialDataPublishers {
         while(iter.hasNext()) {
             SpatialDataPublisher publisher = iter.next();
             publisher.setGeoserverHandler(gsr);
+            publisher.setLimits(limits.get((long)publisher.getId()));
             result.put(publisher.getId(), publisher);
         }
         return result;

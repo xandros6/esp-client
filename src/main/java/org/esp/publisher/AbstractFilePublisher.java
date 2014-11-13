@@ -2,7 +2,9 @@ package org.esp.publisher;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.esp.domain.publisher.ColourMap;
 import org.esp.domain.publisher.ColourMapEntry;
@@ -14,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
-import com.google.inject.Inject;
 
 /**
  * Base spatial data file publisher functionality.
@@ -28,6 +29,7 @@ public abstract class AbstractFilePublisher implements SpatialDataPublisher {
     
     private Logger logger = LoggerFactory.getLogger(AbstractFilePublisher.class);
     
+    private Map<String, Integer> limits = new HashMap<String, Integer>();
     
     public AbstractFilePublisher() {
         super();
@@ -39,6 +41,16 @@ public abstract class AbstractFilePublisher implements SpatialDataPublisher {
             UnknownCRSException {
         Preconditions.checkArgument(file != null, "File is null.");
         return  createMetadata(file, layerName);
+    }
+    
+    /**
+     * Returns a configured limit for the publisher.
+     * 
+     * @param type
+     * @return
+     */
+    protected int getLimit(String type) {
+        return limits.get(type);
     }
     
     /**
@@ -193,7 +205,7 @@ public abstract class AbstractFilePublisher implements SpatialDataPublisher {
     @Override
     public void unpublish(String layerName) throws PublishException {
         removeLayer(layerName);
-        if(!gsr.removeStyle(layerName)) {
+        if(gsr.getStyle(layerName) != null && !gsr.removeStyle(layerName)) {
             throw new PublishException("Cannot remove style for layer " + layerName);
         }
     }
@@ -231,5 +243,14 @@ public abstract class AbstractFilePublisher implements SpatialDataPublisher {
      */
     public String getGeometryType(String layerName) throws PublishException {
         return null;
+    }
+    
+    /**
+     * Configure Publisher limits.
+     * 
+     * @param limits
+     */
+    public void setLimits(Map<String, Integer> limits) {
+        this.limits = limits;
     }
 }

@@ -1,6 +1,7 @@
 package org.esp.publisher;
 
 import java.io.File;
+import java.util.Map;
 
 import org.esp.domain.blueprint.SpatialDataType;
 import org.vaadin.easyuploads.UploadField;
@@ -11,13 +12,20 @@ import com.vaadin.ui.Upload.FinishedEvent;
 
 public class ESPClientUploadField extends UploadField {
 
-    private static final String UPLOAD_MESSAGE = "Choose a %s to upload.  The file size limit is 150 Megabytes.";
-    private static final int FILE_SIZE_LIMIT = 157286400;
+    private static final String UPLOAD_MESSAGE = "Choose a %s to upload.  The file size limit is %s.";
+    //private static final int FILE_SIZE_LIMIT = 157286400;
 
-    public ESPClientUploadField() {
+    private Map<Long, Map<String, Integer>> limits;
+    
+    SpatialDataType spatialDataType = new SpatialDataType();
+    
+    public ESPClientUploadField(Map<Long, Map<String, Integer>> limits) {
         super();
         setFieldType(FieldType.FILE);
-        setCaption(UPLOAD_MESSAGE); }
+        setCaption(UPLOAD_MESSAGE);
+        spatialDataType.setId(1l);
+        this.limits = limits;
+    }
 
     private File file;
     private MediaType mt;
@@ -46,9 +54,7 @@ public class ESPClientUploadField extends UploadField {
         if (getValue() != null) {
 
             File file = (File) getValue();
-            if (file.length() > FILE_SIZE_LIMIT) {
-                Notification
-                        .show("The file size exceeds the limit of 150 Megabytes. Processing aborted.");
+            if(!checkLimits(file)) {
                 return null;
             }
         }
@@ -61,6 +67,35 @@ public class ESPClientUploadField extends UploadField {
     }
 
     public void updateSpatialDataType(SpatialDataType spatialDataType) {
-        setCaption(String.format(UPLOAD_MESSAGE, spatialDataType.getLabel()));
+        this.spatialDataType = spatialDataType;
+        setCaption(String.format(UPLOAD_MESSAGE, getLabel(spatialDataType.getId()), getLimit(spatialDataType.getId())));
+    }
+
+    private String getLimit(long spatialDataType) {
+        return getFileSizeLimit(spatialDataType) + " Megabytes";
+    }
+
+    private Integer getFileSizeLimit(long spatialDataType) {
+        return limits.get(spatialDataType).get("size");
+    }
+
+    private String getLabel(long spatialDataType) {
+        if(spatialDataType == 1) {
+            return "Raster (GeoTiff)";
+        } else if(spatialDataType == 2) {
+            return "Vector (Zipped Shapefile)";
+        }
+        return "";
+    }
+
+    public boolean checkLimits(File f) {
+        int fileSizeLimit = getFileSizeLimit(spatialDataType.getId());
+        if (f.length() > fileSizeLimit*1024*1024) {
+            Notification
+                .show("The file size exceeds the limit of " + fileSizeLimit + " Megabytes. Processing aborted.",
+                        Notification.Type.ERROR_MESSAGE);
+            return false;
+        }
+        return true;
     }
 }

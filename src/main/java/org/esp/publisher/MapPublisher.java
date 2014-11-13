@@ -116,11 +116,12 @@ public class MapPublisher extends TwinPanelView implements View {
                 Notification.show("No entity with id: " + stringId);
                 return;
             }
+            
+            surfaceEditor.doUpdate(entity);
             if(entity.getLayerName() == null) {
                 Notification.show("No layer bound to entity with id: " + stringId);
                 return;
             }
-            surfaceEditor.doUpdate(entity);
             layerManager.setSurfaceLayerName(entity.getLayerName(), entity.getTimestamp());
             layerManager.zoomTo(entity.getEnvelope());
 

@@ -5,6 +5,7 @@ import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import it.geosolutions.geoserver.rest.GeoServerRESTPublisher;
 import it.geosolutions.geoserver.rest.GeoServerRESTReader;
+import it.geosolutions.geoserver.rest.decoder.RESTCoverageStore;
 import it.geosolutions.geoserver.rest.decoder.RESTDataStore;
 import it.geosolutions.geoserver.rest.decoder.RESTFeatureType;
 import it.geosolutions.geoserver.rest.decoder.RESTFeatureType.Attribute;
@@ -20,7 +21,6 @@ import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -177,7 +177,22 @@ public class GeoserverRestApi {
     }
 
     
-    
+    /**
+     * Deletes the store
+     * 
+     * @return
+     */
+    public RESTCoverageStore getRasterStore(String storeName) {
+
+        logger.info("Fetching raster store");
+        
+        if (storeName == null) {
+            return null;
+        }
+
+        return reader.getCoverageStore(workspace, storeName);
+
+    }
 
     /**
      * Deletes the store

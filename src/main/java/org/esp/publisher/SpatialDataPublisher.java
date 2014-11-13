@@ -2,6 +2,7 @@ package org.esp.publisher;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 
 import org.esp.domain.publisher.ColourMap;
 
@@ -150,4 +151,11 @@ public interface SpatialDataPublisher {
      * @throws PublishException 
      */
     public String getGeometryType(String layerName) throws PublishException;
+
+    /**
+     * Configure Publisher limits.
+     * 
+     * @param limits
+     */
+    public void setLimits(Map<String, Integer> limits);
 }

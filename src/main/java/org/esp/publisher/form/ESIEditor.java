@@ -12,8 +12,10 @@ import it.jrc.persist.Dao;
 
 import java.io.File;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.persistence.metamodel.Attribute;
 import javax.persistence.metamodel.SingularAttribute;
@@ -49,6 +51,7 @@ import org.vaadin.addon.leaflet.LMap;
 import org.vaadin.addon.leaflet.util.CRSTranslator;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.data.util.converter.Converter;
@@ -76,8 +79,6 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
     private PolygonField envelopeField;
 
-    private GeoTiffPublisher tme;
-
     private ColourMapFieldGroup colourMapFieldGroup;
     
     private ComboBox spatialDataTypeField;
@@ -96,17 +97,33 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
     
     private ESPClientUploadField uploadField;
     
+    private Map<Long, Map<String, Integer>> limits = new HashMap<Long, Map<String, Integer>>();
+    
     @Inject
     public ESIEditor(Dao dao, RoleManager roleManager,
-            GeoTiffPublisher tme, GeoserverRestApi gsr) {
+            GeoserverRestApi gsr,
+            @Named("geotiff_limit_mb") int geotiffSizeLimit,
+            @Named("shapefile_limit_mb") int shapefileSizeLimit,
+            @Named("shapefile_limit_records") int shapefileRecordsLimit) {
 
         super(EcosystemServiceIndicator.class, dao);
         
-        this.tme = tme;
         this.gsr = gsr;
         SpatialDataPublishers.setGeoserverHandler(gsr);
         this.roleManager = roleManager;
 
+        
+        Map<String, Integer> rasterLimits = new HashMap<String, Integer>();
+        rasterLimits.put("size", geotiffSizeLimit);
+        limits.put(1l, rasterLimits);
+        
+        Map<String, Integer> vectorLimits = new HashMap<String, Integer>();
+        vectorLimits.put("size", shapefileSizeLimit);
+        vectorLimits.put("records", shapefileRecordsLimit);
+        limits.put(2l, vectorLimits);
+        
+        SpatialDataPublishers.setLimits(limits);
+        
         buildPublishForm();
         buildMetaForm();
     }
@@ -136,12 +153,14 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         List<String> attributes;
         try {
             String layerName = entity.getLayerName();
-            attributes = filePublisher.getAttributes(layerName);
-            String attributesInfo = filePublisher.getAttributesInfo(layerName);
-            String symbolType = filePublisher.getGeometryType(layerName);
-            
-            updateUIStyle(layerName, attributesInfo, symbolType);
-            colourMapFieldGroup.setAttributes(attributes, entity.getAttributeName());
+            if(layerName != null) {
+                attributes = filePublisher.getAttributes(layerName);
+                String attributesInfo = filePublisher.getAttributesInfo(layerName);
+                String symbolType = filePublisher.getGeometryType(layerName);
+                
+                updateUIStyle(layerName, attributesInfo, symbolType);
+                colourMapFieldGroup.setAttributes(attributes, entity.getAttributeName());
+            }
         } catch (PublishException e) {
             Notification.show("Error getting attributes for the layer: " + e.getMessage(), Type.ERROR_MESSAGE);
         }
@@ -211,13 +230,16 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         /*
          * Uploading
          */
-        uploadField = new ESPClientUploadField();
+        uploadField = new ESPClientUploadField(limits);
 
         uploadField.addListener(new ValueChangeListener() {
 
             @Override
             public void valueChange(ValueChangeEvent event) {
                 File f = (File) event.getProperty().getValue();
+                if(f == null) {
+                    showError("File has not been correctly upload.");
+                } else if(uploadField.checkLimits(f)) {
 
 //                boolean success = ESIEditor.this.isFormValid();
 //                if (!success) {
@@ -226,7 +248,8 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 //                }
 //
 //                Preconditions.checkArgument(f != null, "Where is the file?");
-                publishFile(f);
+                    publishFile(f);
+                }
             }
 
         });

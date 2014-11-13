@@ -1,8 +1,9 @@
 package org.esp.publisher;
 
+import it.geosolutions.geoserver.rest.decoder.RESTCoverageStore;
+
 import java.awt.image.RenderedImage;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import javax.media.jai.ImageLayout;
@@ -22,7 +23,6 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.TransformException;
 
 import com.google.common.primitives.Doubles;
-import com.google.inject.Inject;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.Polygon;
@@ -168,7 +168,7 @@ public class GeoTiffPublisher extends AbstractFilePublisher {
 
     @Override
     protected void removeLayer(String layerName) throws PublishException {
-        if(!gsr.removeRasterStore(layerName)) {
+        if(gsr.getRasterStore(layerName) != null && !gsr.removeRasterStore(layerName)) {
             throw new PublishException("Cannot remove layer " + layerName);
         }
     }

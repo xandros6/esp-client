@@ -17,3 +17,6 @@ postgis_database = <db_name>
 postgis_schema = layers
 postgis_user = <db_username>
 postgis_password = <db_password>
+geotiff_limit_mb=150
+shapefile_limit_mb=150
+shapefile_limit_records=1000

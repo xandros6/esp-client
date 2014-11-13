@@ -15,6 +15,7 @@ import net.lingala.zip4j.exception.ZipException;
 import org.esp.domain.publisher.ColourMap;
 import org.esp.domain.publisher.ColourMapEntry;
 import org.esp.publisher.utils.PublisherUtils;
+import org.geotools.data.Query;
 import org.geotools.data.shapefile.ShapefileDataStore;
 import org.geotools.data.store.ContentFeatureCollection;
 import org.geotools.data.store.ContentFeatureSource;
@@ -45,13 +46,15 @@ public class ShapefilePublisher extends AbstractFilePublisher {
     private Logger logger = LoggerFactory.getLogger(ShapefilePublisher.class);
     private FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
     
-
+    private int recordLimit = 1000;
 
     protected SimpleFeatureType schema;
 
     public ShapefilePublisher() {
         super();
     }
+    
+    
     
     protected PublishedFileMetadata createMetadata(File zipFile, String layerName)
             throws PublishException, UnknownCRSException {
@@ -63,39 +66,44 @@ public class ShapefilePublisher extends AbstractFilePublisher {
             File shapeFile = PublisherUtils.uncompress(zipFile);
 
             dataStore = new ShapefileDataStore(shapeFile.toURL());
-            List<String> attributes = new ArrayList<String>();
-            schema = dataStore.getSchema();
-            // pick only numeric fields (for themas) 
-            for(AttributeDescriptor descriptor : schema.getAttributeDescriptors()) {
-                if(Number.class.isAssignableFrom(descriptor.getType().getBinding())) {
-                    attributes.add(descriptor.getLocalName());
-                }
-            }
-            metadata.setAttributes(attributes);
-            
             ContentFeatureSource featureSource = dataStore.getFeatureSource();
-            if(attributes.size() > 0) {
-                String attributeName = attributes.get(0);
-                configureAttribute(metadata, featureSource, attributeName);
-            } else {
-                metadata.setMinVal(0d);
-                metadata.setMaxVal(100d);
-
-            }
-            CoordinateReferenceSystem crs = schema.getCoordinateReferenceSystem();
-            setCrs(metadata, crs);
-
-            ReferencedEnvelope e = featureSource.getBounds();
             
-            Geometry poly = PublisherUtils.envelopeToWgs84(e);
-
-            if (poly instanceof Polygon) {
-                metadata.setEnvelope((Polygon) poly);
-            }           
-
-            zipFile = createFinalZip(shapeFile.getParent(),
-                    getFileNameWithoutExtension(shapeFile), layerName);
-            metadata.setFile(zipFile);
+            if(checkLimits(featureSource)) {
+                
+                List<String> attributes = new ArrayList<String>();
+                schema = dataStore.getSchema();
+                // pick only numeric fields (for themas) 
+                for(AttributeDescriptor descriptor : schema.getAttributeDescriptors()) {
+                    if(Number.class.isAssignableFrom(descriptor.getType().getBinding())) {
+                        attributes.add(descriptor.getLocalName());
+                    }
+                }
+                metadata.setAttributes(attributes);
+                
+                
+                if(attributes.size() > 0) {
+                    String attributeName = attributes.get(0);
+                    configureAttribute(metadata, featureSource, attributeName);
+                } else {
+                    metadata.setMinVal(0d);
+                    metadata.setMaxVal(100d);
+    
+                }
+                CoordinateReferenceSystem crs = schema.getCoordinateReferenceSystem();
+                setCrs(metadata, crs);
+    
+                ReferencedEnvelope e = featureSource.getBounds();
+                
+                Geometry poly = PublisherUtils.envelopeToWgs84(e);
+    
+                if (poly instanceof Polygon) {
+                    metadata.setEnvelope((Polygon) poly);
+                }           
+    
+                zipFile = createFinalZip(shapeFile.getParent(),
+                        getFileNameWithoutExtension(shapeFile), layerName);
+                metadata.setFile(zipFile);
+            }
         } catch (MalformedURLException e) {
             throw new PublishException("Error opening the shapefile", e);
         } catch (TransformException e) {
@@ -105,11 +113,27 @@ public class ShapefilePublisher extends AbstractFilePublisher {
         } catch (IOException e) {
             throw new PublishException("Error reading the shapefile", e);
         } finally {
-            dataStore.dispose();
+            if(dataStore != null) {
+                dataStore.dispose();
+            }
         }
 
         return metadata;
     }
+
+    private boolean checkLimits(ContentFeatureSource featureSource) throws PublishException {
+        try {
+            int total = featureSource.getCount(new Query());
+            if(total > getLimit("records")) {
+                throw new PublishException("Too many records in shapefile, max is " + getLimit("records"));
+            }
+        } catch (IOException e) {
+            throw new PublishException("Cannot read shapefile");
+        }
+        return true;
+    }
+
+
 
     private String getFileNameWithoutExtension(File shapeFile) {
         return shapeFile.getName().substring(0, shapeFile.getName().length() - 3);
@@ -302,7 +326,7 @@ public class ShapefilePublisher extends AbstractFilePublisher {
     
     @Override
     protected void removeLayer(String layerName) throws PublishException {
-        if(!gsr.removeShapefile(layerName)) {
+        if(gsr.getLayerInfo(layerName)!= null && !gsr.removeShapefile(layerName)) {
             throw new PublishException("Cannot remove layer " + layerName);
         }
     }

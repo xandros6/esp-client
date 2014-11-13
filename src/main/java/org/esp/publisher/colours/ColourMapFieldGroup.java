@@ -549,6 +549,12 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
         attributesField.removeAllItems();
         setAttributeVisibility(false);
         updateStyleButton.setEnabled(false);
+        
+        editableCombo.setVisible(true);
+        minValField.setVisible(true);
+        maxValField.setVisible(true);
+        ck.setVisible(true);
+        advancedStylerContainer.setVisible(false);
     }
 
     public void updateStyle(String styleName,  String style, String symbolType, String attributes) throws PublishException {
