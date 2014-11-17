@@ -2292,8 +2292,8 @@ gxp.form.FilterField = Ext.extend(Ext.form.CompositeField, {
             }
             this.valueWidgets.removeAll();
             if (type === OpenLayers.Filter.Comparison.BETWEEN) {
-                this.valueWidgets.add(this.addValidation(this.createValueWidget('lower'), value[0]));
-                this.valueWidgets.add(this.addValidation(this.createValueWidget('upper'), value[1]));
+                this.valueWidgets.add(this.addValidation(this.createValueWidget('lower', value[0])));
+                this.valueWidgets.add(this.addValidation(this.createValueWidget('upper', value[1])));
             } else {
                 this.valueWidgets.add(this.addValidation(this.createValueWidget('single', value[0])));
             }
