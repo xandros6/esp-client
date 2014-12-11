@@ -28,7 +28,7 @@ public class ColourMapView extends VerticalLayout implements
 
 
     @Override
-    public SubmitPanel getSubmitPanel() {
+    public SubmitPanel getTopSubmitPanel() {
         return sb;
 
     }
@@ -44,5 +44,11 @@ public class ColourMapView extends VerticalLayout implements
 
         addComponent(sb);
         
+    }
+
+
+    @Override
+    public SubmitPanel getBottomSubmitPanel() {
+        return sb;
     }
 }

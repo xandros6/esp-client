@@ -4,6 +4,7 @@ import it.jrc.auth.RoleManager;
 import it.jrc.domain.adminunits.Grouping;
 import it.jrc.domain.adminunits.Grouping_;
 import it.jrc.form.FieldGroup;
+import it.jrc.form.component.FormConstants;
 import it.jrc.form.component.YearField;
 import it.jrc.form.controller.EditorController;
 import it.jrc.form.view.DefaultEditorView;
@@ -11,6 +12,7 @@ import it.jrc.form.view.IEditorView;
 import it.jrc.persist.Dao;
 
 import java.io.File;
+import java.lang.reflect.Member;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
@@ -18,6 +20,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import javax.persistence.metamodel.Attribute;
+import javax.persistence.metamodel.ManagedType;
 import javax.persistence.metamodel.SingularAttribute;
 
 import org.esp.domain.blueprint.ArealUnit_;
@@ -137,7 +140,8 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         List<FieldGroup<EcosystemServiceIndicator>> fieldGroups = getFieldGroups();
         view.buildForm(fieldGroups);
 
-        buildSubmitPanel(view.getSubmitPanel());
+        buildSubmitPanel(view.getTopSubmitPanel());
+        buildSubmitPanel(view.getBottomSubmitPanel());
     }
     
     @Override
@@ -373,6 +377,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
         // Quick hack to get a filtered TwinColSelect
         TwinColSelect groupingField = new TwinColSelect();
+        groupingField.setWidth(FormConstants.LARGE_FIELD_DEFAULT_WIDTH);
         ff.addField(EcosystemServiceIndicator_.regions, groupingField);
         List<Grouping> groupings = dao.all(Grouping.class, Grouping_.id);
         for (Grouping grouping : groupings) {
@@ -391,7 +396,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
             EditableTwinColSelect<DataSource> dataSourceField = new EditableTwinColSelect<DataSource>(DataSource.class, dao);
             dataSourceField.setEditor(new EditorController<DataSource>(DataSource.class, dao) {
                 {
-                    ff.addField(DataSource_.label);
+                    ff.addField(DataSource_.name);
                     ff.addField(DataSource_.url);
                     addFieldGroup("");
                     init(new DefaultEditorView<DataSource>());

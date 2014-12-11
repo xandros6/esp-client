@@ -694,5 +694,14 @@ $esp-green: rgb(149,204,77);
 			vertical-align: middle;
 		}
 	}
+	
+	.v-window {
+	   padding-bottom: 15px;
+	}
+	
+	.editable-field-label {
+        vertical-align: middle;
+        line-height: 30px;
+    }
 
 }

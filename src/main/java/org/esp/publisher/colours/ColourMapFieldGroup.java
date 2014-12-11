@@ -130,7 +130,7 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
     public ColourMapFieldGroup(Dao dao) {
 
         super(new BeanFieldGroup<EcosystemServiceIndicator>(EcosystemServiceIndicator.class),
-                "Styling", null);
+                "Lay-out", null);
 
         List<ColourMap> cms = dao.all(ColourMap.class);
         defaultValue = cms.get(0);

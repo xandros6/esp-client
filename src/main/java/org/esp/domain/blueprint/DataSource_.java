@@ -7,7 +7,7 @@ import javax.persistence.metamodel.StaticMetamodel;
 @StaticMetamodel(DataSource.class)
 public abstract class DataSource_ {
 
-    public static volatile SingularAttribute<DataSource,String> label;
+    public static volatile SingularAttribute<DataSource,String> name;
 
     public static volatile SingularAttribute<DataSource,String> url;
 

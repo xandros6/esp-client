@@ -31,12 +31,12 @@ public class DataSource {
 
     private String label;
 
-    @Column
-    public String getLabel() {
+    @Column(name="label")
+    public String getName() {
         return label;
     }
 
-    public void setLabel(String label) {
+    public void setName(String label) {
         this.label = label;
     }
 

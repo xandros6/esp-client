@@ -23,7 +23,8 @@ public class ESIEditorView extends VerticalLayout implements
         IEditorView<EcosystemServiceIndicator> {
 
     // private Label status;
-    private SubmitPanel submitPanel;
+    private SubmitPanel topSubmitPanel;
+    private SubmitPanel bottomSubmitPanel;
     private CssLayout mainPanel;
     private List<Component> componentsToToggle = new ArrayList<Component>();
     private List<Component> componentsToHide = new ArrayList<Component>();
@@ -33,8 +34,8 @@ public class ESIEditorView extends VerticalLayout implements
         addStyleName("display-panel-padded");
         setSizeFull();
 
-        submitPanel = new SubmitPanel();
-        addComponent(submitPanel);
+        topSubmitPanel = new SubmitPanel();
+        addComponent(topSubmitPanel);
 
         // status = new Label("Status");
         // addComponent(status);
@@ -52,12 +53,20 @@ public class ESIEditorView extends VerticalLayout implements
 
         mainPanel.setSizeFull();
         setExpandRatio(mainPanel, 1);
+        
+        bottomSubmitPanel = new SubmitPanel();
+        addComponent(bottomSubmitPanel);
     }
 
 
     @Override
-    public SubmitPanel getSubmitPanel() {
-        return submitPanel;
+    public SubmitPanel getTopSubmitPanel() {
+        return topSubmitPanel;
+    }
+    
+    @Override
+    public SubmitPanel getBottomSubmitPanel() {
+        return bottomSubmitPanel;
     }
     
     public void setNewStatus(boolean isNew) {

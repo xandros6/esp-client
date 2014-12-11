@@ -83,14 +83,14 @@ public class ESPClientUploadField extends UploadField {
         if(spatialDataType == 1) {
             return "Raster (GeoTiff)";
         } else if(spatialDataType == 2) {
-            return "Vector (Zipped Shapefile)";
+            return "Map (.zip Shapefile)";
         }
         return "";
     }
 
     public boolean checkLimits(File f) {
         int fileSizeLimit = getFileSizeLimit(spatialDataType.getId());
-        if (f.length() > fileSizeLimit*1024*1024) {
+        if (f.length() > fileSizeLimit*1024l*1024l) {
             Notification
                 .show("The file size exceeds the limit of " + fileSizeLimit + " Megabytes. Processing aborted.",
                         Notification.Type.ERROR_MESSAGE);

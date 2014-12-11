@@ -9,6 +9,7 @@ import com.vaadin.data.Property;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.CssLayout;
 import com.vaadin.ui.CustomField;
+import com.vaadin.ui.Label;
 import com.vaadin.ui.MenuBar;
 import com.vaadin.ui.MenuBar.Command;
 import com.vaadin.ui.MenuBar.MenuItem;
@@ -84,6 +85,10 @@ public abstract class EditableField<T> extends CustomField<T> {
         l.addStyleName("select-create-field");
         l.addComponent(encapsulatedField);
         l.addComponent(getEditMenu());
+        Label label = new Label("New/Edit");
+        label.setSizeUndefined();
+        label.setStyleName("editable-field-label");
+        l.addComponent(label);
         return l;
     }
 

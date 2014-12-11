@@ -12,6 +12,7 @@ import com.vaadin.data.Property;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.CssLayout;
 import com.vaadin.ui.CustomField;
+import com.vaadin.ui.Label;
 import com.vaadin.ui.MenuBar;
 import com.vaadin.ui.MenuBar.Command;
 import com.vaadin.ui.MenuBar.MenuItem;
@@ -64,7 +65,7 @@ public class EditableTwinColSelect<T> extends CustomField<Set> {
          * The selection widget
          */
         this.combo = new NoEventMultiSelect();
-        combo.setWidth(FormConstants.FIELD_DEFAULT_WIDTH);
+        combo.setWidth(FormConstants.LARGE_FIELD_DEFAULT_WIDTH);
 
         combo.setImmediate(true);
 
@@ -154,6 +155,10 @@ public class EditableTwinColSelect<T> extends CustomField<Set> {
         l.addStyleName("select-create-field");
         l.addComponent(combo);
         l.addComponent(getEditMenu());
+        Label label = new Label("New/Edit");
+        label.setSizeUndefined();
+        label.setStyleName("editable-field-label");
+        l.addComponent(label);
         return l;
     }
 
