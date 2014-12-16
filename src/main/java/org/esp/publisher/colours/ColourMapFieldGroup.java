@@ -7,8 +7,10 @@ import it.jrc.persist.Dao;
 import java.beans.PropertyChangeListener;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import org.esp.domain.blueprint.Classification;
 import org.esp.domain.blueprint.EcosystemServiceIndicator;
@@ -33,11 +35,13 @@ import com.vaadin.shared.ui.label.ContentMode;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.Button.ClickListener;
+import com.vaadin.ui.Notification.Type;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.GridLayout;
 import com.vaadin.ui.JavaScript;
 import com.vaadin.ui.Label;
+import com.vaadin.ui.Notification;
 import com.vaadin.ui.OptionGroup;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.UI;
@@ -81,6 +85,8 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
     
     private boolean confirmStylerType = true;
     
+    private Map<String, Class<?>> attributeTypes = new HashMap<String, Class<?>>();
+    
     //Button advancedStylerButton;
 
     Logger logger = LoggerFactory.getLogger(ColourMapFieldGroup.class);
@@ -98,7 +104,7 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
     }
 
     public interface ColourMapAttributeChangeListener {
-        public void onValueChanged(String attributeName);
+        public void onValueChanged(String attributeName, Class<?> attributeType);
     }
     
     public interface StyleChangeListener {
@@ -176,7 +182,16 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
 
             private void configureBasicStyle() {
                 if(attributesField.getItemIds().size() > 0) {
-                    attributesField.select(attributesField.getItemIds().iterator().next());
+                    if(attributesField.getValue() != null && !attributesField.getValue().equals("") && !attributesField.getValue().equals("*")) {
+                        attributesField.select(attributesField.getValue());
+                    } else {
+                        attributesField.select(attributesField.getItemIds().iterator().next());
+                        if(isStringAttributeType()) {
+                            updateClassificationForString();
+                        } else {
+                            classificationMethodField.select(classifications.iterator().next());
+                        }
+                    }
                     fireValueChanged();
                 }
                 setAdvancedVisibility(false);
@@ -239,6 +254,16 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
         
         vl.addComponent(classificationMethodField);
         
+        classificationMethodField.addValueChangeListener(new Property.ValueChangeListener() {
+            public void valueChange(ValueChangeEvent event) {
+                if (isStringAttributeType()
+                        && !isAvailableForString((Classification) classificationMethodField
+                                .getValue())) {
+                    Notification.show("The selected classification is not valid for this type of attribute", Type.ERROR_MESSAGE);
+                }
+            }
+        });
+        
         intervalsNumberField = new IntegerField("Intervals #");
         intervalsNumberField.setImmediate(true);
         intervalsNumberField.setVisible(false);
@@ -272,23 +297,16 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
 
             @Override
             public void buttonClick(ClickEvent event) {
-                fireStyleChanged();
+                if(!isAdvanced() && isStringAttributeType() && !isAvailableForString((Classification)classificationMethodField.getValue())) {
+                    Notification.show("The selected classification is not valid for this type of attribute", Type.ERROR_MESSAGE);
+                } else {
+                    fireStyleChanged();
+                }
             }
             
         });
         
-        /*advancedStylerButton.addClickListener(new ClickListener() {
-
-            @Override
-            public void buttonClick(ClickEvent event) {
-                JavaScript.getCurrent().execute("ESPStyler.showStyler()");
-            }
-            
-        });*/
-
-        // for (ColourMap colourMap : cms) {
-        // cb.addItem(colourMap);
-        // }
+        
 
         editableCombo.addValueChangeListener(new Property.ValueChangeListener() {
             @Override
@@ -319,19 +337,7 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
             }
         });
         
-        /*classificationMethodField.addValueChangeListener(new Property.ValueChangeListener() {
-            @Override
-            public void valueChange(Property.ValueChangeEvent event) {
-                fireAttributeValueChanged();
-            }
-        });
         
-        intervalsNumberField.addValueChangeListener(new Property.ValueChangeListener() {
-            @Override
-            public void valueChange(Property.ValueChangeEvent event) {
-                fireAttributeValueChanged();
-            }
-        });*/
 
         // Bind the fields
 
@@ -342,6 +348,11 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
         getFieldGroup().bind(classificationMethodField, EcosystemServiceIndicator_.classification.getName());
         getFieldGroup().bind(intervalsNumberField, EcosystemServiceIndicator_.intervalsNumber.getName());
 
+    }
+
+    protected boolean isStringAttributeType() {
+        Class<?> attributeType = getAttributeType();
+        return attributeType != null && String.class.isAssignableFrom(attributeType);
     }
 
     protected void setAdvancedVisibility(boolean visibility) {
@@ -355,15 +366,21 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
         advancedStylerContainer.setVisible(visibility);
     }
 
-    public void setAttributes(List<String> attributes, String selectedAttribute) {
+    public void setAttributes(Map<String, Class<?>> attributes, String selectedAttribute) {
         attributesField.removeAllItems();
         if(attributes != null && !attributes.isEmpty()) {
-            for (String attribute : attributes) {
+            attributeTypes = attributes;
+            for (String attribute : attributes.keySet()) {
                 attributesField.addItem(attribute);
             }
             attributesField.select(selectedAttribute);
             if(classificationMethodField.getValue() == null) {
-                classificationMethodField.select(classifications.get(0));
+                Class<?> attributeType = attributeTypes.get(selectedAttribute);
+                if(attributeType != null && String.class.isAssignableFrom(attributeType)) {
+                    updateClassificationForString();
+                } else { 
+                    classificationMethodField.select(classifications.get(0));
+                }
             }
             setAttributeVisibility(true);
             if(selectedAttribute != null) {
@@ -379,7 +396,7 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
                 setAdvancedVisibility(selectedAttribute.equals("*"));
             }
         } else {
-            
+            attributeTypes = new HashMap<String, Class<?>>();
             setAttributeVisibility(false);
             advancedStylerContainer.setVisible(false);
             editableCombo.setVisible(true);
@@ -420,6 +437,14 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
 
     public String getAttributeName() {
         return attributesField.getValue() == null ? null : attributesField.getValue().toString();
+    }
+    
+    public Class<?> getAttributeType() {
+        String attributeName = getAttributeName();
+        if(attributeTypes != null && attributeName != null) {
+            return attributeTypes.get(attributeName);
+        }
+        return null;
     }
     
     public String getClassificationMethod() {
@@ -516,9 +541,33 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
     }
 
     private void fireAttributeValueChanged() {
-        if (attributeListener != null && getAttributeName() != null) {
-            attributeListener.onValueChanged(getAttributeName());
+        String attributeName = getAttributeName();
+        if (attributeListener != null && attributeName != null) {
+            Class<?> attributeType = getAttributeType();
+            if(isStringAttributeType()) {
+                updateClassificationForString();
+            }
+            attributeListener.onValueChanged(attributeName, attributeType);
         }
+    }
+
+    private void updateClassificationForString() {
+        Classification newClassification = null;
+        for(Classification classification : classifications) {
+            
+            if(isAvailableForString(classification)) {
+                newClassification = classification;
+            }
+        }
+        if (newClassification != null && (classificationMethodField.getValue() == null
+                || !classificationMethodField.getValue().equals(newClassification))) {
+            classificationMethodField.setValue(newClassification);
+        }
+    }
+
+    private boolean isAvailableForString(Classification classification) {
+        // only unique values can be used on strings
+        return classification.getId() == 2l;
     }
 
     public int getIntervalsNumber() {

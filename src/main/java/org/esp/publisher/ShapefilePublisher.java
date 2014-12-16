@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import net.lingala.zip4j.exception.ZipException;
 
@@ -31,7 +33,6 @@ import org.opengis.referencing.operation.TransformException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.inject.Inject;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.Polygon;
 
@@ -70,20 +71,21 @@ public class ShapefilePublisher extends AbstractFilePublisher {
             
             if(checkLimits(featureSource)) {
                 
-                List<String> attributes = new ArrayList<String>();
+                Map<String, Class<?>> attributes = new TreeMap<String, Class<?>>();
                 schema = dataStore.getSchema();
-                // pick only numeric fields (for themas) 
+                // pick only numeric or text fields (for themas) 
                 for(AttributeDescriptor descriptor : schema.getAttributeDescriptors()) {
-                    if(Number.class.isAssignableFrom(descriptor.getType().getBinding())) {
-                        attributes.add(descriptor.getLocalName());
+                    Class<?> binding = descriptor.getType().getBinding();
+                    if(Number.class.isAssignableFrom(binding) || String.class.isAssignableFrom(binding)) {
+                        attributes.put(descriptor.getLocalName(), binding);
                     }
                 }
                 metadata.setAttributes(attributes);
                 
                 
                 if(attributes.size() > 0) {
-                    String attributeName = attributes.get(0);
-                    configureAttribute(metadata, featureSource, attributeName);
+                    String attributeName = attributes.keySet().iterator().next();
+                    configureAttribute(metadata, featureSource, attributeName, attributes.get(attributeName));
                 } else {
                     metadata.setMinVal(0d);
                     metadata.setMaxVal(100d);
@@ -173,18 +175,23 @@ public class ShapefilePublisher extends AbstractFilePublisher {
 
     
     private void configureAttribute(ShapefileMetadata metadata, ContentFeatureSource featureSource,
-            String attributeName) throws IOException {
-        metadata.setAttributeName(attributeName);                
-        Function min = ff.function("Collection_Min", ff.property(attributeName));
-        Function max = ff.function("Collection_Max", ff.property(attributeName));
-        
-        ContentFeatureCollection features = featureSource.getFeatures();
-        
-        Number value = (Number)min.evaluate( features );
-        metadata.setMinVal(value.doubleValue());
-        
-        value = (Number)max.evaluate( features );
-        metadata.setMaxVal(value.doubleValue());
+            String attributeName, Class<?> attributeType) throws IOException {
+        metadata.setAttributeName(attributeName);
+        if(Number.class.isAssignableFrom(attributeType)) {
+            Function min = ff.function("Collection_Min", ff.property(attributeName));
+            Function max = ff.function("Collection_Max", ff.property(attributeName));
+            
+            ContentFeatureCollection features = featureSource.getFeatures();
+            
+            Number value = (Number)min.evaluate( features );
+            metadata.setMinVal(value.doubleValue());
+            
+            value = (Number)max.evaluate( features );
+            metadata.setMaxVal(value.doubleValue());
+        } else {
+            metadata.setMinVal(0d);
+            metadata.setMaxVal(1d);
+        }
     }
 
     @Override
@@ -240,16 +247,16 @@ public class ShapefilePublisher extends AbstractFilePublisher {
      * @throws PublishException 
      */
     @Override
-    public List<String> getAttributes(String layerName) throws PublishException {
-        List<String> attributes = new ArrayList<String>();
+    public Map<String, Class<?>> getAttributes(String layerName) throws PublishException {
+        Map<String, Class<?>> attributes = new TreeMap<String, Class<?>>();
         RESTFeatureType layerInfo = gsr.getLayerInfo(layerName);
         if(layerInfo != null) {
             for(Attribute attributeInfo : layerInfo.getAttributes()) {
                 try {
                     Class<?> binding = Class.forName(attributeInfo.getBinding());
                     // we only consider numeric attributes
-                    if(Number.class.isAssignableFrom(binding)) {
-                        attributes.add(attributeInfo.getName());
+                    if(Number.class.isAssignableFrom(binding) || String.class.isAssignableFrom(binding)) {
+                        attributes.put(attributeInfo.getName(), binding);
                     }
                 } catch (ClassNotFoundException e) {
                     throw new PublishException("Invalid binding: " + attributeInfo.getBinding(), e);

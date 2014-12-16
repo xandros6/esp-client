@@ -79,13 +79,14 @@ public interface SpatialDataPublisher {
     public boolean updateStyle(String layerName, String styleTemplate, StylingMetadata metadata) throws PublishException;
 
     /**
-     * Returns the list of supported attributes for the given layerName.
+     * Returns the list of supported attributes for the given layerName,
+     * mapped to their types.
      * 
      * @param layerName
      * @return
      * @throws PublishException 
      */
-    public List<String> getAttributes(String layerName) throws PublishException;
+    public Map<String, Class<?>> getAttributes(String layerName) throws PublishException;
 
     /**
      * Checks if the publisher supports ad hoc styling (to be applied only on 

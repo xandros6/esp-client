@@ -53,7 +53,8 @@ public class MapLegend extends CssLayout {
         legend.setVisible(false);
         ColourMap colourMap = entity.getColourMap();
         if (colourMap != null) {
-            if(entity.getAttributeName() != null && entity.getAttributeName().equals("*")) {
+            if (entity.getSpatialDataType() != null && entity.getSpatialDataType().getId() == 2
+                    && entity.getAttributeName() != null && entity.getAttributeName().equals("*")) {
                 ck.setVisible(false);
                 legend.setVisible(true);
                 JSONObject json = new JSONObject();

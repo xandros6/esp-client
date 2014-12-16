@@ -18,6 +18,13 @@ public interface StylingMetadata {
     public String getAttributeName();
     
     /**
+     * Attribute type to style on.
+     * 
+     * @return
+     */
+    public Class<?> getAttributeType();
+    
+    /**
      * Classification method to use for style generation.
      * 
      * @return

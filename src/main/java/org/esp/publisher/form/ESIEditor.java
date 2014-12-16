@@ -154,7 +154,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         super.doUpdate(entity);
         esiEditorView.setNewStatus(false);
         SpatialDataPublisher filePublisher = getFilePublisher();
-        List<String> attributes;
+        Map<String, Class<?>> attributes;
         try {
             String layerName = entity.getLayerName();
             if(layerName != null) {
@@ -279,9 +279,9 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         colourMapFieldGroup.setAttributeListener(new ColourMapAttributeChangeListener() {
             
             @Override
-            public void onValueChanged(String attributeName) {
+            public void onValueChanged(String attributeName, Class<?> attributeType) {
                 if(getLayerName() != null) {
-                    if(!updateExtrema(getLayerName(), attributeName)) {
+                    if(!updateExtrema(getLayerName(), attributeName, attributeType)) {
                         showError("Unable to update min - max values");
                     }
                     
@@ -699,32 +699,39 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         }
     }
 
-    private boolean updateExtrema(String layerName, String attributeName) {
-        double[] extrema = gsr.getExtrema(layerName, attributeName);
-        if(extrema != null) {
-            Double minVal = extrema[0];
-            Double maxVal = extrema[1];
-            if (minVal < 0) {
-                colourMapFieldGroup.setMinValue("0");
+    private boolean updateExtrema(String layerName, String attributeName, Class<?> attributeType) {
+        if(attributeType != null && Number.class.isAssignableFrom(attributeType)) {
+            double[] extrema = gsr.getExtrema(layerName, attributeName);
+            if(extrema != null) {
+                Double minVal = extrema[0];
+                Double maxVal = extrema[1];
+                if (minVal < 0) {
+                    colourMapFieldGroup.setMinValue("0");
+                } else {
+                    colourMapFieldGroup.setMinValue(minVal.toString());
+                }
+                colourMapFieldGroup.setMaxValue(maxVal.toString());
+                return true;
             } else {
-                colourMapFieldGroup.setMinValue(minVal.toString());
+                return false;
             }
-            colourMapFieldGroup.setMaxValue(maxVal.toString());
-            return true;
         } else {
-            return false;
+            colourMapFieldGroup.setMinValue("0");
+            colourMapFieldGroup.setMaxValue("1");
+            return true;
         }
     }
     
     private void updateStyle(StylingMetadata metadata) {
         String layerName = getLayerName();
         String attributeName = metadata.getAttributeName();
+        Class<?> attributeType = metadata.getAttributeType();
         String sld = metadata.getSLD();
         if (colourMapFieldGroup.isValid() && layerName != null) {
             try {
                 
                 if(attributeName != null && sld == null) {
-                    if(!updateExtrema(layerName, attributeName)) {
+                    if(!updateExtrema(layerName, attributeName, attributeType)) {
                         showError("Cannot retrieve min - max values for the layer");
                         return;
                     }

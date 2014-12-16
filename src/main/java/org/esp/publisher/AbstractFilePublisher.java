@@ -194,7 +194,7 @@ public abstract class AbstractFilePublisher implements SpatialDataPublisher {
     * @return
     * @throws PublishException 
     */
-    public List<String> getAttributes(String layerName) throws PublishException {
+    public Map<String, Class<?>> getAttributes(String layerName) throws PublishException {
         return null;
     }
     
