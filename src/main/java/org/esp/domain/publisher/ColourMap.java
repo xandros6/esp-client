@@ -72,7 +72,10 @@ public class ColourMap {
 
         if (obj instanceof ColourMap) {
             ColourMap comparee = (ColourMap) obj;
-            if (comparee.getId().equals(getId())) {
+            if (comparee.getId() == null && getId() == null) {
+                return true;
+            }
+            if (comparee.getId() != null && comparee.getId().equals(getId())) {
                 return true;
             }
         }

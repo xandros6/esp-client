@@ -159,4 +159,20 @@ public interface SpatialDataPublisher {
      * @param limits
      */
     public void setLimits(Map<String, Integer> limits);
+    
+    
+    /**
+     * Returns a classified style with the given classification description.
+     * 
+     * @param layerName
+     * @param attributeName
+     * @param classificationMethod
+     * @param intervalsNumber
+     * @param colourMap
+     * @return
+     * @throws PublishException
+     */
+    public String classify(String layerName, String attributeName,
+            String classificationMethod, int intervalsNumber, ColourMap colourMap)
+            throws PublishException;
 }

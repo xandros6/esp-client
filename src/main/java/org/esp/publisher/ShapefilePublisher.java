@@ -218,13 +218,14 @@ public class ShapefilePublisher extends AbstractFilePublisher {
             if(attributeName != null) {
                 String classificationMethod = metadata.getClassificationMethod();
                 int intervalsNumber = metadata.getIntervalsNumber();
-                return super.updateStyle(layerName, styleTemplate, getStyleRules(layerName, attributeName, classificationMethod, intervalsNumber, metadata.getColourMap()), metadata);
+                return super.updateStyle(layerName, styleTemplate, classify(layerName, attributeName, classificationMethod, intervalsNumber, metadata.getColourMap()), metadata);
             }
         }
         return false;
     }
 
-    private String getStyleRules(String layerName, String attributeName, String classificationMethod, int intervalsNumber, ColourMap colourMap) throws PublishException {
+    @Override
+    public String classify(String layerName, String attributeName, String classificationMethod, int intervalsNumber, ColourMap colourMap) throws PublishException {
         List<ColourMapEntry> entries = colourMap.getColourMapEntries();
         
         String startColor = entries.get(0).getColor().getCSS().substring(1);

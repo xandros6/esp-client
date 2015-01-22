@@ -54,6 +54,9 @@ public class EditableCombo<T> extends EditableField<T> {
         });
     }
     
+    public ComboBox2 getEncapsulatedField() {
+        return (ComboBox2)encapsulatedField;
+    }
 
     @Override
     public void setEditor(EditorController<T> editor) {

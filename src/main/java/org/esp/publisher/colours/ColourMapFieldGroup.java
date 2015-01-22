@@ -21,6 +21,7 @@ import org.esp.publisher.PublishException;
 import org.esp.publisher.StylingMetadata;
 import org.esp.publisher.form.EditableCombo;
 import org.esp.publisher.form.EditableField;
+import org.esp.publisher.styler.StylerFieldGroup.StyleChangeListener;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -107,32 +108,9 @@ public class ColourMapFieldGroup extends FieldGroup<EcosystemServiceIndicator>  
         public void onValueChanged(String attributeName, Class<?> attributeType);
     }
     
-    public interface StyleChangeListener {
-        public void onValueChanged(ColourMap colourMap, String attributeName,
-                String classificationMethod, int intervalsNumber, String SLD);
-    }
+    
 
-    /**
-     * Public visibility of {@link TextField#setInternalValue} allows value changes from code to not fire a change event.
-     * 
-     * @author Will Temperley
-     * 
-     */
-    class DoubleField extends TextField {
-
-        public DoubleField(String caption, StringToDoubleConverter std) {
-            super(caption);
-            setConverter(std);
-            
-        }
-
-        @Override
-        public void setInternalValue(String newValue) {
-            super.setInternalValue(newValue);
-        }
-
-    }
-
+    
     public ColourMapFieldGroup(Dao dao) {
 
         super(new BeanFieldGroup<EcosystemServiceIndicator>(EcosystemServiceIndicator.class),

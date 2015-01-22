@@ -631,13 +631,13 @@ gxp.TextSymbolizer = Ext.extend(Ext.Panel, {
         Ext.applyIf(this.symbolizer, this.defaultSymbolizer);
 
         this.haloCache = {};
-		var mode = this.attributes.getCount() !== 0 ? "local" : "remote";
+        var mode = this.attributes.getCount() !== 0 ? "local" : "remote";
         var defAttributesComboConfig = {
             xtype: "combo",
             fieldLabel: this.labelValuesText,
             store: this.attributes,
             editable: false,
-			mode: mode,
+            mode: mode,
             triggerAction: "all",
             allowBlank: false,
             displayField: "name",

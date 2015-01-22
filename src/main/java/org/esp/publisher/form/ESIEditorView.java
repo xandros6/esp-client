@@ -12,6 +12,7 @@ import java.util.List;
 
 import org.esp.domain.blueprint.EcosystemServiceIndicator;
 import org.esp.publisher.colours.ColourMapFieldGroup;
+import org.esp.publisher.styler.StylerFieldGroup;
 
 import com.vaadin.data.fieldgroup.BeanFieldGroup;
 import com.vaadin.ui.Component;
@@ -95,8 +96,8 @@ public class ESIEditorView extends VerticalLayout implements
                 componentsToToggle.add(c);
             }
             
-            if (fieldGroupMeta instanceof ColourMapFieldGroup) {
-                Component content = ((ColourMapFieldGroup) fieldGroupMeta).getContent();
+            if (fieldGroupMeta instanceof StylerFieldGroup) {
+                Component content = ((StylerFieldGroup) fieldGroupMeta).getContent();
                 mainPanel.addComponent(content);
                 componentsToToggle.add(content);
             } else {

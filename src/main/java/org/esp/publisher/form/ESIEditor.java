@@ -46,7 +46,8 @@ import org.esp.publisher.StylingMetadata;
 import org.esp.publisher.UnknownCRSException;
 import org.esp.publisher.colours.ColourMapFieldGroup;
 import org.esp.publisher.colours.ColourMapFieldGroup.ColourMapAttributeChangeListener;
-import org.esp.publisher.colours.ColourMapFieldGroup.StyleChangeListener;
+import org.esp.publisher.styler.StylerFieldGroup;
+import org.esp.publisher.styler.StylerFieldGroup.StyleChangeListener;
 import org.esp.publisher.ui.ViewModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,7 +83,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
     private PolygonField envelopeField;
 
-    private ColourMapFieldGroup colourMapFieldGroup;
+    private StylerFieldGroup stylerFieldGroup;
     
     private ComboBox spatialDataTypeField;
 
@@ -161,9 +162,12 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
                 attributes = filePublisher.getAttributes(layerName);
                 String attributesInfo = filePublisher.getAttributesInfo(layerName);
                 String symbolType = filePublisher.getGeometryType(layerName);
-                
+                stylerFieldGroup.startUpdate();
                 updateUIStyle(layerName, attributesInfo, symbolType);
-                colourMapFieldGroup.setAttributes(attributes, entity.getAttributeName());
+                stylerFieldGroup.initStyler(attributes, entity.getAttributeName());
+                stylerFieldGroup.endUpdate();
+            } else {
+                stylerFieldGroup.updateUI(entity);
             }
         } catch (PublishException e) {
             Notification.show("Error getting attributes for the layer: " + e.getMessage(), Type.ERROR_MESSAGE);
@@ -171,7 +175,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         
         uploadField.updateSpatialDataType(entity.getSpatialDataType());
         
-        colourMapFieldGroup.enableUpdateStyle(true);
+        //stylerFieldGroup.enableUpdateStyle(true);
     }
 
     private SpatialDataPublisher getFilePublisher(Long id) {
@@ -191,24 +195,26 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         status.setId(NOT_VALIDATED_STATUS);
         entity.setStatus(status);
         
-        entity.setIntervalsNumber(ColourMapFieldGroup.DEFAULT_N_INTERVALS);
+        entity.setIntervalsNumber(StylerFieldGroup.DEFAULT_N_INTERVALS);
         
-        colourMapFieldGroup.setDefaultValues();
+        stylerFieldGroup.setDefaultValues();
     }
     
     @Override
     protected void doPreCommit(EcosystemServiceIndicator entity) {
         entity.setRole(roleManager.getRole());
         entity.setDateUpdated(Calendar.getInstance().getTime());
-        if(colourMapFieldGroup.getSLD() != null) {
-            entity.setAttributeName("*");
-        }
+        
+        stylerFieldGroup.preCommit(entity);
+        
+        
     }
 
     @Override
     protected void doPostCommit(EcosystemServiceIndicator entity) {
         esiEditorView.setNewStatus(false);
         uploadField.updateSpatialDataType(entity.getSpatialDataType());
+        stylerFieldGroup.updateUI(entity);
     }
 
     private void buildPublishForm() {
@@ -260,23 +266,43 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
         ff.addField("file", uploadField);
 
-        colourMapFieldGroup = new ColourMapFieldGroup(dao);
-        
+        stylerFieldGroup = new StylerFieldGroup(dao);
 
         
-        colourMapFieldGroup.setUpdateStyleListener(new StyleChangeListener() {
+        stylerFieldGroup.setUpdateStyleListener(new StyleChangeListener() {
             
             @Override
             public void onValueChanged(ColourMap colourMap, String attributeName,
                     String classificationMethod, int intervalsNumber, String SLD) {
-                updateStyle(colourMapFieldGroup);
+                updateStyle(stylerFieldGroup);
                 
+            }
+
+            @Override
+            public void onClassify(ColourMap colourMap, String attributeName,
+                    String classificationMethod, int intervalsNumber) {
+                try {
+                    SpatialDataPublisher filePublisher = getFilePublisher();
+                    String layerName = getLayerName();
+                    String sld = normalizeSLD(filePublisher.classify(layerName, attributeName, classificationMethod, intervalsNumber, colourMap));
+                    stylerFieldGroup.updateStyle(layerName, sld,
+                            filePublisher.getGeometryType(layerName),
+                            filePublisher.getAttributesInfo(layerName), true);
+                } catch (PublishException e) {
+                    showError("Error get classified style: " + e.getMessage());
+                }
+                
+            }
+
+            @Override
+            public void onUpdate(StylingMetadata style) {
+                updateStyle(style);
             }
         });
         
        
 
-        colourMapFieldGroup.setAttributeListener(new ColourMapAttributeChangeListener() {
+        stylerFieldGroup.setAttributeListener(new ColourMapAttributeChangeListener() {
             
             @Override
             public void onValueChanged(String attributeName, Class<?> attributeType) {
@@ -307,10 +333,38 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         addFieldGroup("Geospatial data");
         
         // Add to the field groups
-        getFieldGroups().add(colourMapFieldGroup);
+        getFieldGroups().add(stylerFieldGroup);
     }
     
-    
+    /**
+     * Creates a complete SLD from the classify output.
+     * 
+     * @param classify
+     * @return
+     */
+    protected String normalizeSLD(String sld) {
+        String layerName = getLayerName(); 
+        String prefix = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
+        prefix += "<sld:StyledLayerDescriptor xmlns=\"http://www.opengis.net/sld\" xmlns:sld=\"http://www.opengis.net/sld\" xmlns:ogc=\"http://www.opengis.net/ogc\" xmlns:gml=\"http://www.opengis.net/gml\" version=\"1.0.0\">";
+        prefix += "<sld:NamedLayer><sld:Name>" + layerName + "</sld:Name><sld:UserStyle><sld:Name>" + layerName + "</sld:Name><sld:Title>" + layerName + "</sld:Title>";
+        prefix += "<sld:Abstract>" + layerName + "</sld:Abstract><sld:FeatureTypeStyle><sld:Name>name</sld:Name>";
+        
+        String postfix = "</sld:FeatureTypeStyle></sld:UserStyle></sld:NamedLayer></sld:StyledLayerDescriptor>";
+        return prefix + sld
+                .replace("\n", "")
+                .replace("\r", "") 
+                .replace("<Filter>", "<ogc:Filter>")
+                .replace("</Filter>", "</ogc:Filter>")
+                .replace("<Literal>", "<ogc:Literal>")
+                .replace("</Literal>", "</ogc:Literal>")
+                .replace("<PropertyName>", "<ogc:PropertyName>")
+                .replace("</PropertyName>", "</ogc:PropertyName>")
+                .replace("<PropertyIs", "<ogc:PropertyIs")
+                .replace("</PropertyIs", "</ogc:PropertyIs")
+                .replace("<And>", "<ogc:And>")
+                .replace("</And>", "</ogc:And>")
+                + postfix;
+    }
 
     /**
      * Updates a style definition with the given style metadata.
@@ -338,7 +392,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         String style = filePublisher.getPublishedStyle(styleName);
         
         if(style != null) {
-            colourMapFieldGroup.updateStyle(styleName, style, symbolType, attributes);
+            stylerFieldGroup.updateStyle(styleName, style, symbolType, attributes, false);
         }
     }
 
@@ -573,55 +627,58 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         
         // extracts basic metadata from the uploaded file to store them in the EPS-Client database
         PublishedFileMetadata metadata = filePublisher.extractMetadata(f ,layerName);
-        
+        stylerFieldGroup.startUpdate();
         // update UI with the extracted metadata (min - max, srs, etc.)
         updateUIAfterPublish(metadata);
-        
-        if (getLayerName() == null) {
-            // new layer, set the chosen layer name
-            setLayerName(layerName);
-        } else {
-            // remove the old published data, before replacing it with the new one
-            unpublishEntity(getEntity());
-        }
-        // create a basic style for the layer
-        String styleName = filePublisher.createStyle(metadata, layerName,
-                filePublisher.getDefaultStyleTemplate(), colourMapFieldGroup.getColourMap());
-        
-        if(styleName != null) {
-            logger.info("Basic style created: " + styleName);
-            // publish the new layer
-            if(filePublisher.createLayer(layerName, styleName, metadata)) {
-                logger.info("Layer created: " + layerName);
-                // some data types require the layer to be published before
-                // we can create the final style for it
-                if(filePublisher.supportsAdHocStyling()) {
-                    if(updateStyle(layerName, colourMapFieldGroup)) {
-                        logger.info("Ad hoc style created");
-                    } else {
-                        throw new PublishException("Error creating ad hoc style");
+        try {
+            if (getLayerName() == null) {
+                // new layer, set the chosen layer name
+                setLayerName(layerName);
+            } else {
+                // remove the old published data, before replacing it with the new one
+                unpublishEntity(getEntity());
+            }
+            // create a basic style for the layer
+            String styleName = filePublisher.createStyle(metadata, layerName,
+                    filePublisher.getDefaultStyleTemplate(), stylerFieldGroup.getDefaultColourMap());
+            
+            if(styleName != null) {
+                logger.info("Basic style created: " + styleName);
+                // publish the new layer
+                if(filePublisher.createLayer(layerName, styleName, metadata)) {
+                    logger.info("Layer created: " + layerName);
+                    // some data types require the layer to be published before
+                    // we can create the final style for it
+                    if(filePublisher.supportsAdHocStyling()) {
+                        if(updateStyle(layerName, stylerFieldGroup.getBasicStyle())) {
+                            logger.info("Ad hoc style created");
+                        } else {
+                            throw new PublishException("Error creating ad hoc style");
+                        }
                     }
-                }
-                String attributesInfo = filePublisher.getAttributesInfo(layerName);
-                String symbolType = filePublisher.getGeometryType(layerName);
-                updateUIStyle(styleName, attributesInfo, symbolType);
-                if(commitForm(false)) {
-                    // enable the Update Style button
-                    colourMapFieldGroup.enableUpdateStyle(true);
-                    logger.info("File saved");
+                    String attributesInfo = filePublisher.getAttributesInfo(layerName);
+                    String symbolType = filePublisher.getGeometryType(layerName);
+                    updateUIStyle(styleName, attributesInfo, symbolType);
+                    if(commitForm(false)) {
+                        // enable the Update Style button
+                        //stylerFieldGroup.enableUpdateStyle(true);
+                        logger.info("File saved");
+                    } else {
+                        // TODO: rollback
+                        throw new PublishException("Error saving published layer metadata");
+                    }
+                    
+                    firePublishEvent();
                 } else {
                     // TODO: rollback
-                    throw new PublishException("Error saving published layer metadata");
+                    throw new PublishException("Error publishing layer");
                 }
-                
-                firePublishEvent();
             } else {
                 // TODO: rollback
-                throw new PublishException("Error publishing layer");
+                throw new PublishException("Error creating style");
             }
-        } else {
-            // TODO: rollback
-            throw new PublishException("Error creating style");
+        } finally {
+            stylerFieldGroup.endUpdate();
         }
     }
 
@@ -637,21 +694,19 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         // A bit hacky but there's no good way to determine real no-data
         // values.
         if (minVal < 0) {
-            colourMapFieldGroup.setMinValue("0");
+            stylerFieldGroup.setMinValue("0");
         } else {
-            colourMapFieldGroup.setMinValue(metadata.getMinVal().toString());
+            stylerFieldGroup.setMinValue(metadata.getMinVal().toString());
         }
-        colourMapFieldGroup.setMaxValue(metadata.getMaxVal().toString());
+        stylerFieldGroup.setMaxValue(metadata.getMaxVal().toString());
 
         sridField.setValue(metadata.getSrid().toString());
-
+        stylerFieldGroup.setDefaultColorMap();
         spatialReferenceInfoField.setValue(metadata
                 .getDescription());
 
         envelopeField.setValue((LinearRing) metadata.getEnvelope().getBoundary());
-        if(metadata.getAttributes() != null && metadata.getAttributeName() != null) {
-            colourMapFieldGroup.setAttributes(metadata.getAttributes(), metadata.getAttributeName());
-        }
+        stylerFieldGroup.initStyler(metadata.getAttributes(), metadata.getAttributeName());
     }
 
     private void showError(String message) {
@@ -706,18 +761,18 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
                 Double minVal = extrema[0];
                 Double maxVal = extrema[1];
                 if (minVal < 0) {
-                    colourMapFieldGroup.setMinValue("0");
+                    stylerFieldGroup.setMinValue("0");
                 } else {
-                    colourMapFieldGroup.setMinValue(minVal.toString());
+                    stylerFieldGroup.setMinValue(minVal.toString());
                 }
-                colourMapFieldGroup.setMaxValue(maxVal.toString());
+                stylerFieldGroup.setMaxValue(maxVal.toString());
                 return true;
             } else {
                 return false;
             }
         } else {
-            colourMapFieldGroup.setMinValue("0");
-            colourMapFieldGroup.setMaxValue("1");
+            stylerFieldGroup.setMinValue("0");
+            stylerFieldGroup.setMaxValue("1");
             return true;
         }
     }
@@ -727,7 +782,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         String attributeName = metadata.getAttributeName();
         Class<?> attributeType = metadata.getAttributeType();
         String sld = metadata.getSLD();
-        if (colourMapFieldGroup.isValid() && layerName != null) {
+        if (layerName != null) {
             try {
                 
                 if(attributeName != null && sld == null) {

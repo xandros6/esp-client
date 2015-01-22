@@ -26,14 +26,14 @@ var ESPStyler = (function() {
         updateStyle();
 	}
 	
-	function saveRule(rule) {
+	function saveRule(rule, doNotNotify) {
         var i = userStyle.rules.indexOf(selectedRule);
         userStyle.rules[i] = rule;
 	
-		updateStyle();
+		updateStyle(doNotNotify);
 	}
 	
-	function updateStyle() {
+	function updateStyle(doNotNotify) {
 		var format = new OpenLayers.Format.SLD({multipleSymbolizers: true});
 		var newStyle = format.write({
            namedLayers: [{
@@ -45,7 +45,9 @@ var ESPStyler = (function() {
 		legend = createLegend(userStyle.rules, {symbolType: symbolType, selectable: true});
 	
 		Ext.getDom('advancedStylerConfig').value = newStyle;
-		sendEvent('change', Ext.getDom('advancedStylerConfig'));
+		if(!doNotNotify) {
+			sendEvent('change', Ext.getDom('advancedStylerConfig'));
+		}
 	}
 	
 	function sendEvent(eventName, element) {
@@ -108,7 +110,7 @@ var ESPStyler = (function() {
                 text: "Cancel",
                 iconCls: "cancel",
                 handler: function() {
-                    saveRule(origRule);
+                    saveRule(origRule, true);
                     ruleDlg.close();
                 }
             }, {
@@ -257,7 +259,7 @@ var ESPStyler = (function() {
 			panel = new Ext.Container({
 				title: 'Legend',
 				renderTo: 'advancedLegend',
-				width: 400,
+				width: 300,
 				layout: "form",
 				items: [rulesFieldSet]
 			});
@@ -323,7 +325,7 @@ var ESPStyler = (function() {
 			panel = new Ext.Panel({
 				title: 'Advanced Styler',
 				renderTo: 'advancedStyler',
-				width: 400,
+				width: 300,
 				height: 300,
 				layout: "form",
 				items: [
