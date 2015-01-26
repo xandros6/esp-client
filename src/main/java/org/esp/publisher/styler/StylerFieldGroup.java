@@ -29,6 +29,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.vaadin.dialogs.ConfirmDialog;
 
 import com.vaadin.data.Property;
 import com.vaadin.data.Property.ValueChangeEvent;
@@ -46,6 +47,7 @@ import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.JavaScript;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Notification;
+import com.vaadin.ui.UI;
 import com.vaadin.ui.Notification.Type;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
@@ -316,8 +318,22 @@ public class StylerFieldGroup extends FieldGroup<EcosystemServiceIndicator> impl
 
     protected void fireClassify() {
         if (styleListener != null) {
-            styleListener.onClassify(getColourMap(), getAttributeName(), getClassificationMethod(),
-                    getIntervalsNumber());
+            if(isAdvancedStyle() || (currentStyle != null && currentStyle.getSLD() != null)) {
+                ConfirmDialog.show(UI.getCurrent(),
+                        "Are you sure you want to switch to Classified Style? You will loose all the changes made!",
+                        new ConfirmDialog.Listener() {
+    
+                            public void onClose(ConfirmDialog dialog) {
+                                if (dialog.isConfirmed()) {
+                                    doClassify();
+                                }
+                            }
+    
+                        });
+            } else {
+                doClassify();
+            }
+            
         }
 
     }
@@ -948,6 +964,11 @@ public class StylerFieldGroup extends FieldGroup<EcosystemServiceIndicator> impl
     private boolean isAdvancedStyle() {
         return committedStyle != null && committedStyle.getSLD() != null
                 && committedStyle.getAttributeName() == null;
+    }
+
+    private void doClassify() {
+        styleListener.onClassify(getColourMap(), getAttributeName(), getClassificationMethod(),
+                getIntervalsNumber());
     }
 
     /**
