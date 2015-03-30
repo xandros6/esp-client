@@ -27,8 +27,9 @@ public class FakeAuthServlet extends AuthServlet {
     @Inject
     public FakeAuthServlet(OpenIdManager manager, 
             @Named("context_path") String contextPath,
+            
             Configuration templateConf, EntityManagerFactory emf) {
-        super(manager, contextPath, templateConf, emf);
+        super(manager, contextPath, null, null, null, null, templateConf, emf);
     }
 
     @Override

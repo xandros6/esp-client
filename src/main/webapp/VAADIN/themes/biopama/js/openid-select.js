@@ -19,24 +19,29 @@
       providers: [
         {
           name: 'Google',
-          url: 'https://www.google.com/accounts/o8/id',
+          //url: 'https://www.google.com/accounts/o8/id',
+          url: 'https://accounts.google.com/o/oauth2/auth',
+          type: 'openidconnect',
           label: null,
           big: true
         },
         {
           name: 'Yahoo',
           url: 'Yahoo',
+          type: 'oauth',
           label: null,
           big: true
         },    
         {
           name: 'MyOpenID',
           url: 'http://{username}.myopenid.com/',
+          type: 'oauth',
           big: true
         },
         {
           name: 'StackExchange',
           url: 'https://openid.stackexchange.com/',
+          type: 'oauth',
           label: null,
           big: true,
           disabled: true
@@ -111,6 +116,7 @@
     var submit = function(){
       var prov = (gprovider.url) ? gprovider.url.replace('{username}', $('#' + INPUTID).val()): $('#' + INPUTID).val();
       form.append($('<input type="hidden" name="url" value="' + prov + '" />'));
+      form.append($('<input type="hidden" name="type" value="' + gprovider.type + '" />'));
       form.append($('<input type="hidden" name="referrer" value="' + loginReturnTo + '" />'));
       form.append($('<input type="hidden" name="servlet_url" value="' + window.location.href + '" />'));
 //      form.append($('<input type="hidden" name="op" value="' + prov + '" />'));
