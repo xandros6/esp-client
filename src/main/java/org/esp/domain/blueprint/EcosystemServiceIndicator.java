@@ -10,6 +10,8 @@ import java.util.Set;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -389,6 +391,19 @@ public class EcosystemServiceIndicator implements HasRole {
         this.status = status;
     }
     
+    
+    private PublishStatus publishStatus = PublishStatus.NOT_VALIDATED;
+      
+    @Enumerated(EnumType.STRING)
+    @Column(name = "publish_status")
+    public PublishStatus getPublishStatus() {
+        return publishStatus;
+    }
+
+    public void setPublishStatus(PublishStatus publishStatus) {
+        this.publishStatus = publishStatus;
+    }
+
     private String spatialReferenceInfo;
     
     @Column(name = "spatial_reference_info")
