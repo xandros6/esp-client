@@ -14,6 +14,8 @@ import java.util.Iterator;
 
 import org.esp.domain.blueprint.EcosystemServiceIndicator;
 import org.esp.domain.blueprint.EcosystemServiceIndicator_;
+import org.esp.domain.blueprint.PublishStatus;
+import org.esp.domain.blueprint.Status;
 import org.esp.publisher.GeoserverRestApi;
 import org.esp.publisher.LayerManager;
 import org.vaadin.addon.leaflet.LMap;
@@ -23,11 +25,20 @@ import com.google.inject.name.Named;
 import com.vaadin.addon.jpacontainer.EntityItem;
 import com.vaadin.addon.jpacontainer.JPAContainer;
 import com.vaadin.addon.jpacontainer.JPAContainerItem;
+import com.vaadin.data.Container.Filterable;
 import com.vaadin.data.Property;
+import com.vaadin.data.Property.ValueChangeEvent;
+import com.vaadin.data.util.filter.Compare.Equal;
+import com.vaadin.data.util.filter.Or;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
+import com.vaadin.ui.Alignment;
+import com.vaadin.ui.Button;
+import com.vaadin.ui.Button.ClickEvent;
+import com.vaadin.ui.CheckBox;
 import com.vaadin.ui.Component;
 import com.vaadin.ui.HorizontalLayout;
+import com.vaadin.ui.Label;
 import com.vaadin.ui.Table;
 import com.vaadin.ui.VerticalLayout;
 import com.vividsolutions.jts.geom.Polygon;
@@ -51,8 +62,12 @@ public class SearchView extends TwinPanelView implements View {
     private RoleManager roleManager;
 
     private static int COL_WIDTH = 400;
-    
+
     private GeoserverRestApi gsr;
+
+    private Status validated;
+
+    private Status notvalidated;
 
     @Inject
     public SearchView(Dao dao, RoleManager roleManager, 
@@ -61,12 +76,17 @@ public class SearchView extends TwinPanelView implements View {
 
         ContainerManager<EcosystemServiceIndicator> containerManager = new ContainerManager<EcosystemServiceIndicator>(
                 dao, EcosystemServiceIndicator.class);
+
+        this.validated = dao.getEntityManager().find(Status.class,   PublishStatus.VALIDATED.getValue());
+        this.notvalidated = dao.getEntityManager().find(Status.class,  PublishStatus.NOT_VALIDATED .getValue());
+        
         this.esiContainer = containerManager.getContainer();
+        esiContainer.setAutoCommit(false);
         esiContainer.sort(new String[] {"dateUpdated"}, new boolean[]{false});
         this.dao = dao;
         this.layerManager = new LayerManager(new LMap(), defaultWms);
         this.roleManager = roleManager;
-        this.gsr = gsr;
+        addPublishFilter(esiContainer);
         {
             SimplePanel leftPanel = getLeftPanel();
             leftPanel.setWidth((COL_WIDTH + 80) +  "px");
@@ -88,10 +108,92 @@ public class SearchView extends TwinPanelView implements View {
 
             content.addComponent(filterPanel);
 
-            EntityTable<EcosystemServiceIndicator> ecosystemServiceIndicatorTable = getEcosystemServiceIndicatorTable();
-            content.addComponent(ecosystemServiceIndicatorTable);
+            final EntityTable<EcosystemServiceIndicator> ecosystemServiceIndicatorTable = getEcosystemServiceIndicatorTable();
+            
+            /*
+             * Top button bar
+             */
+            if(roleManager.getRole().getIsSuperUser()) {
+                HorizontalLayout buttonBar = new HorizontalLayout();
+                buttonBar.setSpacing(true);
+                buttonBar.setHeight("50px");
+                Button pb = new Button("Publish");
+                pb.addClickListener(new Button.ClickListener(){
+                    public void buttonClick(ClickEvent event) {
+                        if(esiContainer.isModified()){
+                            esiContainer.commit();
+                            esiContainer.refresh();
+                        }
+                        /*
+                        Iterator<Component> i = ecosystemServiceIndicatorTable.iterator();
+                        while (i.hasNext()) {
+                            Component c = i.next();
+                            if (c.getId() != null && c instanceof CheckBox) {
+                                CheckBox cb = (CheckBox) c;
+                                if(cb.getValue()){
+                                    //JPAContainerItem<?> item = (JPAContainerItem<?>) esiContainer.getIdByIndex(
+                                }
+                            }
+                        }
+                        */
+                    }
+                });
+                buttonBar.addComponent(pb);
+                buttonBar.setComponentAlignment(pb, Alignment.MIDDLE_CENTER);
+                Button sb = new Button("Send back");
+                buttonBar.addComponent(sb);
+                buttonBar.setComponentAlignment(sb, Alignment.MIDDLE_CENTER);
+                content.addComponent(buttonBar);
+            }
 
+            /*
+             * Table
+             */
+            
+            content.addComponent(ecosystemServiceIndicatorTable);
             content.setExpandRatio(ecosystemServiceIndicatorTable, 1);
+
+            /*
+             * Bottom button bar
+             */
+            if (roleManager.getRole().getIsSuperUser()) {
+                HorizontalLayout buttonBar = new HorizontalLayout();
+                buttonBar.setSpacing(true);
+                buttonBar.setHeight("50px");
+                Button sa = new Button("Select all");
+                sa.addClickListener(new Button.ClickListener(){
+                    public void buttonClick(ClickEvent event) {
+                        Iterator<Component> i = ecosystemServiceIndicatorTable.iterator();
+                        while (i.hasNext()) {
+                            Component c = i.next();
+                            if (c.getId() != null && c.getId().contains("published")
+                                    && c instanceof CheckBox) {
+                                CheckBox cb = (CheckBox) c;
+                                cb.setValue(true);
+                            }
+                        }
+                    }
+                });
+                buttonBar.addComponent(sa);
+                buttonBar.setComponentAlignment(sa, Alignment.MIDDLE_CENTER);
+                Button da = new Button("Deselect all");
+                da.addClickListener(new Button.ClickListener() {
+                    public void buttonClick(ClickEvent event) {
+                        Iterator<Component> i = ecosystemServiceIndicatorTable.iterator();
+                        while (i.hasNext()) {
+                            Component c = i.next();
+                            if (c.getId() != null && c.getId().contains("published")
+                                    && c instanceof CheckBox) {
+                                CheckBox cb = (CheckBox) c;
+                                cb.setValue(false);
+                            }
+                        }
+                    }
+                });
+                buttonBar.addComponent(da);
+                buttonBar.setComponentAlignment(da, Alignment.MIDDLE_CENTER);
+                content.addComponent(buttonBar);
+            }
         }
 
         /*
@@ -114,22 +216,56 @@ public class SearchView extends TwinPanelView implements View {
             mapLegend = new MapLegend(gsr);
             hl.addComponent(mapLegend);
             hl.setSpacing(true);
-            
+
         }
 
     }
 
     private FilterPanel<EcosystemServiceIndicator> getFilterPanel() {
 
-        FilterPanel<EcosystemServiceIndicator> fp = new FilterPanel<EcosystemServiceIndicator>(esiContainer, dao);
+        FilterPanel<EcosystemServiceIndicator> fp = new FilterPanel<EcosystemServiceIndicator>(esiContainer, dao){
+            @Override
+            public void doFiltering() {
+                super.doFiltering();
+                addPublishFilter(esiContainer);
+            }
+        };
         fp.addFilterField(EcosystemServiceIndicator_.ecosystemService);
         fp.addFilterField(EcosystemServiceIndicator_.study);
         return fp;
 
     }
 
+    class ESPublishColumn implements Table.ColumnGenerator {
+
+        public Component generateCell(Table source, Object itemId,
+                Object columnId) {
+            final JPAContainerItem<?> item = (JPAContainerItem<?>) source.getItem(itemId);
+            final Object entity = item.getEntity();
+            final EcosystemServiceIndicator esi = (EcosystemServiceIndicator) entity;
+            /*
+             * Check if map is not already published
+             */
+            boolean isPublished = (esi.getStatus() != null && esi.getStatus().getId() == PublishStatus.VALIDATED.getValue());
+            if(!isPublished) {
+                final CheckBox checkBox = new CheckBox();
+                checkBox.addValueChangeListener(new Property.ValueChangeListener() {
+                    @Override
+                    public void valueChange(ValueChangeEvent event) {
+                        Status ps = ( checkBox.getValue() ? validated : notvalidated );
+                        item.getItemProperty("status").setValue(ps);
+                    }
+                });
+                checkBox.setId("published"+itemId.toString());
+                return checkBox;
+            }else{
+               return new Label("");
+            }
+        }
+    }
+
     class ESVisualizationColumn implements Table.ColumnGenerator {
-        
+
         private Role role;
 
         public ESVisualizationColumn(Role role) {
@@ -148,18 +284,18 @@ public class SearchView extends TwinPanelView implements View {
             Object entity = item.getEntity();
 
             final EcosystemServiceIndicator esi = (EcosystemServiceIndicator) entity;
-            
+
             /*
              * Check ownership
              */
-            boolean isowner = false;
+            boolean isOwnerOrSupervisor = false;
             if(esi.getRole().equals(role) || role.getIsSuperUser()) {
-                isowner = true;
+                isOwnerOrSupervisor = true;
             }
-            
+
             StringBuilder sb = new StringBuilder();
 
-            if (isowner) {
+            if (isOwnerOrSupervisor) {
                 sb.append("<a href='#!");
                 sb.append(ViewModule.getESILink(esi));
                 sb.append("'>");
@@ -170,7 +306,7 @@ public class SearchView extends TwinPanelView implements View {
                 sb.append(esi.toString());
                 sb.append("</span>");
             }
-            
+
             sb.append("<br/>");
             sb.append(esi.getStudy().getStudyName());
 
@@ -187,10 +323,12 @@ public class SearchView extends TwinPanelView implements View {
         if (selectedEntity == null) {
 
             Iterator<?> it = table.getItemIds().iterator();
-            Object next = it.next();
-            EcosystemServiceIndicator obj = dao.find(EcosystemServiceIndicator.class, next);
-            selectedEntity = obj;
-            table.select(next);
+            if (it.hasNext()) {
+                Object next = it.next();
+                EcosystemServiceIndicator obj = dao.find(EcosystemServiceIndicator.class, next);
+                selectedEntity = obj;
+                table.select(next);
+            }
 
         }
     }
@@ -212,15 +350,40 @@ public class SearchView extends TwinPanelView implements View {
             }
         });
 
-        ESVisualizationColumn generatedColumn = new ESVisualizationColumn(roleManager.getRole());
-        table.addGeneratedColumn("id", generatedColumn);
-        table.setColumnWidth("id", COL_WIDTH);
+        /*
+         * Check super user
+         */
+        boolean isSuperUser = roleManager.getRole().getIsSuperUser();
+        int CHECK_SIZE = 40;
+
+        if (isSuperUser) {
+            ESPublishColumn publishGeneratedColumn = new ESPublishColumn();
+            table.addGeneratedColumn("publish", publishGeneratedColumn);
+            table.setColumnWidth("publish", CHECK_SIZE);
+        }
+
+        ESVisualizationColumn visualizationGeneratedColumn = new ESVisualizationColumn(roleManager.getRole());
+        table.addGeneratedColumn("id", visualizationGeneratedColumn);
+        table.setColumnWidth("id", COL_WIDTH - (isSuperUser?CHECK_SIZE:0) );
+
+
         return table;
 
     }
 
+    protected void addPublishFilter(Filterable toFilter) {
+        if (!roleManager.getRole().getIsSuperUser()) {
+            toFilter.addContainerFilter(
+                    new Or(
+                            new Equal("status", PublishStatus.VALIDATED.getValue()),
+                            new Equal("role", roleManager.getRole())
+                            )
+                    );
+        }
+    }
+
     protected void entitySelected(Long id) {
-        
+
         if (id == null) {
             // Todo - nothing is selected - clear the view, or not?
             selectedEntity = null;
@@ -229,7 +392,7 @@ public class SearchView extends TwinPanelView implements View {
 
         EntityItem<EcosystemServiceIndicator> x = esiContainer.getItem(id);
         EcosystemServiceIndicator entity = x.getEntity();
-        
+
         this.selectedEntity = entity;
 
         if (entity == null) {
@@ -257,5 +420,5 @@ public class SearchView extends TwinPanelView implements View {
         // gl.addComponent(new Label(entity.getIndicator().toString()), 1,2);
     }
 
-    
+
 }
