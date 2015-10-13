@@ -40,6 +40,7 @@ import com.vaadin.ui.Component;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Table;
+import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 import com.vividsolutions.jts.geom.Polygon;
 
@@ -69,6 +70,12 @@ public class SearchView extends TwinPanelView implements View {
 
     private Status notvalidated;
 
+    private int checkedCount;
+
+    private Button pb;
+
+    private Button sb;
+
     @Inject
     public SearchView(Dao dao, RoleManager roleManager, 
             @Named("gs_wms_url") String defaultWms,
@@ -79,7 +86,7 @@ public class SearchView extends TwinPanelView implements View {
 
         this.validated = dao.getEntityManager().find(Status.class,   PublishStatus.VALIDATED.getValue());
         this.notvalidated = dao.getEntityManager().find(Status.class,  PublishStatus.NOT_VALIDATED .getValue());
-        
+
         this.esiContainer = containerManager.getContainer();
         esiContainer.setAutoCommit(false);
         esiContainer.sort(new String[] {"dateUpdated"}, new boolean[]{false});
@@ -109,7 +116,7 @@ public class SearchView extends TwinPanelView implements View {
             content.addComponent(filterPanel);
 
             final EntityTable<EcosystemServiceIndicator> ecosystemServiceIndicatorTable = getEcosystemServiceIndicatorTable();
-            
+
             /*
              * Top button bar
              */
@@ -117,30 +124,29 @@ public class SearchView extends TwinPanelView implements View {
                 HorizontalLayout buttonBar = new HorizontalLayout();
                 buttonBar.setSpacing(true);
                 buttonBar.setHeight("50px");
-                Button pb = new Button("Publish");
+                pb = new Button("Publish");
+                pb.setEnabled(false);
                 pb.addClickListener(new Button.ClickListener(){
                     public void buttonClick(ClickEvent event) {
                         if(esiContainer.isModified()){
                             esiContainer.commit();
                             esiContainer.refresh();
+                            resetChecked();
                         }
-                        /*
-                        Iterator<Component> i = ecosystemServiceIndicatorTable.iterator();
-                        while (i.hasNext()) {
-                            Component c = i.next();
-                            if (c.getId() != null && c instanceof CheckBox) {
-                                CheckBox cb = (CheckBox) c;
-                                if(cb.getValue()){
-                                    //JPAContainerItem<?> item = (JPAContainerItem<?>) esiContainer.getIdByIndex(
-                                }
-                            }
-                        }
-                        */
                     }
                 });
                 buttonBar.addComponent(pb);
                 buttonBar.setComponentAlignment(pb, Alignment.MIDDLE_CENTER);
-                Button sb = new Button("Send back");
+                sb = new Button("Send back");
+                sb.setEnabled(false);
+                sb.addClickListener(new Button.ClickListener(){
+                    public void buttonClick(ClickEvent event) {
+                        if(selectedEntity != null){
+                            ModalMessageWindow window = new ModalMessageWindow(selectedEntity);
+                            UI.getCurrent().addWindow(window);
+                        }
+                    }
+                });
                 buttonBar.addComponent(sb);
                 buttonBar.setComponentAlignment(sb, Alignment.MIDDLE_CENTER);
                 content.addComponent(buttonBar);
@@ -149,7 +155,7 @@ public class SearchView extends TwinPanelView implements View {
             /*
              * Table
              */
-            
+
             content.addComponent(ecosystemServiceIndicatorTable);
             content.setExpandRatio(ecosystemServiceIndicatorTable, 1);
 
@@ -252,14 +258,16 @@ public class SearchView extends TwinPanelView implements View {
                 checkBox.addValueChangeListener(new Property.ValueChangeListener() {
                     @Override
                     public void valueChange(ValueChangeEvent event) {
-                        Status ps = ( checkBox.getValue() ? validated : notvalidated );
+                        Status ps = checkBox.getValue() ? validated : notvalidated;
+                        manageChecked(esi, checkBox.getValue());                        
                         item.getItemProperty("status").setValue(ps);
                     }
+
                 });
                 checkBox.setId("published"+itemId.toString());
                 return checkBox;
             }else{
-               return new Label("");
+                return new Label("");
             }
         }
     }
@@ -386,7 +394,7 @@ public class SearchView extends TwinPanelView implements View {
 
         if (id == null) {
             // Todo - nothing is selected - clear the view, or not?
-            selectedEntity = null;
+            resetSelected();
             return;
         }
 
@@ -412,12 +420,34 @@ public class SearchView extends TwinPanelView implements View {
         }
 
         mapLegend.setValue(entity);
+        sb.setEnabled(true);
 
-        // gl.addComponent(new Label(entity.getEcosystemService().toString()),
-        // 0,0);
-        // gl.addComponent(new Label(entity.getComments()), 0,1);
-        // gl.addComponent(new Label(entity.getMinimumMappingUnit()), 0,2);
-        // gl.addComponent(new Label(entity.getIndicator().toString()), 1,2);
+    }
+
+    private void resetSelected(){
+        sb.setEnabled(false);
+        selectedEntity = null;
+    }
+    
+    private void resetChecked(){
+        pb.setEnabled(false);
+        checkedCount = 0;
+    }
+
+    private void manageChecked(EcosystemServiceIndicator checkedEntity, Boolean checked) {
+        if(checked != null){
+            if(checked){
+                checkedCount++;
+            }else{
+                checkedCount--;
+            }
+            checkedCount = (checkedCount > 0 ? checkedCount : 0);
+        }        
+        if(checkedCount > 0){
+            pb.setEnabled(true);
+        }else{
+            pb.setEnabled(false);
+        }
     }
 
 
