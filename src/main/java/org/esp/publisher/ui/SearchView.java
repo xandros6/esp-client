@@ -10,10 +10,13 @@ import it.jrc.persist.Dao;
 import it.jrc.ui.HtmlLabel;
 import it.jrc.ui.SimplePanel;
 
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
 import org.esp.domain.blueprint.EcosystemServiceIndicator;
 import org.esp.domain.blueprint.EcosystemServiceIndicator_;
+import org.esp.domain.blueprint.Message;
 import org.esp.domain.blueprint.PublishStatus;
 import org.esp.domain.blueprint.Status;
 import org.esp.publisher.GeoserverRestApi;
@@ -30,8 +33,11 @@ import com.vaadin.data.Property;
 import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.util.filter.Compare.Equal;
 import com.vaadin.data.util.filter.Or;
+import com.vaadin.event.LayoutEvents;
+import com.vaadin.event.LayoutEvents.LayoutClickEvent;
 import com.vaadin.navigator.View;
 import com.vaadin.navigator.ViewChangeListener.ViewChangeEvent;
+import com.vaadin.server.ThemeResource;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
@@ -42,6 +48,9 @@ import com.vaadin.ui.Label;
 import com.vaadin.ui.Table;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
+import com.vaadin.ui.Window;
+import com.vaadin.ui.Window.CloseEvent;
+import com.vaadin.ui.themes.BaseTheme;
 import com.vividsolutions.jts.geom.Polygon;
 
 public class SearchView extends TwinPanelView implements View {
@@ -64,39 +73,50 @@ public class SearchView extends TwinPanelView implements View {
 
     private static int COL_WIDTH = 400;
 
-    private GeoserverRestApi gsr;
+    private static int CHECK_SIZE = 40;
 
     private Status validated;
 
     private Status notvalidated;
 
-    private int checkedCount;
-
     private Button pb;
 
     private Button sb;
 
+    private Set<JPAContainerItem<?>> checkedItems;
+
+    private ModalMessageWindow modalMessageWindow;
+
     @Inject
-    public SearchView(Dao dao, RoleManager roleManager, 
-            @Named("gs_wms_url") String defaultWms,
+    public SearchView(Dao dao, RoleManager roleManager,
+            final ModalMessageWindow modalMessageWindow, @Named("gs_wms_url") String defaultWms,
             GeoserverRestApi gsr) {
 
         ContainerManager<EcosystemServiceIndicator> containerManager = new ContainerManager<EcosystemServiceIndicator>(
                 dao, EcosystemServiceIndicator.class);
-
-        this.validated = dao.getEntityManager().find(Status.class,   PublishStatus.VALIDATED.getValue());
-        this.notvalidated = dao.getEntityManager().find(Status.class,  PublishStatus.NOT_VALIDATED .getValue());
-
+        this.modalMessageWindow = modalMessageWindow;
+        this.modalMessageWindow.addCloseListener(new Window.CloseListener() {
+            @Override
+            public void windowClose(CloseEvent e) {
+                entitySelected(selectedEntity.getId());
+            }
+        });
+        this.validated = dao.getEntityManager().find(Status.class,
+                PublishStatus.VALIDATED.getValue());
+        this.notvalidated = dao.getEntityManager().find(Status.class,
+                PublishStatus.NOT_VALIDATED.getValue());
+        this.checkedItems = new HashSet<JPAContainerItem<?>>();
         this.esiContainer = containerManager.getContainer();
-        esiContainer.setAutoCommit(false);
-        esiContainer.sort(new String[] {"dateUpdated"}, new boolean[]{false});
+
+        esiContainer.sort(new String[] { EcosystemServiceIndicator_.dateUpdated.getName() },
+                new boolean[] { false });
         this.dao = dao;
         this.layerManager = new LayerManager(new LMap(), defaultWms);
         this.roleManager = roleManager;
         addPublishFilter(esiContainer);
         {
             SimplePanel leftPanel = getLeftPanel();
-            leftPanel.setWidth((COL_WIDTH + 80) +  "px");
+            leftPanel.setWidth((COL_WIDTH + 80) + "px");
             content.setSizeFull();
             leftPanel.addComponent(content);
 
@@ -120,30 +140,34 @@ public class SearchView extends TwinPanelView implements View {
             /*
              * Top button bar
              */
-            if(roleManager.getRole().getIsSuperUser()) {
+            if (roleManager.getRole().getIsSuperUser()) {
                 HorizontalLayout buttonBar = new HorizontalLayout();
                 buttonBar.setSpacing(true);
                 buttonBar.setHeight("50px");
                 pb = new Button("Publish");
                 pb.setEnabled(false);
-                pb.addClickListener(new Button.ClickListener(){
+                pb.addClickListener(new Button.ClickListener() {
                     public void buttonClick(ClickEvent event) {
-                        if(esiContainer.isModified()){
-                            esiContainer.commit();
-                            esiContainer.refresh();
-                            resetChecked();
+                        Iterator<JPAContainerItem<?>> i = checkedItems.iterator();
+                        while (i.hasNext()) {
+                            JPAContainerItem<?> item = i.next();
+                            item.getItemProperty(EcosystemServiceIndicator_.status.getName())
+                                    .setValue(validated);
                         }
+                        esiContainer.refresh();
+                        resetChecked();
                     }
                 });
                 buttonBar.addComponent(pb);
                 buttonBar.setComponentAlignment(pb, Alignment.MIDDLE_CENTER);
                 sb = new Button("Send back");
                 sb.setEnabled(false);
-                sb.addClickListener(new Button.ClickListener(){
+                sb.addClickListener(new Button.ClickListener() {
                     public void buttonClick(ClickEvent event) {
-                        if(selectedEntity != null){
-                            ModalMessageWindow window = new ModalMessageWindow(selectedEntity);
-                            UI.getCurrent().addWindow(window);
+                        if (selectedEntity != null) {
+                            modalMessageWindow.createMessage(selectedEntity);
+                            UI.getCurrent().addWindow(modalMessageWindow);
+                            modalMessageWindow.focus();
                         }
                     }
                 });
@@ -167,7 +191,7 @@ public class SearchView extends TwinPanelView implements View {
                 buttonBar.setSpacing(true);
                 buttonBar.setHeight("50px");
                 Button sa = new Button("Select all");
-                sa.addClickListener(new Button.ClickListener(){
+                sa.addClickListener(new Button.ClickListener() {
                     public void buttonClick(ClickEvent event) {
                         Iterator<Component> i = ecosystemServiceIndicatorTable.iterator();
                         while (i.hasNext()) {
@@ -229,7 +253,8 @@ public class SearchView extends TwinPanelView implements View {
 
     private FilterPanel<EcosystemServiceIndicator> getFilterPanel() {
 
-        FilterPanel<EcosystemServiceIndicator> fp = new FilterPanel<EcosystemServiceIndicator>(esiContainer, dao){
+        FilterPanel<EcosystemServiceIndicator> fp = new FilterPanel<EcosystemServiceIndicator>(
+                esiContainer, dao) {
             @Override
             public void doFiltering() {
                 super.doFiltering();
@@ -244,29 +269,32 @@ public class SearchView extends TwinPanelView implements View {
 
     class ESPublishColumn implements Table.ColumnGenerator {
 
-        public Component generateCell(Table source, Object itemId,
-                Object columnId) {
+        public Component generateCell(Table source, Object itemId, Object columnId) {
             final JPAContainerItem<?> item = (JPAContainerItem<?>) source.getItem(itemId);
             final Object entity = item.getEntity();
             final EcosystemServiceIndicator esi = (EcosystemServiceIndicator) entity;
             /*
              * Check if map is not already published
              */
-            boolean isPublished = (esi.getStatus() != null && esi.getStatus().getId() == PublishStatus.VALIDATED.getValue());
-            if(!isPublished) {
+            boolean isPublished = (esi.getStatus() != null && esi.getStatus().getId() == PublishStatus.VALIDATED
+                    .getValue());
+            if (!isPublished) {
                 final CheckBox checkBox = new CheckBox();
                 checkBox.addValueChangeListener(new Property.ValueChangeListener() {
                     @Override
                     public void valueChange(ValueChangeEvent event) {
-                        Status ps = checkBox.getValue() ? validated : notvalidated;
-                        manageChecked(esi, checkBox.getValue());                        
-                        item.getItemProperty("status").setValue(ps);
+                        if (checkBox.getValue()) {
+                            checkedItems.add(item);
+                        } else {
+                            checkedItems.remove(item);
+                        }
+                        manageChecked();
                     }
 
                 });
-                checkBox.setId("published"+itemId.toString());
+                checkBox.setId("published" + itemId.toString());
                 return checkBox;
-            }else{
+            } else {
                 return new Label("");
             }
         }
@@ -280,8 +308,7 @@ public class SearchView extends TwinPanelView implements View {
             this.role = role;
         }
 
-        public Component generateCell(Table source, Object itemId,
-                Object columnId) {
+        public Component generateCell(Table source, final Object itemId, Object columnId) {
             JPAContainerItem<?> item = (JPAContainerItem<?>) source.getItem(itemId);
 
             HtmlLabel label = new HtmlLabel();
@@ -297,7 +324,7 @@ public class SearchView extends TwinPanelView implements View {
              * Check ownership
              */
             boolean isOwnerOrSupervisor = false;
-            if(esi.getRole().equals(role) || role.getIsSuperUser()) {
+            if (esi.getRole().equals(role) || role.getIsSuperUser()) {
                 isOwnerOrSupervisor = true;
             }
 
@@ -320,11 +347,66 @@ public class SearchView extends TwinPanelView implements View {
 
             label.setValue(sb.toString());
 
-            return label;
+            HorizontalLayout hl = new HorizontalLayout();
+            hl.setSizeFull();
+            hl.addComponent(label);
+            hl.setExpandRatio(label, 1);
+            hl.setComponentAlignment(label, Alignment.MIDDLE_LEFT);
+
+            Component msgButton = getRecMessageBtn(esi);
+            if (msgButton != null) {
+                hl.addComponent(msgButton);
+                hl.setComponentAlignment(msgButton, Alignment.MIDDLE_CENTER);
+            }
+            // Forward clicks on the layout as selection
+            // in the table
+            hl.addLayoutClickListener(new LayoutEvents.LayoutClickListener() {
+                @Override
+                public void layoutClick(LayoutClickEvent event) {
+                    table.select(itemId);
+                }
+            });
+
+            return hl;
 
         }
-    }
 
+        public Component getRecMessageBtn(EcosystemServiceIndicator esi) {
+            /*
+             * Check if exists direct or feedback message
+             */
+            final Message fbMsg = getFeedbackMessage(esi);
+            if (roleManager.getRole().getIsSuperUser() && fbMsg != null) {
+                final Button readNewMessageBtn = new Button();
+                readNewMessageBtn.setStyleName(BaseTheme.BUTTON_LINK);
+                readNewMessageBtn.setIcon(new ThemeResource("../biopama/img/opened_email.png"));
+                readNewMessageBtn.addClickListener(new Button.ClickListener() {
+                    public void buttonClick(ClickEvent event) {
+                        modalMessageWindow.showMessage(fbMsg);
+                        UI.getCurrent().addWindow(modalMessageWindow);
+                        modalMessageWindow.focus();
+                    }
+                });
+                return readNewMessageBtn;
+            }
+            final Message dirMsg = getDirectMessage(esi);
+            if (!roleManager.getRole().getIsSuperUser() && dirMsg != null) {
+                final Button readNewMessageBtn = new Button();
+                readNewMessageBtn.setStyleName(BaseTheme.BUTTON_LINK);
+                readNewMessageBtn.setIcon(new ThemeResource("../biopama/img/opened_email.png"));
+                readNewMessageBtn.addClickListener(new Button.ClickListener() {
+                    public void buttonClick(ClickEvent event) {
+                        modalMessageWindow.feedbackMessage(dirMsg);
+                        UI.getCurrent().addWindow(modalMessageWindow);
+                        modalMessageWindow.focus();
+                    }
+                });
+                return readNewMessageBtn;
+            }
+            return null;
+        }
+
+    }
 
     @Override
     public void enter(ViewChangeEvent event) {
@@ -351,7 +433,6 @@ public class SearchView extends TwinPanelView implements View {
 
         table.addValueChangeListener(new Property.ValueChangeListener() {
             public void valueChange(Property.ValueChangeEvent event) {
-
                 Long si = (Long) event.getProperty().getValue();
                 entitySelected(si);
 
@@ -362,7 +443,6 @@ public class SearchView extends TwinPanelView implements View {
          * Check super user
          */
         boolean isSuperUser = roleManager.getRole().getIsSuperUser();
-        int CHECK_SIZE = 40;
 
         if (isSuperUser) {
             ESPublishColumn publishGeneratedColumn = new ESPublishColumn();
@@ -370,10 +450,10 @@ public class SearchView extends TwinPanelView implements View {
             table.setColumnWidth("publish", CHECK_SIZE);
         }
 
-        ESVisualizationColumn visualizationGeneratedColumn = new ESVisualizationColumn(roleManager.getRole());
+        ESVisualizationColumn visualizationGeneratedColumn = new ESVisualizationColumn(
+                roleManager.getRole());
         table.addGeneratedColumn("id", visualizationGeneratedColumn);
-        table.setColumnWidth("id", COL_WIDTH - (isSuperUser?CHECK_SIZE:0) );
-
+        table.setColumnWidth("id", COL_WIDTH - (isSuperUser ? CHECK_SIZE : 0));
 
         return table;
 
@@ -381,12 +461,9 @@ public class SearchView extends TwinPanelView implements View {
 
     protected void addPublishFilter(Filterable toFilter) {
         if (!roleManager.getRole().getIsSuperUser()) {
-            toFilter.addContainerFilter(
-                    new Or(
-                            new Equal("status", PublishStatus.VALIDATED.getValue()),
-                            new Equal("role", roleManager.getRole())
-                            )
-                    );
+            toFilter.addContainerFilter(new Or(new Equal(EcosystemServiceIndicator_.status
+                    .getName(), PublishStatus.VALIDATED.getValue()), new Equal(
+                    EcosystemServiceIndicator_.role.getName(), roleManager.getRole())));
         }
     }
 
@@ -420,35 +497,80 @@ public class SearchView extends TwinPanelView implements View {
         }
 
         mapLegend.setValue(entity);
-        sb.setEnabled(true);
+
+        /*
+         * Disable send button if message is already sent by admin to this map or if the author of map is the admin itself
+         */
+        if (roleManager.getRole().getIsSuperUser()) {
+            if (getSentMessage(entity) == null && !entity.getRole().equals(roleManager.getRole())) {
+                sb.setEnabled(true);
+            } else {
+                sb.setEnabled(false);
+            }
+        }
 
     }
 
-    private void resetSelected(){
+    private void resetSelected() {
         sb.setEnabled(false);
         selectedEntity = null;
     }
-    
-    private void resetChecked(){
+
+    private void resetChecked() {
         pb.setEnabled(false);
-        checkedCount = 0;
+        checkedItems.clear();
     }
 
-    private void manageChecked(EcosystemServiceIndicator checkedEntity, Boolean checked) {
-        if(checked != null){
-            if(checked){
-                checkedCount++;
-            }else{
-                checkedCount--;
-            }
-            checkedCount = (checkedCount > 0 ? checkedCount : 0);
-        }        
-        if(checkedCount > 0){
+    private void manageChecked() {
+        if (checkedItems.size() > 0) {
             pb.setEnabled(true);
-        }else{
+        } else {
             pb.setEnabled(false);
         }
     }
 
+    private Message getFeedbackMessage(EcosystemServiceIndicator esi) {
+        Message fbkMsg = null;
+        Set<Message> msgs = esi.getMessages();
+        for (Message msg : msgs) {
+            if (msg != null) {
+                fbkMsg = msg.getFeedback();
+                if (fbkMsg != null && msg.getAuthor().equals(this.roleManager.getRole())) {
+                    break;
+                }
+            }
+        }
+        return fbkMsg;
+    }
+
+    /*
+     * Hide message already managed by user (with feedback)
+     */
+    private Message getDirectMessage(EcosystemServiceIndicator esi) {
+        Message dirMsg = null;
+        Set<Message> msgs = esi.getMessages();
+        for (Message msg : msgs) {
+            if (msg != null && msg.getFeedback() == null && msg.getParent() == null) {
+                dirMsg = msg;
+                break;
+            }
+        }
+        return dirMsg;
+    }
+
+    /*
+     * Hide message already managed by user (with feedback)
+     */
+    private Message getSentMessage(EcosystemServiceIndicator esi) {
+        Message sentMsg = null;
+        Set<Message> msgs = esi.getMessages();
+        for (Message msg : msgs) {
+            if (msg != null) {
+                sentMsg = msg;
+                break;
+            }
+        }
+        return sentMsg;
+    }
 
 }
