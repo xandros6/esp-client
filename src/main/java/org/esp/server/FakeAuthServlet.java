@@ -35,7 +35,7 @@ public class FakeAuthServlet extends AuthServlet {
 
 
             SecurityUtils.getSubject().login(new UsernamePasswordToken("willtemperley@gmail.com", ""));
-            //SecurityUtils.getSubject().login(new UsernamePasswordToken("titos.ignacio@gmail.com", ""));
+            //SecurityUtils.getSubject().login(new UsernamePasswordToken("jimimaes@gmail.com", ""));
             super.doGet(request, response);
 
     }
