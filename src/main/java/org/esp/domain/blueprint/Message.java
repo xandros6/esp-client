@@ -13,30 +13,31 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
+import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
-
-import org.hibernate.annotations.Generated;
-import org.hibernate.annotations.GenerationTime;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 @Entity
 @Table(schema = "blueprint", name = "message")
-public class Message{
-    
+public class Message {
+
     private Long id;
 
     private String text;
-    
+
     private Message feedback;
-    
+
+    private Message parent;
+
     private Role author;
-    
-    private Date dateCreated;
-    
-    private Boolean opened;
-    
+
+    private Date created;
+
     private EcosystemServiceIndicator ecosystemServiceIndicator;
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO, generator = "seq")
     @SequenceGenerator(allocationSize = 1, name = "seq", sequenceName = "blueprint.status_id_seq")
@@ -48,6 +49,7 @@ public class Message{
         this.id = id;
     }
 
+    @Column(length = 500)
     public String getText() {
         return text;
     }
@@ -56,7 +58,7 @@ public class Message{
         this.text = text;
     }
 
-    @OneToOne(cascade=CascadeType.ALL)
+    @OneToOne(mappedBy = "parent")
     public Message getFeedback() {
         return feedback;
     }
@@ -65,22 +67,22 @@ public class Message{
         this.feedback = feedback;
     }
 
-    public Boolean getOpened() {
-        return opened;
+    @OneToOne(cascade = CascadeType.ALL)
+    public Message getParent() {
+        return parent;
     }
 
-    public void setOpened(Boolean opened) {
-        this.opened = opened;
+    public void setParent(Message parent) {
+        this.parent = parent;
     }
 
-    @Column(name = "date_created")
-    @Generated(value = GenerationTime.INSERT)
-    public Date getDateCreated() {
-        return dateCreated;
+    @Temporal(TemporalType.TIMESTAMP)
+    public Date getCreated() {
+        return created;
     }
 
-    public void setDateCreated(Date dateCreated) {
-        this.dateCreated = dateCreated;
+    public void setCreated(Date created) {
+        this.created = created;
     }
 
     @OneToOne
@@ -100,5 +102,11 @@ public class Message{
     public void setEcosystemServiceIndicator(EcosystemServiceIndicator ecosystemServiceIndicator) {
         this.ecosystemServiceIndicator = ecosystemServiceIndicator;
     }
-    
+
+    @PreUpdate
+    @PrePersist
+    public void updateTimeStamps() {
+        created = new Date();
+    }
+
 }
