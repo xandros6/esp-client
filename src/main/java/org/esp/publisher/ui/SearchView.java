@@ -88,8 +88,9 @@ public class SearchView extends TwinPanelView implements View {
     private ModalMessageWindow modalMessageWindow;
 
     @Inject
-    public SearchView(Dao dao, RoleManager roleManager,
-            final ModalMessageWindow modalMessageWindow, @Named("gs_wms_url") String defaultWms,
+    public SearchView(Dao dao, RoleManager roleManager, 
+			final ModalMessageWindow modalMessageWindow,
+            @Named("gs_wms_url") String defaultWms,
             GeoserverRestApi gsr) {
 
         ContainerManager<EcosystemServiceIndicator> containerManager = new ContainerManager<EcosystemServiceIndicator>(
@@ -181,6 +182,7 @@ public class SearchView extends TwinPanelView implements View {
              */
 
             content.addComponent(ecosystemServiceIndicatorTable);
+
             content.setExpandRatio(ecosystemServiceIndicatorTable, 1);
 
             /*
@@ -246,7 +248,7 @@ public class SearchView extends TwinPanelView implements View {
             mapLegend = new MapLegend(gsr);
             hl.addComponent(mapLegend);
             hl.setSpacing(true);
-
+            
         }
 
     }
@@ -301,14 +303,15 @@ public class SearchView extends TwinPanelView implements View {
     }
 
     class ESVisualizationColumn implements Table.ColumnGenerator {
-
+        
         private Role role;
 
         public ESVisualizationColumn(Role role) {
             this.role = role;
         }
 
-        public Component generateCell(Table source, final Object itemId, Object columnId) {
+        public Component generateCell(Table source, final Object itemId,
+                Object columnId) {
             JPAContainerItem<?> item = (JPAContainerItem<?>) source.getItem(itemId);
 
             HtmlLabel label = new HtmlLabel();
@@ -319,7 +322,7 @@ public class SearchView extends TwinPanelView implements View {
             Object entity = item.getEntity();
 
             final EcosystemServiceIndicator esi = (EcosystemServiceIndicator) entity;
-
+            
             /*
              * Check ownership
              */
@@ -327,7 +330,7 @@ public class SearchView extends TwinPanelView implements View {
             if (esi.getRole().equals(role) || role.getIsSuperUser()) {
                 isOwnerOrSupervisor = true;
             }
-
+            
             StringBuilder sb = new StringBuilder();
 
             if (isOwnerOrSupervisor) {
@@ -341,7 +344,7 @@ public class SearchView extends TwinPanelView implements View {
                 sb.append(esi.toString());
                 sb.append("</span>");
             }
-
+            
             sb.append("<br/>");
             sb.append(esi.getStudy().getStudyName());
 
@@ -433,6 +436,7 @@ public class SearchView extends TwinPanelView implements View {
 
         table.addValueChangeListener(new Property.ValueChangeListener() {
             public void valueChange(Property.ValueChangeEvent event) {
+
                 Long si = (Long) event.getProperty().getValue();
                 entitySelected(si);
 
@@ -468,7 +472,7 @@ public class SearchView extends TwinPanelView implements View {
     }
 
     protected void entitySelected(Long id) {
-
+        
         if (id == null) {
             // Todo - nothing is selected - clear the view, or not?
             resetSelected();
@@ -477,7 +481,7 @@ public class SearchView extends TwinPanelView implements View {
 
         EntityItem<EcosystemServiceIndicator> x = esiContainer.getItem(id);
         EcosystemServiceIndicator entity = x.getEntity();
-
+        
         this.selectedEntity = entity;
 
         if (entity == null) {
