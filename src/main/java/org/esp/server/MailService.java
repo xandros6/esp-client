@@ -54,7 +54,7 @@ public class MailService {
         this.fromName = fromName;
         this.freeMarker = freeMarker;
         this.useSSL = useSSL;
-        this.freeMarker.setClassForTemplateLoading(this.getClass(), "/");
+        //this.freeMarker.setClassForTemplateLoading(this.getClass(), "/");
     }
 
     public void sendEmail(String subject, String message, String to) throws EmailException,
@@ -79,7 +79,7 @@ public class MailService {
             TemplateException {
 
         EcosystemServiceIndicator esi = message.getEcosystemServiceIndicator();
-        Template template = this.freeMarker.getTemplate("sendBackEmail.ftl");
+        Template template = this.freeMarker.getTemplate("SendBackEmail.ftl");
         Map<String, String> rootMap = new HashMap<String, String>();
         rootMap.put("SUBJECT", BACK_SUBJECT);
         rootMap.put("TO", esi.getRole().getFirstName() + " " + esi.getRole().getLastName());
