@@ -253,6 +253,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         spatialDataTypeField.addValueChangeListener(new ValueChangeListener() {
             public void valueChange(ValueChangeEvent event) {
                 Object value = event.getProperty().getValue();
+                getEntity().setSpatialDataType(value != null ? (SpatialDataType)value : null);
                 uploadField.updateSpatialDataType(getEntity().getSpatialDataType());
                 esiEditorView.setNewStatus(value == null);
             }
