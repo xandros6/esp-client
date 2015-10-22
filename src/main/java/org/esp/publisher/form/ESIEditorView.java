@@ -76,9 +76,10 @@ public class ESIEditorView extends VerticalLayout implements
                 c.setVisible(!isNew);
 //            }
         }
+
         
         for (Component c : componentsToHide) {
-              c.setVisible(isNew);
+              c.setVisible(false);
         }
     }
 
@@ -86,38 +87,61 @@ public class ESIEditorView extends VerticalLayout implements
     public void buildForm(List<FieldGroup<EcosystemServiceIndicator>> fields) {
         for (FieldGroup<EcosystemServiceIndicator> fieldGroupMeta : fields) {
 
+            HtmlLabel spacer = new HtmlLabel("&nbsp;");
+
             BeanFieldGroup<EcosystemServiceIndicator> bfg = fieldGroupMeta
                     .getFieldGroup();
 
             HtmlHeader c = new HtmlHeader(fieldGroupMeta.getLabel());
             mainPanel.addComponent(c);
 
-            if(fieldGroupMeta.getLabel() != ESIEditor.THE_ECOSYSTEM_SERVICE) {
+            if(fieldGroupMeta.getLabel() == ESIEditor.SPATIAL_DATA) {
                 componentsToToggle.add(c);
+                componentsToToggle.add(spacer);
             }
-            
+            if(fieldGroupMeta.getLabel() == ESIEditor.LAY_OUT) {
+                    componentsToHide.add(c);
+                    componentsToHide.add(spacer);
+                    for (Field<?> field : fieldGroupMeta.getFieldGroup().getFields()) {
+                        componentsToHide.add(field);
+                    }
+                    Component content = ((StylerFieldGroup) fieldGroupMeta).getContent();
+                    mainPanel.addComponent(content);
+                    componentsToHide.add(content);                
+            }else{
+                //}
+
+                /*
             if (fieldGroupMeta instanceof StylerFieldGroup) {
                 Component content = ((StylerFieldGroup) fieldGroupMeta).getContent();
                 mainPanel.addComponent(content);
-                componentsToToggle.add(content);
-            } else {
+                componentsToToggle.add(content);*/
+           // } else {
                 Collection<Field<?>> fieldGroupFields = bfg.getFields();
                 for (Field<?> field : fieldGroupFields) {
                     mainPanel.addComponent(field);
                     //If it's invisible already, it should always be invisible
-                    if(fieldGroupMeta.getLabel() != ESIEditor.THE_ECOSYSTEM_SERVICE && field.isVisible()) {
+                    if(fieldGroupMeta.getLabel() == ESIEditor.SPATIAL_DATA && field.isVisible()) {
                         componentsToToggle.add(field);
                     }
-                    if(field.getCaption().equals(ESIEditor.SPATIAL_DATA_TYPE))  {
-                        componentsToHide.add(field);
-                    }
+                    //if(field.getCaption().equals(ESIEditor.SPATIAL_DATA_TYPE))  {
+                     //   componentsToHide.add(field);
+                    //}
+                    //}
                 }
-            }
 
-            mainPanel.addComponent(new HtmlLabel("&nbsp;"));
-            // view.addComponent(formLayout, fieldGroupMeta.getLabel(),
-            // fieldGroupMeta.getDescription());
-            // addComponent(formLayout);
+                mainPanel.addComponent(spacer);
+                // view.addComponent(formLayout, fieldGroupMeta.getLabel(),
+                // fieldGroupMeta.getDescription());
+                // addComponent(formLayout);
+            }
+        }
+    }
+
+
+    public void showStyler() {
+        for (Component c : componentsToHide) {
+            c.setVisible(true);
         }
     }
 }
