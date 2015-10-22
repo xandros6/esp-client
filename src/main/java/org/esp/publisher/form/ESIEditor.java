@@ -104,6 +104,9 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
     private ESPClientUploadField uploadField;
     
     private Map<Long, Map<String, Integer>> limits = new HashMap<Long, Map<String, Integer>>();
+    private EditableCombo<EcosystemService> ecosystemServiceField;
+    private Field<Indicator> indicatorField;
+    private EditableCombo<Study> studyField;
     
     @Inject
     public ESIEditor(Dao dao, RoleManager roleManager,
@@ -190,21 +193,9 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         esiEditorView.setNewStatus(true);
         super.doCreate();
         
-        
         EcosystemServiceIndicator entity = getEntity();
         
-        Status status = new Status();
-        status.setId(TEMPORARY_STATUS);
-        entity.setStatus(status);
-        EcosystemService dummyEcosystemService = new EcosystemService();
-        dummyEcosystemService.setId(0l);
-        entity.setEcosystemService(dummyEcosystemService);
-        Indicator dummyIndicator = new Indicator();
-        dummyIndicator.setId(0l);
-        entity.setIndicator(dummyIndicator);
-        Study dummyStudy = new Study();
-        dummyStudy.setId(0l);
-        entity.setStudy(dummyStudy);
+        entity.setStatus(dao.find(Status.class, TEMPORARY_STATUS));
         
         entity.setIntervalsNumber(StylerFieldGroup.DEFAULT_N_INTERVALS);
         
@@ -230,23 +221,31 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
 
     private void buildPublishForm() {
 
-        EditableField<EcosystemService> ecosystemServiceField = new EditableCombo<EcosystemService>(
+        /*
+         * The service
+         */
+        ecosystemServiceField = new EditableCombo<EcosystemService>(
                 EcosystemService.class, dao, "SELECT es FROM EcosystemService es WHERE es.id > 0");
+        ecosystemServiceField.setInvalidCommitted(true);
+        ecosystemServiceField.setInvalidAllowed(true);
         ff.addField(EcosystemServiceIndicator_.ecosystemService, ecosystemServiceField);
         /*
          * The indicator
          */
-        getFieldWithPopup("SELECT i FROM Indicator i WHERE i.id > 0",
+        indicatorField = getFieldWithPopup("SELECT i FROM Indicator i WHERE i.id > 0",
                 EcosystemServiceIndicator_.indicator, Indicator_.label);
-
+        indicatorField.setInvalidCommitted(true);
+        indicatorField.setInvalidAllowed(true);
         /*
          * The study
          */
-        EditableField<Study> studyField = new EditableCombo<Study>(
+        studyField = new EditableCombo<Study>(
                 Study.class, dao, "SELECT s FROM Study s WHERE s.id > 0");
         InlineStudyEditor studyEditor = new InlineStudyEditor(dao, roleManager);
         studyField.setEditor(studyEditor);
         studyEditor.init(new DefaultEditorView<Study>());
+        studyField.setInvalidCommitted(true);
+        studyField.setInvalidAllowed(true);
         ff.addField(EcosystemServiceIndicator_.study, studyField);
         
         spatialDataTypeField = (ComboBox) ff.addField(EcosystemServiceIndicator_.spatialDataType);
@@ -689,7 +688,13 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
                     String attributesInfo = filePublisher.getAttributesInfo(layerName);
                     String symbolType = filePublisher.getGeometryType(layerName);
                     updateUIStyle(styleName, attributesInfo, symbolType);
-                    if(commitFormNoValidation()) {
+                    /*
+                     * Force setting fields
+                     */
+                    indicatorField.getPropertyDataSource().setValue(dao.find(Indicator.class, 0l));
+                    ecosystemServiceField.getPropertyDataSource().setValue(dao.find(EcosystemService.class, 0l));
+                    studyField.getPropertyDataSource().setValue(dao.find(Study.class, 0l));
+                    if(commitForm(false)) {
                         // enable the Update Style button
                         //stylerFieldGroup.enableUpdateStyle(true);
                         esiEditorView.showStyler();
