@@ -11,7 +11,6 @@ import java.util.Collection;
 import java.util.List;
 
 import org.esp.domain.blueprint.EcosystemServiceIndicator;
-import org.esp.publisher.colours.ColourMapFieldGroup;
 import org.esp.publisher.styler.StylerFieldGroup;
 
 import com.vaadin.data.fieldgroup.BeanFieldGroup;
@@ -77,9 +76,12 @@ public class ESIEditorView extends VerticalLayout implements
 //            }
         }
 
-        
         for (Component c : componentsToHide) {
-              c.setVisible(false);
+              c.setVisible(!isNew);
+        }
+        
+        if(!isNew){
+            showStyler();
         }
     }
 
@@ -100,23 +102,15 @@ public class ESIEditorView extends VerticalLayout implements
                 componentsToToggle.add(spacer);
             }
             if(fieldGroupMeta.getLabel() == ESIEditor.LAY_OUT) {
-                    componentsToHide.add(c);
-                    componentsToHide.add(spacer);
-                    for (Field<?> field : fieldGroupMeta.getFieldGroup().getFields()) {
-                        componentsToHide.add(field);
-                    }
-                    Component content = ((StylerFieldGroup) fieldGroupMeta).getContent();
-                    mainPanel.addComponent(content);
-                    componentsToHide.add(content);                
-            }else{
-                //}
-
-                /*
-            if (fieldGroupMeta instanceof StylerFieldGroup) {
+                componentsToHide.add(c);
+                componentsToHide.add(spacer);
+                for (Field<?> field : fieldGroupMeta.getFieldGroup().getFields()) {
+                    componentsToHide.add(field);
+                }
                 Component content = ((StylerFieldGroup) fieldGroupMeta).getContent();
                 mainPanel.addComponent(content);
-                componentsToToggle.add(content);*/
-           // } else {
+                componentsToHide.add(content);                
+            }else{
                 Collection<Field<?>> fieldGroupFields = bfg.getFields();
                 for (Field<?> field : fieldGroupFields) {
                     mainPanel.addComponent(field);
@@ -124,16 +118,9 @@ public class ESIEditorView extends VerticalLayout implements
                     if(fieldGroupMeta.getLabel() == ESIEditor.SPATIAL_DATA && field.isVisible()) {
                         componentsToToggle.add(field);
                     }
-                    //if(field.getCaption().equals(ESIEditor.SPATIAL_DATA_TYPE))  {
-                     //   componentsToHide.add(field);
-                    //}
-                    //}
                 }
 
                 mainPanel.addComponent(spacer);
-                // view.addComponent(formLayout, fieldGroupMeta.getLabel(),
-                // fieldGroupMeta.getDescription());
-                // addComponent(formLayout);
             }
         }
     }
