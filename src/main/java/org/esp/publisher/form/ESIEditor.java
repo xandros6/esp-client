@@ -13,14 +13,18 @@ import it.jrc.persist.Dao;
 
 import java.io.File;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 import javax.persistence.metamodel.Attribute;
 import javax.persistence.metamodel.SingularAttribute;
 
+import org.apache.commons.lang3.time.DateUtils;
 import org.esp.domain.blueprint.ArealUnit_;
 import org.esp.domain.blueprint.DataSource;
 import org.esp.domain.blueprint.DataSource_;
@@ -107,6 +111,9 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
     private EditableCombo<EcosystemService> ecosystemServiceField;
     private Field<Indicator> indicatorField;
     private EditableCombo<Study> studyField;
+    private Indicator dummyIndicator;
+    private EcosystemService dummyEcosystemService;
+    private Study dummyStudy;
     
     @Inject
     public ESIEditor(Dao dao, RoleManager roleManager,
@@ -116,6 +123,27 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
             @Named("shapefile_limit_records") int shapefileRecordsLimit) {
 
         super(EcosystemServiceIndicator.class, dao);
+        
+        /*
+         * Clear temporary data older than yesterday
+         */
+        try{
+            dao.getEntityManager().getTransaction().begin();
+            Query q = dao.getEntityManager().createQuery("DELETE FROM EcosystemServiceIndicator es WHERE es.status.id = :temporary AND es.dateCreated < :yesterday");
+            q.setParameter("temporary", TEMPORARY_STATUS);
+            q.setParameter("yesterday", DateUtils.addDays(new Date(), -1));
+            int deleted = q.executeUpdate();
+            dao.getEntityManager().getTransaction().commit();
+            logger.info("Deleted n."+deleted+" EcosystemServiceIndicator older than yesterday");
+        }catch(Exception e){
+            logger.error(e.getMessage(),e);
+            dao.getEntityManager().getTransaction().rollback();
+        }
+        
+        
+        dummyIndicator = dao.find(Indicator.class, 0l);
+        dummyEcosystemService = dao.find(EcosystemService.class, 0l);
+        dummyStudy = dao.find(Study.class, 0l);
         
         this.gsr = gsr;
         SpatialDataPublishers.setGeoserverHandler(gsr);
@@ -157,6 +185,14 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
             UI.getCurrent().getNavigator().navigateTo(ViewModule.HOME);
             return;
         }
+        /*
+         * Temporary is not available for edit
+         */
+        if(entity.getStatus().getId() == PublishStatus.TEMPORARY.getValue()){
+            Notification.show("No longer available.", Type.HUMANIZED_MESSAGE);
+            UI.getCurrent().getNavigator().navigateTo(ViewModule.HOME);
+            return;
+        }
         super.doUpdate(entity);
         esiEditorView.setNewStatus(false);
         SpatialDataPublisher filePublisher = getFilePublisher();
@@ -190,6 +226,9 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
     @Override
     public void doCreate() {
 
+        /*
+         * Clear form
+         */
         esiEditorView.setNewStatus(true);
         super.doCreate();
         
@@ -226,16 +265,14 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
          */
         ecosystemServiceField = new EditableCombo<EcosystemService>(
                 EcosystemService.class, dao, "SELECT es FROM EcosystemService es WHERE es.id > 0");
-        ecosystemServiceField.setInvalidCommitted(true);
-        ecosystemServiceField.setInvalidAllowed(true);
+
         ff.addField(EcosystemServiceIndicator_.ecosystemService, ecosystemServiceField);
         /*
          * The indicator
          */
         indicatorField = getFieldWithPopup("SELECT i FROM Indicator i WHERE i.id > 0",
                 EcosystemServiceIndicator_.indicator, Indicator_.label);
-        indicatorField.setInvalidCommitted(true);
-        indicatorField.setInvalidAllowed(true);
+
         /*
          * The study
          */
@@ -244,8 +281,6 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
         InlineStudyEditor studyEditor = new InlineStudyEditor(dao, roleManager);
         studyField.setEditor(studyEditor);
         studyEditor.init(new DefaultEditorView<Study>());
-        studyField.setInvalidCommitted(true);
-        studyField.setInvalidAllowed(true);
         ff.addField(EcosystemServiceIndicator_.study, studyField);
         
         spatialDataTypeField = (ComboBox) ff.addField(EcosystemServiceIndicator_.spatialDataType);
@@ -689,11 +724,20 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
                     String symbolType = filePublisher.getGeometryType(layerName);
                     updateUIStyle(styleName, attributesInfo, symbolType);
                     /*
-                     * Force setting fields
+                     * Disable validation and store dummy values for empty fields
                      */
-                    indicatorField.getPropertyDataSource().setValue(dao.find(Indicator.class, 0l));
-                    ecosystemServiceField.getPropertyDataSource().setValue(dao.find(EcosystemService.class, 0l));
-                    studyField.getPropertyDataSource().setValue(dao.find(Study.class, 0l));
+                    if(indicatorField.getValue() == null){
+                        indicatorField.getPropertyDataSource().setValue(dummyIndicator);
+                        indicatorField.setInvalidCommitted(true);
+                    }
+                    if(ecosystemServiceField.getValue() == null){
+                        ecosystemServiceField.getPropertyDataSource().setValue(dummyEcosystemService);
+                        ecosystemServiceField.setInvalidCommitted(true);
+                    }
+                    if(studyField.getValue() == null){
+                        studyField.getPropertyDataSource().setValue(dummyStudy);
+                        studyField.setInvalidCommitted(true);
+                    }
                     if(commitForm(false)) {
                         // enable the Update Style button
                         //stylerFieldGroup.enableUpdateStyle(true);
@@ -714,6 +758,30 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
                 throw new PublishException("Error creating style");
             }
         } finally {
+            /*
+             * Override dummy values with empty
+             */
+            if(indicatorField.getValue().equals(dummyIndicator)){
+                indicatorField.setValue(null);
+            }
+            if(ecosystemServiceField.getValue().equals(dummyEcosystemService)){
+                ecosystemServiceField.setValue(null);
+            }
+            if(studyField.getValue().equals(dummyStudy)){
+                studyField.setValue(null);
+            }
+            /*
+             * Change form TEMPORARY to NOT VALIDATED
+             */
+            getEntity().setStatus(dao.find(Status.class, NOT_VALIDATED_STATUS));
+            
+            /*
+             * Enable validation
+             */
+            ecosystemServiceField.setInvalidCommitted(false);
+            indicatorField.setInvalidCommitted(false);
+            studyField.setInvalidCommitted(false);
+
             stylerFieldGroup.endUpdate();
         }
     }
