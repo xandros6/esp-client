@@ -3,10 +3,12 @@ package org.esp.publisher.form;
 import it.jrc.auth.RoleManager;
 import it.jrc.domain.adminunits.Grouping;
 import it.jrc.domain.adminunits.Grouping_;
+import it.jrc.form.ButtonFactory;
 import it.jrc.form.FieldGroup;
 import it.jrc.form.component.FormConstants;
 import it.jrc.form.component.YearField;
 import it.jrc.form.controller.EditorController;
+import it.jrc.form.editor.SubmitPanel;
 import it.jrc.form.view.DefaultEditorView;
 import it.jrc.form.view.IEditorView;
 import it.jrc.persist.Dao;
@@ -20,7 +22,6 @@ import java.util.Locale;
 import java.util.Map;
 
 import javax.persistence.Query;
-import javax.persistence.TypedQuery;
 import javax.persistence.metamodel.Attribute;
 import javax.persistence.metamodel.SingularAttribute;
 
@@ -56,6 +57,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.vaadin.addon.leaflet.LMap;
 import org.vaadin.addon.leaflet.util.CRSTranslator;
+import org.vaadin.dialogs.ConfirmDialog;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -63,6 +65,8 @@ import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.Property.ValueChangeListener;
 import com.vaadin.data.util.converter.Converter;
 import com.vaadin.data.util.converter.StringToIntegerConverter;
+import com.vaadin.ui.Button;
+import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.ComboBox;
 import com.vaadin.ui.Field;
 import com.vaadin.ui.Notification;
@@ -723,31 +727,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
                     String attributesInfo = filePublisher.getAttributesInfo(layerName);
                     String symbolType = filePublisher.getGeometryType(layerName);
                     updateUIStyle(styleName, attributesInfo, symbolType);
-                    /*
-                     * Disable validation and store dummy values for empty fields
-                     */
-                    if(indicatorField.getValue() == null){
-                        indicatorField.getPropertyDataSource().setValue(dummyIndicator);
-                        indicatorField.setInvalidCommitted(true);
-                    }
-                    if(ecosystemServiceField.getValue() == null){
-                        ecosystemServiceField.getPropertyDataSource().setValue(dummyEcosystemService);
-                        ecosystemServiceField.setInvalidCommitted(true);
-                    }
-                    if(studyField.getValue() == null){
-                        studyField.getPropertyDataSource().setValue(dummyStudy);
-                        studyField.setInvalidCommitted(true);
-                    }
-                    if(commitForm(false)) {
-                        // enable the Update Style button
-                        //stylerFieldGroup.enableUpdateStyle(true);
-                        esiEditorView.showStyler();
-                        logger.info("File saved");
-                    } else {
-                        // TODO: rollback
-                        throw new PublishException("Error saving published layer metadata");
-                    }
-                    
+                    commitWithoutValidation("File saved");
                     firePublishEvent();
                 } else {
                     // TODO: rollback
@@ -758,30 +738,6 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
                 throw new PublishException("Error creating style");
             }
         } finally {
-            /*
-             * Override dummy values with empty
-             */
-            if(indicatorField.getValue().equals(dummyIndicator)){
-                indicatorField.setValue(null);
-            }
-            if(ecosystemServiceField.getValue().equals(dummyEcosystemService)){
-                ecosystemServiceField.setValue(null);
-            }
-            if(studyField.getValue().equals(dummyStudy)){
-                studyField.setValue(null);
-            }
-            /*
-             * Change form TEMPORARY to NOT VALIDATED
-             */
-            getEntity().setStatus(dao.find(Status.class, NOT_VALIDATED_STATUS));
-            
-            /*
-             * Enable validation
-             */
-            ecosystemServiceField.setInvalidCommitted(false);
-            indicatorField.setInvalidCommitted(false);
-            studyField.setInvalidCommitted(false);
-
             stylerFieldGroup.endUpdate();
         }
     }
@@ -897,13 +853,7 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
                 }
                 if(updateStyle(layerName, metadata)) {
                     updateUIStyle(layerName, null, null);
-                    if(commitForm(false)) {
-                        logger.info("Style updated");
-                        firePublishEvent();
-                    } else {
-                        // TODO: rollback
-                        throw new PublishException("Error saving published layer metadata");
-                    }
+                    commitWithoutValidation("Style updated");
                 } else {
                  // TODO: rollback
                     throw new PublishException("Error updating style");
@@ -914,6 +864,100 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
             
         }
     }
-
     
+    private void commitWithoutValidation(String message) throws PublishException{
+        /*
+         * Disable validation and store dummy values for empty fields
+         */
+        if(indicatorField.getValue() == null){
+            indicatorField.getPropertyDataSource().setValue(dummyIndicator);
+            indicatorField.setInvalidCommitted(true);
+        }
+        if(ecosystemServiceField.getValue() == null){
+            ecosystemServiceField.getPropertyDataSource().setValue(dummyEcosystemService);
+            ecosystemServiceField.setInvalidCommitted(true);
+        }
+        if(studyField.getValue() == null){
+            studyField.getPropertyDataSource().setValue(dummyStudy);
+            studyField.setInvalidCommitted(true);
+        }
+        boolean com = commitForm(false);
+        /*
+         * Override dummy values with empty
+         */
+        if(indicatorField.getValue().equals(dummyIndicator)){
+            indicatorField.getPropertyDataSource().setValue(null);
+        }
+        if(ecosystemServiceField.getValue().equals(dummyEcosystemService)){
+            ecosystemServiceField.getPropertyDataSource().setValue(null);
+        }
+        if(studyField.getValue().equals(dummyStudy)){
+            studyField.getPropertyDataSource().setValue(null);
+        }
+        
+        /*
+         * Enable validation
+         */
+        ecosystemServiceField.setInvalidCommitted(false);
+        indicatorField.setInvalidCommitted(false);
+        studyField.setInvalidCommitted(false);
+        
+        if(com){
+            // enable the Update Style button
+            //stylerFieldGroup.enableUpdateStyle(true);
+            esiEditorView.showStyler();
+            logger.info(message);
+        }else {
+            // TODO: rollback
+            throw new PublishException("Error saving published layer metadata");
+        }
+    }
+    
+    @Override
+    protected void buildSubmitPanel(SubmitPanel submitPanel) {
+        /*
+         * Submit panel
+         */
+        Button commit = ButtonFactory.getButton(
+                ButtonFactory.SAVE_BUTTON_CAPTION, ButtonFactory.SAVE_ICON);
+        commit.setEnabled(containerManager.canUpdate());
+
+        commit.addClickListener(new Button.ClickListener() {
+            public void buttonClick(ClickEvent event) {
+                /*
+                 * Change form TEMPORARY to NOT VALIDATED
+                 */
+                Status preStatus = getEntity().getStatus();
+                getEntity().setStatus(dao.find(Status.class, NOT_VALIDATED_STATUS));
+                if(!commitForm(true)){
+                    getEntity().setStatus(preStatus);
+                }
+            }
+        });
+
+        Button delete = ButtonFactory.getButton(
+                ButtonFactory.DELETE_BUTTON_CAPTION, ButtonFactory.DELETE_ICON);
+        delete.setEnabled(containerManager.canDelete());
+
+        delete.addClickListener(new Button.ClickListener() {
+            public void buttonClick(ClickEvent event) {
+
+                ConfirmDialog.show(UI.getCurrent(),
+                        "Are you sure you wish to delete this record?",
+                        new ConfirmDialog.Listener() {
+
+                            public void onClose(ConfirmDialog dialog) {
+                                if (dialog.isConfirmed()) {
+                                    doDelete();
+
+                                }
+                            }
+
+                        });
+            }
+        });
+
+        submitPanel.addLeft(commit);
+        submitPanel.addRight(delete);
+    }
 }
