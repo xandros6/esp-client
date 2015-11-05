@@ -214,8 +214,6 @@ public class GeoserverRestApi {
     
     private boolean publishPostgis(File zipFile,String srs, String layerAndStoreName, String styleName, Boolean addLayerSuffix) throws PublishException{
         String layerAndStoreNameMod = layerAndStoreName + (addLayerSuffix ? DB_LAYER_SUFFIX : "");
-        //String zipFileName = FilenameUtils.removeExtension(zipFile.getAbsolutePath()) + (addLayerSuffix ? DB_LAYER_SUFFIX : "") + "." + FilenameUtils.getExtension(zipFile.getName());
-        //zipFile.renameTo(new File(zipFileName));
         importer.importShapefile(zipFile, layerAndStoreName, layerAndStoreNameMod, srs);
         GSFeatureTypeEncoder fte = new GSFeatureTypeEncoder();            
         fte.setName(layerAndStoreNameMod);
