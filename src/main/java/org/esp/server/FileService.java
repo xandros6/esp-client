@@ -30,15 +30,16 @@ public class FileService {
         }
     }
 
-    public void uploadFile(String layerName, File fileToUpload, SpatialDataType datatType)
+    public void uploadFile(Long id, String layerName, File fileToUpload, SpatialDataType datatType)
             throws IOException {
+        String subfolder = getSubfolder(id,layerName,datatType);
         String fileName = layerName + "." + (datatType.getId() == 1 ? MediaType.TIFF.subtype() : MediaType.ZIP.subtype());
-        String destination = FilenameUtils.concat(downloadFolder.getAbsolutePath(), fileName);
+        String destination = FilenameUtils.concat(downloadFolder.getAbsolutePath() + "/" + subfolder, fileName);
         FileUtils.copyFile(fileToUpload, new File(destination));
     }
 
-    public void deleteFile(String layerName) throws IOException {
-        FileFilter fileFilter = new WildcardFileFilter(layerName+".*");
+    public void deleteFile(Long id, String layerName) throws IOException {
+        FileFilter fileFilter = new WildcardFileFilter("*" + id + "_" + layerName);
         File[] files = downloadFolder.listFiles(fileFilter);
         if(files.length == 1){
             FileUtils.deleteQuietly(files[0]);
@@ -55,6 +56,19 @@ public class FileService {
         }else{
             logger.error("Unable to download uploaded file for layer : " + layerName);
         }
+    }
+    
+    private String getSubfolder(Long id, String layerName,SpatialDataType datatType){
+        String subfolder = "";
+        if(datatType.getId() == 1){ 
+            //Raster
+            subfolder = "R";
+        }else{
+            //Vector
+            subfolder = "V";
+        }
+        subfolder = subfolder + "_" + id + "_" + layerName;
+        return subfolder;
     }
 
 }
