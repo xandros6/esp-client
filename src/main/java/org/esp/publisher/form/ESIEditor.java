@@ -764,8 +764,8 @@ public class ESIEditor extends EditorController<EcosystemServiceIndicator> {
                     File tmpFile =  File.createTempFile(f.getName(), ".tmp");
                     FileUtils.copyFile(f, tmpFile);
                     commitWithoutValidation("File saved");
-                    //Persist source file
-                    fileService.uploadFile(getEntity().getId(),layerName,tmpFile,spatialDataType);
+                    // Persist source file
+                    fileService.uploadFile(getEntity().getId(), layerName, tmpFile, spatialDataType);
                     firePublishEvent();
                     tmpFile.delete();
                 } else {
